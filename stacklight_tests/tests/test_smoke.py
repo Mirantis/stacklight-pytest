@@ -33,6 +33,15 @@ class TestPrometheusSmoke(object):
         hosts = salt_actions.ping("I@prometheus:relay")
         if not hosts:
             pytest.skip("Prometheus relay is not installed in the cluster")
+        relay_vip = salt_actions.get_pillar_item(
+            hosts[0], '_param:stacklight_telemetry_address')[0]
+        relay_port = salt_actions.get_pillar_item(
+            hosts[0], 'prometheus:relay:bind:port')[0]
+        logger.info("Initializing prometheus client with the address "
+                    "{}:{}".format(relay_vip, relay_port))
+        relay = PrometheusClient(
+            "http://{0}:{1}/".format(relay_vip, relay_port))
+        relay.get_all_measurements()
         backends = [h["host"] for h in salt_actions.get_pillar_item(
             hosts[0], "prometheus:relay:backends")[0]]
         port = salt_actions.get_pillar_item(
