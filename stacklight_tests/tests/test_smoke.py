@@ -1,6 +1,7 @@
 import logging
 import pytest
 import socket
+import time
 
 from stacklight_tests import utils
 from stacklight_tests.clients.prometheus.prometheus_client import PrometheusClient  # noqa
@@ -42,6 +43,9 @@ class TestPrometheusSmoke(object):
         relay = PrometheusClient(
             "http://{0}:{1}/".format(relay_vip, relay_port))
         relay.get_all_measurements()
+        # (TODO: vgusev) Fix in Q1. Wait while all query times is present for
+        # all prometheus hosts
+        time.sleep(30)
         backends = [h["host"] for h in salt_actions.get_pillar_item(
             hosts[0], "prometheus:relay:backends")[0]]
         port = salt_actions.get_pillar_item(
