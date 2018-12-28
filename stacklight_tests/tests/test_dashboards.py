@@ -213,8 +213,17 @@ def get_all_grafana_dashboards_names():
     dashboards = {
         "Alertmanager": "I@prometheus:server",
         "Apache": "I@apache:server",
+        # TODO(vgusev): change pillar for bond
+        "Bond": "I@linux:network:interface:bond0",
         "Calico": "I@kubernetes:master:network:calico:enabled:True",
         "Cassandra": "I@opencontrail:database",
+        "Ceph - Cluster": "I@ceph:common",
+        "Ceph Hosts Overview": "I@ceph:common",
+        "Ceph OSD device details": "I@ceph:osd",
+        "Ceph OSD Overview": "I@ceph:osd",
+        "Ceph Pools Overview": "I@ceph:common",
+        "Ceph RGW Instance Detail": "I@ceph:radosgw",
+        "Ceph RGW Overview": "I@ceph:radosgw",
         "Cinder": "I@cinder:controller",
         "Docker": "I@docker:client",
         "Elasticsearch": "I@elasticsearch:server",

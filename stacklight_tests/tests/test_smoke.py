@@ -45,7 +45,7 @@ class TestPrometheusSmoke(object):
         relay.get_all_measurements()
         # (TODO: vgusev) Fix in Q1. Wait while all query times is present for
         # all prometheus hosts
-        time.sleep(30)
+        time.sleep(60)
         backends = [h["host"] for h in salt_actions.get_pillar_item(
             hosts[0], "prometheus:relay:backends")[0]]
         port = salt_actions.get_pillar_item(
