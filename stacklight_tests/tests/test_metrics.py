@@ -214,7 +214,7 @@ class TestMetrics(object):
 
     @pytest.mark.run(order=1)
     def test_up_metrics(self, prometheus_api):
-        q = '{__name__=~".*_up"}'
+        q = '{__name__=~".*_up", __name__!~"ceph_num_mds_up"}'
         metrics = prometheus_api.get_query(q)
         for metric in metrics:
             msg = 'Metric {} has value {}'.format(
