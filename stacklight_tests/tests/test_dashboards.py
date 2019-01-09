@@ -217,7 +217,7 @@ def get_all_grafana_dashboards_names():
         "Bond": "I@linux:network:interface:bond0",
         "Calico": "I@kubernetes:master:network:calico:enabled:True",
         "Cassandra": "I@opencontrail:database",
-        "Ceph - Cluster": "I@ceph:common",
+        "Ceph Cluster": "I@ceph:common",
         "Ceph Hosts Overview": "I@ceph:common",
         "Ceph OSD device details": "I@ceph:osd",
         "Ceph OSD Overview": "I@ceph:osd",
