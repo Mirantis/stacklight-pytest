@@ -30,7 +30,15 @@ class MKConfig(object):
         salt = salt_api.SaltApi()
         inv = salt.salt_api.cmd('salt:master', 'cmd.run', ['reclass --inventory'], expr_form='pillar').values()
         file_like_io = StringIO(''.join(inv).decode("utf-8"))
-        inventory = yaml.load(file_like_io)
+        try:
+            inventory = yaml.load(file_like_io)
+
+        except yaml.scanner.ScannerError as e:
+            print(e)
+            print ('Cannot parse reclass inventory yaml. Go to cfg '
+                   'node and check output of '
+                   '`reclass --inventory` command.')
+            exit()
 
         LOG.info("Try to load nodes for domain {}".format(cluster_name))
         if "skipped_nodes" in os.environ:
