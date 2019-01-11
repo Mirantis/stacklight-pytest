@@ -25,8 +25,7 @@ class PrometheusClient(http_client.HttpClient):
         if query_result["status"] != "success":
             raise Exception("Failed resp: {}".format(resp))
 
-        if query_result["data"]["resultType"] == "vector":
-            return query_result["data"]["result"]
+        return query_result["data"]["result"]
 
     def get_query_range(self, query, start_time, end_time, step):
         params = {
