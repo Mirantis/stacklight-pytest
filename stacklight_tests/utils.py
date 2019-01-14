@@ -8,8 +8,8 @@ import requests
 from requests.packages.urllib3 import poolmanager
 import yaml
 
-from stacklight_tests import custom_exceptions as exceptions
-
+#from stacklight_tests import custom_exceptions as exceptions
+import custom_exceptions as exceptions
 
 class TestHTTPAdapter(requests.adapters.HTTPAdapter):
     """Custom transport adapter to disable host checking in https requests."""
