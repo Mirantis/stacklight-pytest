@@ -192,6 +192,18 @@ class MKConfig(object):
             "alerta_username": _param["_param"]["alerta_admin_username"]
         }
 
+    def generate_mongodb_config(self):
+        _param = self.get_application_node(["mongodb"])['parameters'][
+            "mongodb"]["server"]
+        return {
+            "mongodb_primary": [
+                h["host"] for h in _param["members"] if h.get("priority")][0],
+            "mongodb_secondaries": [
+                h["host"] for h in _param["members"] if not h.get("priority")],
+            "mongodb_port": _param["bind"]["port"],
+            "mongodb_replica": _param["replica_set"]
+        }
+
     def main(self):
         config = {
             "env": {"type": "mk"},
