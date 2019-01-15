@@ -1,4 +1,3 @@
-import salt.client
 import os
 import requests
 
@@ -50,6 +49,7 @@ class SaltApi(object):
                                         os.environ['SALT_PASSWORD'],
                                         os.environ['SALT_URL'])
         else:
+            import salt.client
             self.salt_api = salt.client.LocalClient()
 
     def run_cmd(self, tgt, command, tgt_type='compound'):
