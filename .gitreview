@@ -1,4 +1,4 @@
 [gerrit]
-host=review.gerrithub.io
+host=gerrit.mcp.mirantis.com
 port=29418
-project=Mirantis/stacklight-pytest.git
+project=mcp/stacklight-pytest.git

@@ -63,6 +63,8 @@ class MKConfig(object):
                 "grafana.client": "grafana_client",
                 "kibana.server": "elasticsearch_server",
                 "prometheus.server": "prometheus_server",
+                "prometheus.alerta": "alerta",
+                "mongodb.server": "mongodb",
             }
             cls_based_roles = [
                 role for role_name, role in roles_mapping.items()
@@ -105,6 +107,8 @@ class MKConfig(object):
                 _param.get('prometheus_influxdb_password') or "lmapass",
             "influxdb_db_name":
                 _param.get('prometheus_influxdb_db') or "prometheus",
+            "influxdb_admin_password":
+                _param.get('influxdb_admin_password') or "password",
         }
 
     def generate_elasticsearch_config(self):
@@ -128,16 +132,6 @@ class MKConfig(object):
             "grafana_default_datasource": _client_param['datasource'].keys()[0]
         }
 
-    def generate_nagios_config(self):
-        _param = self.get_application_node("nagios")['parameters']['_param']
-        return {
-            "nagios_vip": _param['nagios_host'],
-            "nagios_port": 80,
-            "nagios_tls": False,
-            "nagios_username": _param['nagios_username'],
-            "nagios_password": _param['nagios_password'],
-        }
-
     def generate_keystone_config(self):
         _param = (
             self.get_application_node("keystone")['parameters']['keystone'])
@@ -147,20 +141,25 @@ class MKConfig(object):
             "admin_tenant": _param['server']['admin_tenant'],
             "private_address": _param['server']['bind']['private_address'],
             "public_address": _param['server']['bind']['public_address'],
+            "private_protocol": _param['server']['bind']['private_protocol'],
+            "private_port": _param['server']['bind']['private_port'],
         }
 
     def generate_mysql_config(self):
         _param = self.get_application_node("galera")['parameters']['_param']
         return {
-            "mysql_user": _param['mysql_admin_user'],
-            "mysql_password": _param['mysql_admin_password']
+            "mysql_user": _param.get('mysql_admin_user', 'root'),
+            "mysql_password":
+                _param.get('mysql_admin_password', False) or
+                _param.get('galera_server_admin_password_generated', False)
         }
 
     def generate_prometheus_config(self):
         def get_port(input_line):
             return input_line["ports"][0].split(":")[0]
 
-        _param = self.get_application_node(["prometheus_server", "service.docker.client"])['parameters']
+        _param = self.get_application_node(
+            ["prometheus_server", "service.docker.client"])['parameters']
         expose_params = (
             _param["docker"]["client"]["stack"]["monitoring"]["service"])
 
@@ -173,6 +172,33 @@ class MKConfig(object):
                 get_port(expose_params["alertmanager"]),
             "prometheus_pushgateway":
                 get_port(expose_params["pushgateway"]),
+        }
+
+    def generate_alerta_config(self):
+        def get_port(input_line):
+            return input_line["ports"][0].split(":")[0]
+        _param = self.get_application_node(
+            ["alerta", "service.docker.client"])['parameters']
+        expose_params = (
+            _param["docker"]["client"]["stack"]["monitoring"]["service"])
+
+        return {
+            "alerta_host": _param["_param"]["prometheus_control_address"],
+            "alerta_port":
+                get_port(expose_params["alerta"]),
+            "alerta_username": _param["_param"]["alerta_admin_username"]
+        }
+
+    def generate_mongodb_config(self):
+        _param = self.get_application_node(["mongodb"])['parameters'][
+            "mongodb"]["server"]
+        return {
+            "mongodb_primary": [
+                h["host"] for h in _param["members"] if h.get("priority")][0],
+            "mongodb_secondaries": [
+                h["host"] for h in _param["members"] if not h.get("priority")],
+            "mongodb_port": _param["bind"]["port"],
+            "mongodb_replica": _param["replica_set"]
         }
 
     def main(self):

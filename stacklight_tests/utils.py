@@ -78,6 +78,10 @@ def topo_sort(graph_unsorted):
 
 
 def load_config():
+    test_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(test_dir, "mcp_config.py")
+    if "SL_AUTOCONF" in os.environ.keys():
+        os.system('python {}'.format(path))
     with open(get_fixture("config.yaml")) as config_file:
         config = yaml.load(config_file)
     return config
@@ -116,3 +120,16 @@ def parse_time_rfc_3339(timestamp):
     except ValueError:
         result = dt.datetime.strptime(timestamp, dt_fallback_format)
     return result
+
+
+def wait_for_resource_status(resource_client, resource,
+                             expected_status, timeout=180,
+                             interval=10):
+    msg = "Timed out waiting to become {}".format(expected_status)
+    wait(
+        (lambda:
+         resource_client.get(resource).status == expected_status),
+        interval=interval,
+        timeout=timeout,
+        timeout_msg=msg
+    )

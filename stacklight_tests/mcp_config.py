@@ -1,13 +1,14 @@
-import salt.client as client
-import subprocess
 import socket
 
 import yaml
 from pprint import pprint
+from clients import salt_api
 
 import settings
+import os
 import utils
 from io import StringIO
+
 
 class LOG(object):
     @staticmethod
@@ -26,14 +27,20 @@ class MKConfig(object):
             cluster_name = socket.getfqdn().split('.', 1)[-1]
             LOG.info("No domain/cluster_name passed, use generated: {}"
                      .format(cluster_name))
-        salt = client.LocalClient()
-        inv = salt.cmd('salt:master', 'cmd.run', ['reclass --inventory'],
-                       expr_form='pillar').values()
-        file_io = StringIO(''.join(inv).decode("utf-8"))
-        inventory = yaml.load(file_io)
+        salt = salt_api.SaltApi()
+        inv = salt.salt_api.cmd(
+            'salt:master', 'cmd.run', ['reclass --inventory'],
+            expr_form='pillar').values()
+        file_like_io = StringIO(''.join(inv).decode("utf-8"))
+        inventory = yaml.load(file_like_io)
+
         LOG.info("Try to load nodes for domain {}".format(cluster_name))
-        self.nodes = {k: v for k, v in inventory["nodes"].items()
-                      if cluster_name in k}
+        if "skipped_nodes" in os.environ:
+            skipped_nodes = os.environ['skipped_nodes']
+            self.nodes = {k: v for k, v in inventory["nodes"].items()
+                          if k not in skipped_nodes}
+        else:
+            self.nodes = {k: v for k, v in inventory["nodes"].items()}
         LOG.info("Load nodes: {}".format(self.nodes.keys()))
 
     def get_application_node(self, applications):
@@ -50,6 +57,7 @@ class MKConfig(object):
 
     def generate_nodes_config(self):
         nodes_config = []
+        private_key = ''
 
         def parse_roles_from_classes(node):
             roles_mapping = {
@@ -63,6 +71,7 @@ class MKConfig(object):
                 "grafana.client": "grafana_client",
                 "kibana.server": "elasticsearch_server",
                 "prometheus.server": "prometheus_server",
+                "prometheus.alerta": "alerta",
             }
             cls_based_roles = [
                 role for role_name, role in roles_mapping.items()
@@ -84,6 +93,8 @@ class MKConfig(object):
             nodes_config.append({
                 "address": node_params['_param']['single_address'],
                 "hostname": node_params['linux']['network']['fqdn'],
+                "username": "root",
+                "private_key": private_key,
                 "roles": roles,
             })
 
@@ -103,6 +114,8 @@ class MKConfig(object):
                 _param.get('prometheus_influxdb_password') or "lmapass",
             "influxdb_db_name":
                 _param.get('prometheus_influxdb_db') or "prometheus",
+            "influxdb_admin_password":
+                _param.get('influxdb_admin_password') or "password",
         }
 
     def generate_elasticsearch_config(self):
@@ -126,16 +139,6 @@ class MKConfig(object):
             "grafana_default_datasource": _client_param['datasource'].keys()[0]
         }
 
-    def generate_nagios_config(self):
-        _param = self.get_application_node("nagios")['parameters']['_param']
-        return {
-            "nagios_vip": _param['nagios_host'],
-            "nagios_port": 80,
-            "nagios_tls": False,
-            "nagios_username": _param['nagios_username'],
-            "nagios_password": _param['nagios_password'],
-        }
-
     def generate_keystone_config(self):
         _param = (
             self.get_application_node("keystone")['parameters']['keystone'])
@@ -157,6 +160,7 @@ class MKConfig(object):
     def generate_prometheus_config(self):
         def get_port(input_line):
             return input_line["ports"][0].split(":")[0]
+
         _param = self.get_application_node(
             ["prometheus_server", "service.docker.client"])['parameters']
         expose_params = (
@@ -171,6 +175,21 @@ class MKConfig(object):
                 get_port(expose_params["alertmanager"]),
             "prometheus_pushgateway":
                 get_port(expose_params["pushgateway"]),
+        }
+
+    def generate_alerta_config(self):
+        def get_port(input_line):
+            return input_line["ports"][0].split(":")[0]
+        _param = self.get_application_node(
+            ["alerta", "service.docker.client"])['parameters']
+        expose_params = (
+            _param["docker"]["client"]["stack"]["monitoring"]["service"])
+
+        return {
+            "alerta_host": _param["_param"]["prometheus_control_address"],
+            "alerta_port":
+                get_port(expose_params["alerta"]),
+            "alerta_username": _param["_param"]["alerta_admin_username"]
         }
 
     def main(self):

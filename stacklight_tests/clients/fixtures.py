@@ -1,10 +1,11 @@
+from alertaclient.api import Client
+from pymongo import MongoClient
 import pytest
 
 from stacklight_tests.clients import es_kibana_api
 from stacklight_tests.clients import grafana_api
 from stacklight_tests.clients.openstack import client_manager
 from stacklight_tests.clients import influxdb_api
-from stacklight_tests.clients import nagios_api
 from stacklight_tests.clients import salt_api
 from stacklight_tests.clients.prometheus import alertmanager_client
 from stacklight_tests.clients.prometheus import prometheus_client
@@ -43,15 +44,11 @@ def prometheus_alerting(prometheus_config, prometheus_native_alerting):
 
 
 @pytest.fixture(scope="session")
-def nagios_client(nagios_config):
-    nagios_api_client = nagios_api.NagiosApi(
-        address=nagios_config["nagios_vip"],
-        port=nagios_config["nagios_port"],
-        username=nagios_config["nagios_username"],
-        password=nagios_config["nagios_password"],
-        tls_enabled=nagios_config["nagios_tls"],
-    )
-    return nagios_api_client
+def alerta_api(alerta_config):
+    endpoint = "http://{0}:{1}/api".format(alerta_config["alerta_host"],
+                                           alerta_config["alerta_port"])
+    client = Client(endpoint=endpoint, ssl_verify=False)
+    return client
 
 
 @pytest.fixture(scope="session")
@@ -98,7 +95,10 @@ def kibana_client(elasticsearch_config):
 
 @pytest.fixture(scope="session")
 def os_clients(keystone_config):
-    auth_url = "http://{}:5000/".format(keystone_config["public_address"])
+    auth_url = "{}://{}:{}/".format(
+        keystone_config["private_protocol"],
+        keystone_config["private_address"],
+        keystone_config["private_port"])
     openstack_clients = client_manager.OfficialClientManager(
         username=keystone_config["admin_name"],
         password=keystone_config["admin_password"],
@@ -118,3 +118,9 @@ def os_actions(os_clients):
 @pytest.fixture(scope="session")
 def salt_actions():
     return salt_api.SaltApi()
+
+
+@pytest.fixture(scope="session")
+def mongodb_api(mongodb_config):
+    return MongoClient(mongodb_config["mongodb_primary"],
+                       mongodb_config["mongodb_port"])
