@@ -163,6 +163,69 @@ ignored_queries_for_fail = [
     '- avg(sum(haproxy_active_servers{type="backend"}) by (host, proxy) '
     '+ sum(haproxy_backup_servers{type="backend"}) by (host, proxy)) '
     'by (proxy) > 0',
+
+    # Ceph. We may not have metrics for all Ceph resources right after
+    # deployment
+    # ceph-rgw-instance-detail
+    'rate(ceph_rgw_put{ceph_daemon=~"[[rgw_servers]]"}[1m])',
+    'rate(ceph_rgw_get{ceph_daemon=~"[[rgw_servers]]"}[1m])',
+    'rate(ceph_rgw_failed_req{ceph_daemon=~"[[rgw_servers]]"}[1m])',
+    'rate(ceph_rgw_req{ceph_daemon=~\"[[rgw_servers]]\"}[1m]) -\n  '
+    '(rate(ceph_rgw_get{ceph_daemon=~\"[[rgw_servers]]\"}[1m]) +\n   '
+    'rate(ceph_rgw_put{ceph_daemon=~\"[[rgw_servers]]\"}[1m]))',
+    'rate(ceph_rgw_get_b{ceph_daemon=~"[[rgw_servers]]"}[1m])',
+    'rate(ceph_rgw_put_b{ceph_daemon=~"[[rgw_servers]]"}[1m])',
+    # ceph-osd-device-details
+    'label_replace(label_replace(irate(diskio_read_time[1m]), "instance", '
+    '"$1", "host", "(.+)"), "device", "$1", "name", "(.+)") / '
+    'label_replace(label_replace(irate(diskio_reads[1m]), "instance", "$1", '
+    '"host", "(.+)"), "device", "$1", "name", "(.+)") and on '
+    '(instance, device) ceph_disk_occupation{ceph_daemon=~"osd.[[osd_id]]"}',
+    'label_replace(label_replace(irate(diskio_write_time[1m]), "instance", '
+    '"$1", "host", "(.+)"), "device", "$1", "name", "(.+)") / '
+    'label_replace(label_replace(irate(diskio_writes[1m]), "instance", "$1", '
+    '"host", "(.+)"), "device", "$1", "name", "(.+)") and on '
+    '(instance, device) ceph_disk_occupation{ceph_daemon=~"osd.[[osd_id]]"}',
+    'irate(ceph_osd_op_w_in_bytes{ceph_daemon=~"osd.[[osd_id]]"}[1m])',
+    'irate(ceph_osd_op_r_out_bytes{ceph_daemon=~"osd.[[osd_id]]"}[1m])',
+    'label_replace(label_replace(irate(diskio_reads[1m]), "instance", "$1", '
+    '"host", "(.+)"), "device", "$1", "name", "(.+)") and on '
+    '(instance, device) ceph_disk_occupation{ceph_daemon=~"osd.[[osd_id]]"}',
+    'label_replace(label_replace(irate(diskio_writes[1m]), "instance", "$1", '
+    '"host", "(.+)"), "device", "$1", "name", "(.+)") and on '
+    '(instance, device) ceph_disk_occupation{ceph_daemon=~"osd.[[osd_id]]"}',
+    'irate(ceph_osd_op_r_latency_sum{ceph_daemon=~"osd.[[osd_id]]"}[1m]) / '
+    'on (ceph_daemon) irate(ceph_osd_op_r_latency_count[1m]) * 1000',
+    'label_replace(label_replace(irate(diskio_io_time[1m]), "instance", "$1", '
+    '"host", "(.+)"), "device", "$1", "name", "(.+)") and on '
+    '(instance, device) ceph_disk_occupation{ceph_daemon=~"osd.[[osd_id]]"}',
+    'irate(ceph_osd_op_w_latency_sum{ceph_daemon=~"osd.[[osd_id]]"}[1m]) / '
+    'on (ceph_daemon) irate(ceph_osd_op_w_latency_count[1m]) * 1000',
+    'irate(ceph_osd_op_r{ceph_daemon=~"osd.[[osd_id]]"}[1m])',
+    'irate(ceph_osd_op_w{ceph_daemon=~"osd.[[osd_id]]"}[1m])',
+    'label_replace(label_replace(irate(diskio_write_bytes[1m]), "instance", '
+    '"$1", "host", "(.+)"), "device", "$1", "name", "(.+)") and on '
+    '(instance, device) ceph_disk_occupation{ceph_daemon=~"osd.[[osd_id]]"}',
+    'label_replace(label_replace(irate(diskio_read_bytes[1m]), "instance", '
+    '"$1", "host", "(.+)"), "device", "$1", "name", "(.+)") and on '
+    '(instance, device) ceph_disk_occupation{ceph_daemon=~"osd.[[osd_id]]"}',
+    # ceph-pools-overview
+    'avg((rate(ceph_pool_rd_bytes{pool_id=~"[[pool_id]]"}[1m]) + '
+    'rate(ceph_pool_wr_bytes{pool_id=~"[[pool_id]]"}[1m])) + '
+    'on(pool_id,instance) group_left(name) '
+    'ceph_pool_metadata{pool_id=~"[[pool_id]]"}) without (instance)',
+    'topk(5,(label_replace((irate(ceph_pool_rd{pool_id=~"[[pool_id]]"}[1m]) + '
+    'irate(ceph_pool_wr{pool_id=~"[[pool_id]]"}[1m])),"id", "$1", "pool_id", '
+    '"(.*)") + on(pool_id) group_left(instance,name) '
+    'ceph_pool_metadata{pool_id=~"[[pool_id]]"}) )',
+    '(label_replace((irate(ceph_pool_rd_bytes{pool_id=~"[[pool_id]]"}[1m]) + '
+    'irate(ceph_pool_wr_bytes{pool_id=~"[[pool_id]]"}[1m])),"id", "$1", '
+    '"pool_id", "(.*)") + on(pool_id) group_left(instance,name) '
+    'ceph_pool_metadata{pool_id=~"[[pool_id]]"}) ',
+    'avg((rate(ceph_pool_rd{pool_id=~"[[pool_id]]"}[1m]) + '
+    'rate(ceph_pool_wr{pool_id=~"[[pool_id]]"}[1m])) + '
+    'on(pool_id,instance) group_left(name) '
+    'ceph_pool_metadata{pool_id=~"[[pool_id]]"}) without (instance)',
 ]
 
 
