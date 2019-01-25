@@ -32,7 +32,15 @@ class MKConfig(object):
             'salt:master', 'cmd.run', ['reclass --inventory'],
             expr_form='pillar').values()
         file_like_io = StringIO(''.join(inv).decode("utf-8"))
-        inventory = yaml.load(file_like_io)
+        try:
+            inventory = yaml.load(file_like_io)
+
+        except yaml.scanner.ScannerError as e:
+            print(e)
+            print ('Cannot parse reclass inventory yaml. Go to cfg '
+                   'node and check output of '
+                   '`reclass --inventory` command.')
+            exit()
 
         LOG.info("Try to load nodes for domain {}".format(cluster_name))
         if "skipped_nodes" in os.environ:
@@ -148,13 +156,17 @@ class MKConfig(object):
             "admin_tenant": _param['server']['admin_tenant'],
             "private_address": _param['server']['bind']['private_address'],
             "public_address": _param['server']['bind']['public_address'],
+            "private_protocol": _param['server']['bind']['private_protocol'],
+            "private_port": _param['server']['bind']['private_port'],
         }
 
     def generate_mysql_config(self):
         _param = self.get_application_node("galera")['parameters']['_param']
         return {
-            "mysql_user": _param['mysql_admin_user'],
-            "mysql_password": _param['mysql_admin_password']
+            "mysql_user": _param.get('mysql_admin_user', 'root'),
+            "mysql_password":
+                _param.get('mysql_admin_password', False) or
+                _param.get('galera_server_admin_password_generated', False)
         }
 
     def generate_prometheus_config(self):
@@ -190,6 +202,18 @@ class MKConfig(object):
             "alerta_port":
                 get_port(expose_params["alerta"]),
             "alerta_username": _param["_param"]["alerta_admin_username"]
+        }
+
+    def generate_mongodb_config(self):
+        _param = self.get_application_node(["mongodb"])['parameters'][
+            "mongodb"]["server"]
+        return {
+            "mongodb_primary": [
+                h["host"] for h in _param["members"] if h.get("priority")][0],
+            "mongodb_secondaries": [
+                h["host"] for h in _param["members"] if not h.get("priority")],
+            "mongodb_port": _param["bind"]["port"],
+            "mongodb_replica": _param["replica_set"]
         }
 
     def main(self):
