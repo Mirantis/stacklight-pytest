@@ -29,7 +29,7 @@ class MKConfig(object):
                      .format(cluster_name))
         salt = salt_api.SaltApi()
         inv = salt.salt_api.cmd(
-            'salt:master', 'cmd.run', ['reclass --inventory'],
+            'salt:master', 'cmd.run', ['reclass --inventory 2>/dev/null'],
             expr_form='pillar').values()
         file_like_io = StringIO(''.join(inv).decode("utf-8"))
         try:
