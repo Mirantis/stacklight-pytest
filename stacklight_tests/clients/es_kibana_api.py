@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 class ElasticSearchApi(object):
     def __init__(self, host, port=9200):
         super(ElasticSearchApi, self).__init__()
+        self.url = "http://{host}:{port}".format(host=host, port=port)
         self.es = elasticsearch.Elasticsearch(
             [{'host': host, 'port': port}])
         self._kibana_protocol = None
