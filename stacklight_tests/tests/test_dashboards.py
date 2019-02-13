@@ -402,6 +402,7 @@ def dashboard_name(request, salt_actions):
     return dash_name
 
 
+@pytest.mark.dashboards
 def test_grafana_dashboard_panel_queries(
         dashboard_name, grafana_client, prometheus_api):
 
@@ -448,6 +449,7 @@ def test_grafana_dashboard_panel_queries(
             len(dashboard_results[PanelStatus.partial_fail]) == 0), error_msg
 
 
+@pytest.mark.dashboards
 def test_panels_fixture(grafana_client):
     dashboards = grafana_client.get_all_dashboards_names()
     # Workaround for Main dashboard
@@ -460,6 +462,7 @@ def test_panels_fixture(grafana_client):
          "{}".format(missing_dashboards))
 
 
+@pytest.mark.dashboards
 def test_grafana_database_type(salt_actions):
     db_type = salt_actions.get_pillar_item(
         "I@grafana:client",

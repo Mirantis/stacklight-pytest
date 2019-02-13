@@ -5,6 +5,9 @@ from stacklight_tests import utils
 
 logger = logging.getLogger(__name__)
 
+pytestmark = pytest.mark.skip(
+    "Skip all tests for alerts as they are destructive")
+
 service_down_entities = {
     # format: {id_for_test: (service_to_stop, [filter(s)_for_nodes],
     # count_of_nodes_to_stop_on, alertname, service_name_in_alert)}
@@ -85,6 +88,7 @@ service_down_entities = {
 }
 
 
+@pytest.mark.alerts
 class TestPrometheusAlerts(object):
     def test_system_load_alerts(self, cluster, prometheus_alerting):
         def check_status(is_fired=True):

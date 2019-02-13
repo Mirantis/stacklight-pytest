@@ -33,6 +33,8 @@ fluentd_loggers = {
 
 
 @pytest.mark.run(order=1)
+@pytest.mark.smoke
+@pytest.mark.logs
 def test_elasticsearch_status(es_client, salt_actions):
     logger.info("Getting Elasticsearch status")
     resp = utils.check_http_get_response(
@@ -54,6 +56,8 @@ def test_elasticsearch_status(es_client, salt_actions):
 
 
 @pytest.mark.run(order=1)
+@pytest.mark.smoke
+@pytest.mark.logs
 def test_kibana_status(kibana_client):
     logger.info("Getting Kibana status")
     resp = utils.check_http_get_response(
@@ -93,6 +97,7 @@ def test_log_helper(salt_actions):
 
 
 @pytest.mark.smoke
+@pytest.mark.logs
 @pytest.mark.parametrize(argnames="input_data",
                          argvalues=fluentd_loggers.values(),
                          ids=fluentd_loggers.keys())
@@ -118,6 +123,8 @@ def test_fluentd_logs(es_client, salt_actions, input_data):
     assert found_loggers, msg
 
 
+@pytest.mark.smoke
+@pytest.mark.logs
 def test_node_count_in_es(es_client, salt_actions):
     expected_nodes = salt_actions.ping(short=True)
     q = {"size": "0",

@@ -9,8 +9,10 @@ from stacklight_tests.clients.prometheus.prometheus_client import PrometheusClie
 logger = logging.getLogger(__name__)
 
 
+@pytest.mark.prometheus
 class TestPrometheusSmoke(object):
     @pytest.mark.run(order=1)
+    @pytest.mark.smoke
     def test_prometheus_container(self, salt_actions):
         prometheus_nodes = salt_actions.ping(
             "prometheus:alertmanager", tgt_type="pillar")
@@ -26,6 +28,7 @@ class TestPrometheusSmoke(object):
                     for node in prometheus_nodes])
 
     @pytest.mark.run(order=1)
+    @pytest.mark.smoke
     def test_prometheus_datasource(self, prometheus_api):
         assert prometheus_api.get_all_measurements()
 
@@ -109,9 +112,8 @@ class TestPrometheusSmoke(object):
                    interval=30, timeout=2 * 60,
                    timeout_msg=timeout_msg)
 
-
-class TestAlertmanagerSmoke(object):
     @pytest.mark.run(order=1)
+    @pytest.mark.smoke
     def test_alertmanager_endpoint_availability(self, prometheus_config):
         """Check that alertmanager endpoint is available.
 
@@ -132,6 +134,7 @@ class TestAlertmanagerSmoke(object):
         assert result
 
     @pytest.mark.run(order=1)
+    @pytest.mark.smoke
     def test_alertmanager_ha(self, salt_actions, prometheus_config):
         """Check alertmanager HA .
 
@@ -150,6 +153,5 @@ class TestAlertmanagerSmoke(object):
             if alertmanager_docker_id:
                 command = "docker kill " + str(alertmanager_docker_id)
                 salt_actions.run_cmd(host, command)
-                return TestAlertmanagerSmoke. \
-                    test_alertmanager_endpoint_availability(self,
-                                                            prometheus_config)
+                return self.test_alertmanager_endpoint_availability(
+                    prometheus_config)

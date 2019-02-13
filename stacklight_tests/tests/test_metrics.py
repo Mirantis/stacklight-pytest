@@ -5,6 +5,7 @@ import os
 logger = logging.getLogger(__name__)
 
 
+@pytest.mark.metrics
 class TestMetrics(object):
     target_metrics = {
         "cpu": ['cpu_usage_system', 'cpu_usage_softirq', 'cpu_usage_steal',
@@ -145,6 +146,7 @@ class TestMetrics(object):
                 assert len(output) != 0, msg
 
     @pytest.mark.run(order=1)
+    @pytest.mark.smoke
     def test_prometheus_targets(self, salt_actions, prometheus_api):
         def get_replicas_count(stack, service):
             tgt = "I@docker:swarm and I@prometheus:server"
@@ -213,6 +215,7 @@ class TestMetrics(object):
                 prometheus_api.check_metric_values(q, 1)
 
     @pytest.mark.run(order=1)
+    @pytest.mark.smoke
     def test_up_metrics(self, prometheus_api):
         q = '{__name__=~".*_up", __name__!~"ceph_num_mds_up"}'
         metrics = prometheus_api.get_query(q)
