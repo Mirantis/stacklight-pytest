@@ -99,3 +99,9 @@ def env_requirements(request, env_config):
 
 def is_mk(env_conf):
     return env_conf.get("env", {}).get("type", "") == "mk"
+
+
+@pytest.fixture(autouse=True)
+def skip_if_no_sl(env_config):
+    if not env_config.get("prometheus", {}).get("stacklight_installed", False):
+        pytest.skip("Stacklight is not installed in the cluster")
