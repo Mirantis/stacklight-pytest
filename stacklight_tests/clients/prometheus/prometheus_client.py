@@ -152,9 +152,9 @@ class PrometheusClient(http_client.HttpClient):
 
 
 def get_prometheus_client_from_config(config):
-    api_client = PrometheusClient(
-        "http://{0}:{1}/".format(
-            config["prometheus_vip"],
-            config["prometheus_server_port"])
-    )
+    host = config["prometheus_relay_vip"] if config.get(
+        "use_prometheus_lts", False) else config["prometheus_vip"]
+    port = config["prometheus_relay_port"] if config.get(
+        "use_prometheus_lts", False) else config["prometheus_server_port"]
+    api_client = PrometheusClient("http://{0}:{1}/".format(host, port))
     return api_client
