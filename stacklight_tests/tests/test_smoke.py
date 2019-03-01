@@ -213,3 +213,19 @@ class TestPrometheusSmoke(object):
         assert len(failed_containers) == 0, \
             "Some containers are in incorrect state: {}".format(
                 failed_containers)
+
+    def test_firing_alerts(self, prometheus_alerting):
+        logger.info("Getting a list of firing alerts")
+        alerts = prometheus_alerting.list_alerts()
+        skip_list = ['SystemDiskFullWarning', 'SystemDiskFullCritical',
+                     'NetdevBudgetRanOutsWarning', 'MemcachedItemsNoneMinor',
+                     'SystemMemoryFullMajor', 'SystemMemoryFullWarning']
+        for alert in alerts:
+            msg = "Alert {} is fired".format(alert.name)
+            if alert.host:
+                msg += " for the node {}".format(alert.host)
+            logger.warning(msg)
+        alerts = filter(lambda x: x.name not in skip_list, alerts)
+        assert len(alerts) == 0, \
+            "There are some firing alerts in the cluster: {}".format(
+                " ".join([a.name for a in alerts]))
