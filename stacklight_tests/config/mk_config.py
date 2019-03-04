@@ -165,6 +165,7 @@ class MKConfig(object):
 
         return {
             "use_prometheus_query_alert": True,
+            "stacklight_installed": True,
             "prometheus_vip": _param["_param"]["prometheus_control_address"],
             "prometheus_server_port":
                 get_port(expose_params["server"]),

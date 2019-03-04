@@ -9,8 +9,10 @@ from stacklight_tests.clients.prometheus.prometheus_client import PrometheusClie
 logger = logging.getLogger(__name__)
 
 
+@pytest.mark.prometheus
 class TestPrometheusSmoke(object):
     @pytest.mark.run(order=1)
+    @pytest.mark.smoke
     def test_prometheus_container(self, salt_actions):
         prometheus_nodes = salt_actions.ping(
             "prometheus:alertmanager", tgt_type="pillar")
@@ -26,6 +28,7 @@ class TestPrometheusSmoke(object):
                     for node in prometheus_nodes])
 
     @pytest.mark.run(order=1)
+    @pytest.mark.smoke
     def test_prometheus_datasource(self, prometheus_api):
         assert prometheus_api.get_all_measurements()
 
@@ -109,9 +112,8 @@ class TestPrometheusSmoke(object):
                    interval=30, timeout=2 * 60,
                    timeout_msg=timeout_msg)
 
-
-class TestAlertmanagerSmoke(object):
     @pytest.mark.run(order=1)
+    @pytest.mark.smoke
     def test_alertmanager_endpoint_availability(self, prometheus_config):
         """Check that alertmanager endpoint is available.
 
@@ -132,6 +134,7 @@ class TestAlertmanagerSmoke(object):
         assert result
 
     @pytest.mark.run(order=1)
+    @pytest.mark.smoke
     def test_alertmanager_ha(self, salt_actions, prometheus_config):
         """Check alertmanager HA .
 
@@ -150,6 +153,57 @@ class TestAlertmanagerSmoke(object):
             if alertmanager_docker_id:
                 command = "docker kill " + str(alertmanager_docker_id)
                 salt_actions.run_cmd(host, command)
-                return TestAlertmanagerSmoke. \
-                    test_alertmanager_endpoint_availability(self,
-                                                            prometheus_config)
+                return self.test_alertmanager_endpoint_availability(
+                    prometheus_config)
+
+    @pytest.mark.smoke
+    def test_docker_service_replicas(self, salt_actions):
+        node = salt_actions.ping("I@prometheus:server and I@docker:client")
+        cmd = 'docker service ls --format "{{.Name}} {{.Mode}} {{.Replicas}}"'
+        status = salt_actions.run_cmd(node, cmd)[0].split("\n")
+        logger.info("\nCurrent status of docker services:")
+        for service in status:
+            service = service.split(" ")
+            logger.info("{:<30} {:<15} {}".format(
+                service[0], service[1], service[2]))
+        wrong_replicas = []
+        for service in status:
+            service = service.split(" ")
+            if service[2][0] != service[2][2]:
+                msg = (
+                    "Service '{}' in mode '{}' has incorrect count of "
+                    "replicas: {}".format(service[0], service[1], service[2]))
+                wrong_replicas.append(msg)
+        assert len(wrong_replicas) == 0, \
+            "Some docker services have incorrect count of replicas: {}".format(
+                wrong_replicas)
+
+    @pytest.mark.smoke
+    def test_docker_container_status(self, salt_actions):
+        node = salt_actions.ping("I@prometheus:server and I@docker:client")
+        cmd = ("docker service ps $(docker stack services -q {}) --format "
+               "'{{{{.Name}}}} {{{{.Node}}}} {{{{.DesiredState}}}} "
+               "{{{{.CurrentState}}}}'")
+        status = []
+        for stack in ["monitoring", "dashboard"]:
+            status.extend(
+                salt_actions.run_cmd(node, cmd.format(stack))[0].split("\n"))
+        logger.info("\nCurrent status of docker containers:")
+        for container in status:
+            container = container.split(" ")
+            logger.info("{:<50} {:<10} {:<15} {}".format(
+                container[0], container[1], container[2],
+                ' '.join(container[3:])))
+        failed_containers = []
+        for container in status:
+            if container.split(" ")[2].lower() != "running":
+                msg = ("Container {} has incorrect state '{}' on the node {}. "
+                       "Current state: '{}'")
+                failed_containers.append(
+                    msg.format(container.split(" ")[0],
+                               container.split(" ")[2],
+                               container.split(" ")[1],
+                               ' '.join(container.split(" ")[3:])))
+        assert len(failed_containers) == 0, \
+            "Some containers are in incorrect state: {}".format(
+                failed_containers)

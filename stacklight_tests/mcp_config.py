@@ -29,7 +29,7 @@ class MKConfig(object):
                      .format(cluster_name))
         salt = salt_api.SaltApi()
         inv = salt.salt_api.cmd(
-            'salt:master', 'cmd.run', ['reclass --inventory'],
+            'salt:master', 'cmd.run', ['reclass --inventory 2>/dev/null'],
             expr_form='pillar').values()
         file_like_io = StringIO(''.join(inv).decode("utf-8"))
         try:
@@ -180,6 +180,7 @@ class MKConfig(object):
 
         return {
             "use_prometheus_query_alert": True,
+            "stacklight_installed": True,
             "prometheus_vip": _param["_param"]["prometheus_control_address"],
             "prometheus_server_port":
                 get_port(expose_params["server"]),

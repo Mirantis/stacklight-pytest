@@ -2,52 +2,13 @@ import os
 import requests
 
 
-class salt_remote:
-    def __init__(self, headers, user, password, url):
-            self.headers = headers
-            self.user = user
-            self.password = password
-            self.url = url
-
-    def get_session(self):
-        login_payload = {'username': self.user,
-                         'password': self.password, 'eauth': 'pam'}
-
-        login_request = requests.post(os.path.join(self.url,
-                                                   'login'),
-                                      headers=self.headers, data=login_payload)
-        if login_request.ok:
-            self.cookies = login_request.cookies
-        else:
-            raise EnvironmentError("401 Not authorized.")
-
-    def cmd(self, tgt, fun, param=None, expr_form='pcre', tgt_type=None,
-            timeout=1):
-        self.get_session()
-        accept_key_payload = {'fun': fun, 'tgt': tgt, 'client': 'local',
-                              'expr_form': expr_form, 'tgt_type': tgt_type,
-                              'timeout': timeout}
-        if param:
-            accept_key_payload['arg'] = param
-        try:
-            result = requests.post(self.url, headers=self.headers,
-                                   data=accept_key_payload,
-                                   cookies=self.cookies)
-            if result.ok:
-                return result.json()['return'][0]
-            else:
-                raise
-        except:
-            raise EnvironmentError("Failed")
-
-
 class SaltApi(object):
     def __init__(self):
         if "SALT_URL" in os.environ.keys():
-            self.salt_api = salt_remote({'Accept': 'application/json'},
-                                        os.environ['SALT_USERNAME'],
-                                        os.environ['SALT_PASSWORD'],
-                                        os.environ['SALT_URL'])
+            self.salt_api = SaltRemote(
+                {'Accept': 'application/json'}, os.environ['SALT_USERNAME'],
+                os.environ['SALT_PASSWORD'], os.environ['SALT_URL']
+            )
         else:
             import salt.client
             self.salt_api = salt.client.LocalClient()
@@ -95,3 +56,43 @@ class SaltApi(object):
             err = "Service {} is stopped on the {} node"
             assert self.service_status(node, name).values()[0], err.format(
                 name, node)
+
+
+class SaltRemote(SaltApi):
+    def __init__(self, headers, user, password, url):
+            super(SaltApi, self).__init__()
+            self.headers = headers
+            self.user = user
+            self.password = password
+            self.url = url
+
+    def get_session(self):
+        login_payload = {'username': self.user,
+                         'password': self.password, 'eauth': 'pam'}
+
+        login_request = requests.post(os.path.join(self.url,
+                                                   'login'),
+                                      headers=self.headers, data=login_payload)
+        if login_request.ok:
+            self.cookies = login_request.cookies
+        else:
+            raise EnvironmentError("401 Not authorized.")
+
+    def cmd(self, tgt, fun, param=None, expr_form=None, tgt_type='compound',
+            timeout=1):
+        self.get_session()
+        accept_key_payload = {'fun': fun, 'tgt': tgt, 'client': 'local',
+                              'expr_form': expr_form, 'tgt_type': tgt_type,
+                              'timeout': timeout}
+        if param:
+            accept_key_payload['arg'] = param
+        try:
+            result = requests.post(self.url, headers=self.headers,
+                                   data=accept_key_payload,
+                                   cookies=self.cookies)
+            if result.ok:
+                return result.json()['return'][0]
+            else:
+                raise
+        except:
+            raise EnvironmentError("Failed")

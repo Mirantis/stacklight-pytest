@@ -10,6 +10,7 @@ from stacklight_tests import utils
 logger = logging.getLogger(__name__)
 
 
+@pytest.mark.openstack_metrics
 class TestOpenstackMetrics(object):
     @pytest.mark.run(order=2)
     def test_glance_metrics(self, destructive, prometheus_api, os_clients):

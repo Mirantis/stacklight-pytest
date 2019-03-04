@@ -6,11 +6,13 @@ from stacklight_tests import utils
 logger = logging.getLogger(__name__)
 
 
+@pytest.mark.alerta
 @pytest.mark.smoke
 def test_alerta_smoke(alerta_api):
     alerta_api.get_count()
 
 
+@pytest.mark.alerta
 @pytest.mark.smoke
 def test_alerta_alerts_consistency(prometheus_native_alerting, alerta_api):
     def check_alerts():
@@ -33,6 +35,7 @@ def test_alerta_alerts_consistency(prometheus_native_alerting, alerta_api):
                timeout_msg="Alerts in Alertmanager and Alerta incosistent")
 
 
+@pytest.mark.alerta
 @pytest.mark.smoke
 def test_mongodb_installed(salt_actions):
     target = "I@mongodb:server"
@@ -41,6 +44,7 @@ def test_mongodb_installed(salt_actions):
     salt_actions.check_service_running("mongodb", target)
 
 
+@pytest.mark.alerta
 @pytest.mark.smoke
 def test_mongodb_configuration(salt_actions, mongodb_api):
     node = salt_actions.ping("I@mongodb:server")[0]
