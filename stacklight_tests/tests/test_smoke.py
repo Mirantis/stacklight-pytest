@@ -181,29 +181,35 @@ class TestPrometheusSmoke(object):
     @pytest.mark.smoke
     def test_docker_container_status(self, salt_actions):
         node = salt_actions.ping("I@prometheus:server and I@docker:client")
-        cmd = ("docker service ps $(docker stack services -q {}) --format "
-               "'{{{{.Name}}}} {{{{.Node}}}} {{{{.DesiredState}}}} "
-               "{{{{.CurrentState}}}}'")
+        srv_cmd = (
+            "docker service ps $(docker stack services -q {}) --format "
+            "'{{{{.Name}}}}' | uniq"
+        )
+        stacks = ["monitoring", "dashboard"]
         status = []
-        for stack in ["monitoring", "dashboard"]:
-            status.extend(
-                salt_actions.run_cmd(node, cmd.format(stack))[0].split("\n"))
+        for stack in stacks:
+            services = salt_actions.run_cmd(node, srv_cmd.format(stack))[
+                0].split("\n")
+            for service in services:
+                st_cmd = (
+                    "docker service ps $(docker stack services -q {}) "
+                    "--no-trunc --format '{{{{.Name}}}}\t{{{{.Node}}}}"
+                    "\t{{{{.DesiredState}}}}\t{{{{.CurrentState}}}}' "
+                    "| grep {} | head -n1").format(
+                    stack, service)
+                status.append(salt_actions.run_cmd(node, st_cmd)[0])
+
         logger.info("\nCurrent status of docker containers:")
         for container in status:
-            container = container.split(" ")
-            logger.info("{:<50} {:<10} {:<15} {}".format(
-                container[0], container[1], container[2],
-                ' '.join(container[3:])))
+            container = container.split("\t")
+            logger.info("{:<50} {:<10} {:<15} {}".format(*container))
+
         failed_containers = []
         for container in status:
-            if container.split(" ")[2].lower() != "running":
-                msg = ("Container {} has incorrect state '{}' on the node {}. "
+            if container.split("\t")[2].lower() != "running":
+                msg = ("Container {} on the node {} has incorrect state '{}'. "
                        "Current state: '{}'")
-                failed_containers.append(
-                    msg.format(container.split(" ")[0],
-                               container.split(" ")[2],
-                               container.split(" ")[1],
-                               ' '.join(container.split(" ")[3:])))
+                failed_containers.append(msg.format(*container.split("\t")))
         assert len(failed_containers) == 0, \
             "Some containers are in incorrect state: {}".format(
                 failed_containers)

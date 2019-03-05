@@ -10,13 +10,15 @@ logger = logging.getLogger(__name__)
 
 def check_service_notification_by_type(es_client, object_id, event_type):
     logger.info("Checking {} notification".format(event_type))
-    q = '{{"query": {{"match": {{"event_type":"{0}"}}}}, "size": 100}}'.format(
-        event_type)
+    q = ('{{"query": {{"match": {{"event_type.keyword":"{0}"}}}}, '
+         '"size": 100}}'.format(event_type))
     output = es_client.search(index='notification-*', body=q)
     return any(object_id in x for x in [
         p['_source']['Payload'] for p in output['hits']['hits']])
 
 
+@pytest.mark.smoke
+@pytest.mark.notifications
 def test_glance_notifications(salt_actions, destructive, os_clients,
                               es_client):
     nodes = salt_actions.ping("I@glance:server")
@@ -57,6 +59,8 @@ def test_glance_notifications(salt_actions, destructive, os_clients,
         )
 
 
+@pytest.mark.smoke
+@pytest.mark.notifications
 def test_neutron_notifications(salt_actions, destructive, os_clients,
                                os_actions, es_client):
     nodes = salt_actions.ping("I@neutron:server")
@@ -117,6 +121,8 @@ def test_neutron_notifications(salt_actions, destructive, os_clients,
         )
 
 
+@pytest.mark.smoke
+@pytest.mark.notifications
 def test_cinder_notifications(salt_actions, destructive, os_clients,
                               es_client):
     nodes = salt_actions.ping("I@cinder:controller")
@@ -151,6 +157,8 @@ def test_cinder_notifications(salt_actions, destructive, os_clients,
         )
 
 
+@pytest.mark.smoke
+@pytest.mark.notifications
 def test_nova_notifications(salt_actions, os_clients, os_actions, es_client,
                             destructive):
     nodes = salt_actions.ping("I@nova:controller")
@@ -218,6 +226,8 @@ def test_nova_notifications(salt_actions, os_clients, os_actions, es_client,
         )
 
 
+@pytest.mark.smoke
+@pytest.mark.notifications
 def test_keystone_notifications(salt_actions, os_clients, es_client,
                                 destructive):
     nodes = salt_actions.ping("I@keystone:server")
@@ -281,6 +291,8 @@ def test_keystone_notifications(salt_actions, os_clients, es_client,
         )
 
 
+@pytest.mark.smoke
+@pytest.mark.notifications
 def test_heat_notifications(salt_actions, os_clients, es_client, os_actions,
                             destructive):
     nodes = salt_actions.ping("I@heat:server")
