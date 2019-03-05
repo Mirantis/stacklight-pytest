@@ -216,3 +216,145 @@ def test_nova_notifications(salt_actions, os_clients, os_actions, es_client,
                 es_client, server.id, event),
             interval=30, timeout=5 * 60, timeout_msg=msg
         )
+
+
+def test_keystone_notifications(salt_actions, os_clients, es_client,
+                                destructive):
+    nodes = salt_actions.ping("I@keystone:server")
+    if not nodes:
+        pytest.skip("Openstack is not installed in the cluster")
+
+    client = os_clients.auth
+    domain = os_clients.auth.project_domain_id
+
+    logger.info("Creating a test project")
+    project = client.projects.create(utils.rand_name("tenant-"), domain)
+    destructive.append(lambda: client.projects.delete(project))
+
+    password = "123456"
+    name = utils.rand_name("user-")
+    logger.info("Creating a test user")
+    user = client.users.create(name, domain=domain, password=password,
+                               default_project=project)
+    destructive.append(lambda: client.users.delete(user))
+
+    logger.info("Creating a test role")
+    role = client.roles.create(utils.rand_name("role-"))
+    destructive.append(lambda: client.roles.delete(role))
+
+    logger.info("Project id: {}, user id: {}, role id: {}".format(
+        project.id, user.id, role.id))
+
+    logger.info("Removing the test resources")
+    client.roles.delete(role)
+    client.users.delete(user)
+    client.projects.delete(project)
+
+    role_event_list = ["identity.role.created", "identity.role.deleted"]
+    user_event_list = ["identity.user.created", "identity.user.deleted"]
+    project_event_list = ["identity.project.created",
+                          "identity.project.deleted"]
+
+    for event in role_event_list:
+        msg = ("Didn't get a notification {} with expected role id "
+               "{}".format(event, role.id))
+        utils.wait(
+            lambda: check_service_notification_by_type(
+                es_client, role.id, event),
+            interval=30, timeout=5 * 60, timeout_msg=msg
+        )
+    for event in user_event_list:
+        msg = ("Didn't get a notification {} with expected user id "
+               "{}".format(event, user.id))
+        utils.wait(
+            lambda: check_service_notification_by_type(
+                es_client, user.id, event),
+            interval=30, timeout=5 * 60, timeout_msg=msg
+        )
+    for event in project_event_list:
+        msg = ("Didn't get a notification {} with expected project id "
+               "{}".format(event, project.id))
+        utils.wait(
+            lambda: check_service_notification_by_type(
+                es_client, project.id, event),
+            interval=30, timeout=5 * 60, timeout_msg=msg
+        )
+
+
+def test_heat_notifications(salt_actions, os_clients, es_client, os_actions,
+                            destructive):
+    nodes = salt_actions.ping("I@heat:server")
+    if not nodes:
+        pytest.skip("Openstack is not installed in the cluster")
+
+    logger.info("Creating a test image")
+    image = os_clients.image.images.create(
+        name="TestVM",
+        disk_format='qcow2',
+        container_format='bare')
+    with file_cache.get_file(settings.CIRROS_QCOW2_URL) as f:
+        os_clients.image.images.upload(image.id, f)
+    destructive.append(lambda: os_clients.image.images.delete(image.id))
+
+    logger.info("Creating a test flavor")
+    name = utils.rand_name("heat-flavor-")
+    flavor = os_actions.create_flavor(name)
+    destructive.append(lambda: os_clients.compute.flavors.delete(flavor))
+
+    logger.info("Creating test network and subnet")
+    project_id = os_clients.auth.projects.find(name='admin').id
+    net = os_actions.create_network(project_id)
+    subnet = os_actions.create_subnet(net, project_id, "192.168.100.0/24")
+
+    filepath = utils.get_fixture("heat_create_neutron_stack_template.yaml",
+                                 parent_dirs=("heat",))
+    with open(filepath) as template_file:
+        template = template_file.read()
+
+    logger.info("Creating a test stack")
+    parameters = {
+        'InstanceType': flavor.name,
+        'ImageId': image.id,
+        'network': net["id"],
+    }
+    stack = os_actions.create_stack(template, parameters=parameters)
+    destructive.append(lambda: os_clients.orchestration.stacks.delete(
+        stack.id))
+    destructive.append(lambda: os_clients.network.delete_subnet(
+        subnet['id']))
+    destructive.append(lambda: os_clients.network.delete_network(
+        net['id']))
+    logger.info("Stack id: {}".format(stack.id))
+
+    logger.info("Removing the test stack")
+    os_clients.orchestration.stacks.delete(stack.id)
+    utils.wait(
+        lambda: (stack.id not in [
+            s.id for s in os_clients.orchestration.stacks.list()])
+    )
+
+    logger.info("Removing the test flavor")
+    os_clients.compute.flavors.delete(flavor.id)
+
+    logger.info("Removing the test image")
+    os_clients.image.images.delete(image.id)
+
+    logger.info("Removing the test network and subnet")
+    os_clients.network.delete_subnet(subnet['id'])
+    os_clients.network.delete_network(net['id'])
+
+    event_list = [
+        "orchestration.stack.create.start",
+        "orchestration.stack.create.end",
+        "orchestration.stack.delete.start",
+        "orchestration.stack.delete.end",
+    ]
+
+    for event in event_list:
+        msg = ("Didn't get a notification {} with expected stack id "
+               "{}".format(event, stack.id))
+        utils.wait(
+            lambda: check_service_notification_by_type(
+                es_client, stack.id, event),
+            interval=30, timeout=5 * 60, timeout_msg=msg
+        )
