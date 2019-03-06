@@ -10,8 +10,29 @@ logger = logging.getLogger(__name__)
 
 def check_service_notification_by_type(es_client, object_id, event_type):
     logger.info("Checking {} notification".format(event_type))
-    q = ('{{"query": {{"match": {{"event_type.keyword":"{0}"}}}}, '
-         '"size": 100}}'.format(event_type))
+    q = {
+        "_source": "Payload",
+        "size": 100,
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "event_type.keyword": "{0}".format(event_type)
+                        }
+                    },
+                    {
+                        "range": {
+                            "Timestamp": {
+                                "gte": "now-1h",
+                                "lte": "now"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
     output = es_client.search(index='notification-*', body=q)
     return any(object_id in x for x in [
         p['_source']['Payload'] for p in output['hits']['hits']])
@@ -55,7 +76,7 @@ def test_glance_notifications(salt_actions, destructive, os_clients,
         utils.wait(
             lambda: check_service_notification_by_type(
                 es_client, image.id, event),
-            interval=30, timeout=5 * 60, timeout_msg=msg
+            interval=10, timeout=2 * 60, timeout_msg=msg
         )
 
 
@@ -93,7 +114,7 @@ def test_neutron_notifications(salt_actions, destructive, os_clients,
         utils.wait(
             lambda: check_service_notification_by_type(
                 es_client, net['name'], event),
-            interval=30, timeout=5 * 60, timeout_msg=msg
+            interval=10, timeout=2 * 60, timeout_msg=msg
         )
     for event in net_delete_event_list:
         msg = "Didn't get a notification {} with expected net id {}".format(
@@ -101,7 +122,7 @@ def test_neutron_notifications(salt_actions, destructive, os_clients,
         utils.wait(
             lambda: check_service_notification_by_type(
                 es_client, net['id'], event),
-            interval=30, timeout=5 * 60, timeout_msg=msg
+            interval=10, timeout=2 * 60, timeout_msg=msg
         )
     for event in subnet_create_event_list:
         msg = ("Didn't get a notification {} with expected subnet "
@@ -109,7 +130,7 @@ def test_neutron_notifications(salt_actions, destructive, os_clients,
         utils.wait(
             lambda: check_service_notification_by_type(
                 es_client, subnet['name'], event),
-            interval=30, timeout=5 * 60, timeout_msg=msg
+            interval=10, timeout=2 * 60, timeout_msg=msg
         )
     for event in subnet_delete_event_list:
         msg = "Didn't get a notification {} with expected subnet id {}".format(
@@ -117,7 +138,7 @@ def test_neutron_notifications(salt_actions, destructive, os_clients,
         utils.wait(
             lambda: check_service_notification_by_type(
                 es_client, subnet['id'], event),
-            interval=30, timeout=5 * 60, timeout_msg=msg
+            interval=10, timeout=2 * 60, timeout_msg=msg
         )
 
 
@@ -153,7 +174,7 @@ def test_cinder_notifications(salt_actions, destructive, os_clients,
         utils.wait(
             lambda: check_service_notification_by_type(
                 es_client, volume.id, event),
-            interval=30, timeout=5 * 60, timeout_msg=msg
+            interval=10, timeout=2 * 60, timeout_msg=msg
         )
 
 
@@ -222,7 +243,7 @@ def test_nova_notifications(salt_actions, os_clients, os_actions, es_client,
         utils.wait(
             lambda: check_service_notification_by_type(
                 es_client, server.id, event),
-            interval=30, timeout=5 * 60, timeout_msg=msg
+            interval=10, timeout=2 * 60, timeout_msg=msg
         )
 
 
@@ -271,7 +292,7 @@ def test_keystone_notifications(salt_actions, os_clients, es_client,
         utils.wait(
             lambda: check_service_notification_by_type(
                 es_client, role.id, event),
-            interval=30, timeout=5 * 60, timeout_msg=msg
+            interval=10, timeout=2 * 60, timeout_msg=msg
         )
     for event in user_event_list:
         msg = ("Didn't get a notification {} with expected user id "
@@ -279,7 +300,7 @@ def test_keystone_notifications(salt_actions, os_clients, es_client,
         utils.wait(
             lambda: check_service_notification_by_type(
                 es_client, user.id, event),
-            interval=30, timeout=5 * 60, timeout_msg=msg
+            interval=10, timeout=2 * 60, timeout_msg=msg
         )
     for event in project_event_list:
         msg = ("Didn't get a notification {} with expected project id "
@@ -287,7 +308,7 @@ def test_keystone_notifications(salt_actions, os_clients, es_client,
         utils.wait(
             lambda: check_service_notification_by_type(
                 es_client, project.id, event),
-            interval=30, timeout=5 * 60, timeout_msg=msg
+            interval=10, timeout=2 * 60, timeout_msg=msg
         )
 
 
@@ -368,5 +389,5 @@ def test_heat_notifications(salt_actions, os_clients, es_client, os_actions,
         utils.wait(
             lambda: check_service_notification_by_type(
                 es_client, stack.id, event),
-            interval=30, timeout=5 * 60, timeout_msg=msg
+            interval=10, timeout=2 * 60, timeout_msg=msg
         )
