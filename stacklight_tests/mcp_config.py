@@ -79,9 +79,7 @@ class MKConfig(object):
                 "grafana.client": "grafana_client",
                 "kibana.server": "elasticsearch_server",
                 "prometheus.server": "prometheus_server",
-                "prometheus.relay": "prometheus_relay",
                 "prometheus.alerta": "alerta",
-                "mongodb.server": "mongodb",
             }
             cls_based_roles = [
                 role for role_name, role in roles_mapping.items()
@@ -179,25 +177,17 @@ class MKConfig(object):
             ["prometheus_server", "service.docker.client"])['parameters']
         expose_params = (
             _param["docker"]["client"]["stack"]["monitoring"]["service"])
-        _relay_param = self.get_application_node("prometheus_relay")[
-            "parameters"]
 
         return {
             "use_prometheus_query_alert": True,
-            "use_prometheus_lts": True,
             "stacklight_installed": True,
-            "prometheus_vip": _param["_param"][
-                "prometheus_control_address"],
+            "prometheus_vip": _param["_param"]["prometheus_control_address"],
             "prometheus_server_port":
                 get_port(expose_params["server"]),
             "prometheus_alertmanager":
                 get_port(expose_params["alertmanager"]),
             "prometheus_pushgateway":
                 get_port(expose_params["pushgateway"]),
-            "prometheus_relay_vip": _relay_param["_param"][
-                "stacklight_telemetry_address"],
-            "prometheus_relay_port": _relay_param["_param"][
-                "cluster_prometheus_relay_port"]
         }
 
     def generate_alerta_config(self):
