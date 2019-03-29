@@ -1,7 +1,6 @@
 import logging
 import pytest
 import socket
-import time
 
 from stacklight_tests import utils
 from stacklight_tests.clients.prometheus.prometheus_client import PrometheusClient  # noqa
@@ -34,30 +33,31 @@ class TestPrometheusSmoke(object):
 
     @pytest.mark.run(order=1)
     def test_prometheus_relay(self, salt_actions):
-        hosts = salt_actions.ping("I@prometheus:relay")
-        if not hosts:
+        relays = salt_actions.ping("I@prometheus:relay")
+        if not relays:
             pytest.skip("Prometheus relay is not installed in the cluster")
-        relay_vip = salt_actions.get_pillar_item(
-            hosts[0], '_param:stacklight_telemetry_address')[0]
-        relay_port = salt_actions.get_pillar_item(
-            hosts[0], 'prometheus:relay:bind:port')[0]
-        logger.info("Initializing prometheus client with the address "
-                    "{}:{}".format(relay_vip, relay_port))
-        relay = PrometheusClient(
-            "http://{0}:{1}/".format(relay_vip, relay_port))
-        relay.get_all_measurements()
-        # (TODO: vgusev) Fix in Q1. Wait while all query times is present for
-        # all prometheus hosts
-        time.sleep(60)
-        backends = [h["host"] for h in salt_actions.get_pillar_item(
-            hosts[0], "prometheus:relay:backends")[0]]
+        hosts = [h["host"] for h in salt_actions.get_pillar_item(
+            relays[0], "prometheus:relay:backends")[0]]
         port = salt_actions.get_pillar_item(
-            hosts[0], "prometheus:relay:backends:port")[0]
-        cmd = "curl -s {}:{}/metrics | awk '/^prometheus/{{print $1}}'"
-        outputs = [salt_actions.run_cmd(hosts[0], cmd.format(b, port))[0]
-                   for b in backends]
-        # (TODO: vgusev) Change logic in the whole test
-        assert len(outputs) != 0
+            relays[0], "prometheus:relay:bind:port")[0]
+
+        # Create a dict {relay_ip: prometheus_metrics}
+        metric_dict = {}
+        for host in hosts:
+            metric_dict.update(
+                {host: PrometheusClient("http://{}:{}/".format(
+                    host, port)).get_query('{__name__=~"^prometheus.*"}')})
+
+        # Remove timestamp from each metric
+        for output in metric_dict.values():
+            for metric in output:
+                metric['value'] = filter(lambda v: isinstance(v, unicode),
+                                         metric['value'])
+
+        # Check that all outputs are the same
+        for x, y in zip(metric_dict.keys(), metric_dict.keys()[1:]):
+            logger.info("Compare metrics from {} and {} relays".format(x, y))
+            assert sorted(metric_dict[x]) == sorted(metric_dict[y])
 
     @pytest.mark.run(order=1)
     def test_prometheus_lts(self, prometheus_api, salt_actions):
@@ -219,7 +219,8 @@ class TestPrometheusSmoke(object):
         alerts = prometheus_alerting.list_alerts()
         skip_list = ['SystemDiskFullWarning', 'SystemDiskFullCritical',
                      'NetdevBudgetRanOutsWarning', 'MemcachedItemsNoneMinor',
-                     'SystemMemoryFullMajor', 'SystemMemoryFullWarning']
+                     'SystemMemoryFullMajor', 'SystemMemoryFullWarning',
+                     'SystemLoadTooHighCritical', 'SystemLoadTooHighWarning']
         for alert in alerts:
             msg = "Alert {} is fired".format(alert.name)
             if alert.host:
