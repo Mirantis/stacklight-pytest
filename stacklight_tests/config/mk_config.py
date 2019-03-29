@@ -6,6 +6,7 @@ from pprint import pprint
 
 from stacklight_tests import settings
 from stacklight_tests import utils
+from stacklight_tests.clients import salt_api
 
 
 class LOG(object):
@@ -128,7 +129,8 @@ class MKConfig(object):
             "grafana_vip": _client_param['server']['host'],
             "grafana_port": _client_param['server']['port'],
             "grafana_username": _client_param['server']['user'],
-            "grafana_password": _client_param['server']['password'],
+            "grafana_password": salt_api.SaltApi().get_pillar_item(
+                'I@grafana:client', '_param:grafana_password_generated')[0],
             "grafana_default_datasource": _client_param['datasource'].keys()[0]
         }
 
@@ -137,7 +139,8 @@ class MKConfig(object):
             self.get_application_node("keystone")['parameters']['keystone'])
         return {
             "admin_name": _param['server']['admin_name'],
-            "admin_password": _param['server']['admin_password'],
+            "admin_password": salt_api.SaltApi().get_pillar_item(
+                'I@keystone:server', 'keystone:server:admin_password')[0],
             "admin_tenant": _param['server']['admin_tenant'],
             "private_address": _param['server']['bind']['private_address'],
             "public_address": _param['server']['bind']['public_address'],

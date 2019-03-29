@@ -143,7 +143,9 @@ class MKConfig(object):
             "grafana_vip": _client_param['server']['host'],
             "grafana_port": _client_param['server']['port'],
             "grafana_username": _client_param['server']['user'],
-            "grafana_password": _client_param['server']['password'],
+            "grafana_password": salt_api.SaltApi().salt_api.cmd(
+                'I@grafana:client', 'pillar.get',
+                ['_param:grafana_password_generated']).values()[0],
             "grafana_default_datasource": _client_param['datasource'].keys()[0]
         }
 
@@ -152,7 +154,9 @@ class MKConfig(object):
             self.get_application_node("keystone")['parameters']['keystone'])
         return {
             "admin_name": _param['server']['admin_name'],
-            "admin_password": _param['server']['admin_password'],
+            "admin_password": salt_api.SaltApi().salt_api.cmd(
+                'I@keystone:server', 'pillar.get',
+                ['keystone:server:admin_password']).values()[0],
             "admin_tenant": _param['server']['admin_tenant'],
             "private_address": _param['server']['bind']['private_address'],
             "public_address": _param['server']['bind']['public_address'],
