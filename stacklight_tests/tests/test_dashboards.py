@@ -143,6 +143,36 @@ ignored_queries_for_fail = [
     'and openstack_nova_service_status{binary="nova-conductor"} == 0) by '
     '(instance))',
 
+    'max(sum(openstack_nova_vcpus and on (hostname) '
+    '(openstack_nova_service_status == 0 and '
+    'openstack_nova_service_state == 0)) by (instance))',
+    'max(sum(openstack_nova_vcpus and on (hostname) '
+    '(openstack_nova_service_status == 0 and '
+    'openstack_nova_service_state == 1)) by (instance))',
+    'max(sum(openstack_nova_vcpus and on (hostname) '
+    '(openstack_nova_service_status == 1 and '
+    'openstack_nova_service_state == 0)) by (instance))',
+
+    'max(sum(openstack_nova_ram and on (hostname) '
+    '(openstack_nova_service_status == 0 and '
+    'openstack_nova_service_state == 0)) by (instance))',
+    'max(sum(openstack_nova_ram and on (hostname) '
+    '(openstack_nova_service_status == 1 and '
+    'openstack_nova_service_state == 0)) by (instance))',
+    'max(sum(openstack_nova_ram and on (hostname) '
+    '(openstack_nova_service_status == 0 and '
+    'openstack_nova_service_state == 1)) by (instance))',
+
+    'max(avg(openstack_nova_disk and on (hostname) '
+    '(openstack_nova_service_status == 0 and '
+    'openstack_nova_service_state == 1)) by (instance))',
+    'max(avg(openstack_nova_disk and on (hostname) '
+    '(openstack_nova_service_status == 1 and '
+    'openstack_nova_service_state == 0)) by (instance))',
+    'max(avg(openstack_nova_disk and on (hostname) '
+    '(openstack_nova_service_status == 0 and '
+    'openstack_nova_service_state == 0)) by (instance))',
+
     # Kubernetes. We have no rkt containers by default
     'sum(rate(container_network_transmit_bytes_total{rkt_container_name!="",'
     'kubernetes_io_hostname=~"^$host$"}[$rate_interval])) by '
