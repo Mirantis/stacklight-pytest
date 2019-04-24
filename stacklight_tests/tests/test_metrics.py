@@ -227,3 +227,31 @@ class TestMetrics(object):
             logger.info(msg)
             err_msg = 'Incorrect value in metric {}'.format(metric)
             assert '1' in metric['value'], err_msg
+
+    @pytest.mark.run(order=2)
+    def test_ovs_metrics(self, prometheus_api, salt_actions):
+        nodes = salt_actions.ping("I@linux:network:bridge:openvswitch",
+                                  short=True)
+        if not nodes:
+            pytest.skip("OVS is not installed in the cluster")
+        metrics = prometheus_api.get_query(
+            '{__name__=~"^procstat.*", exe="ovs-vswitchd"}')
+        expected_metrics = [
+            'procstat_cpu_time_system', 'procstat_cpu_time_user',
+            'procstat_cpu_usage', 'procstat_memory_data',
+            'procstat_memory_locked', 'procstat_memory_vms',
+            'procstat_pid', 'procstat_read_bytes', 'procstat_read_count',
+            'procstat_running', 'procstat_write_bytes', 'procstat_write_count']
+        for metric in expected_metrics:
+            logger.info("Check '{}{}' metrics are present".format(
+                metric, '{exe="ovs-vswitchd"}'))
+            got_metrics = filter(lambda m: m['metric']['__name__'] == metric,
+                                 metrics)
+            assert got_metrics, "'{}' metrics not found".format(metric)
+            for host in nodes:
+                logger.info("Check '{}{{host='{}', exe='ovs-vswitchd'}}' "
+                            "metric is present".format(metric, host))
+                msg = ("Metric '{}{{host='{}', exe='ovs-vswitchd'}}' "
+                       "not found".format(metric, host))
+                assert any([m['metric']['host'] == host
+                            for m in got_metrics]), msg
