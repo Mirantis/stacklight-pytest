@@ -25,11 +25,14 @@ class OfficialClientManager(object):
     NEUTRONCLIENT_VERSION = 2
     NOVACLIENT_VERSION = 2
     INTERFACE = 'admin'
+    endpoint_type = "internalURL"
+    if "OS_INTERFACE" in os.environ.keys():
+        INTERFACE = os.environ["OS_INTERFACE"]
     if "OS_ENDPOINT_TYPE" in os.environ.keys():
-        INTERFACE = os.environ["OS_ENDPOINT_TYPE"]
+        endpoint_type = os.environ["OS_ENDPOINT_TYPE"]
 
     def __init__(self, username=None, password=None,
-                 tenant_name=None, auth_url=None, endpoint_type="internalURL",
+                 tenant_name=None, auth_url=None, endpoint_type=endpoint_type,
                  cert=False, domain="Default", **kwargs):
         self.traceback = ""
 

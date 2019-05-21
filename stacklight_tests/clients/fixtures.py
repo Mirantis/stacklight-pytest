@@ -9,6 +9,7 @@ from stacklight_tests.clients import influxdb_api
 from stacklight_tests.clients import salt_api
 from stacklight_tests.clients.prometheus import alertmanager_client
 from stacklight_tests.clients.prometheus import prometheus_client
+import os
 
 
 @pytest.fixture(scope="session")
@@ -99,6 +100,12 @@ def os_clients(keystone_config):
         keystone_config["private_protocol"],
         keystone_config["private_address"],
         keystone_config["private_port"])
+    if "OS_ENDPOINT_TYPE" in os.environ.keys():
+        if os.environ["OS_ENDPOINT_TYPE"] in ["public", "publicURL"]:
+            auth_url = "{}://{}:{}/".format(
+                keystone_config["private_protocol"],
+                keystone_config["public_address"],
+                keystone_config["private_port"])
     openstack_clients = client_manager.OfficialClientManager(
         username=keystone_config["admin_name"],
         password=keystone_config["admin_password"],
