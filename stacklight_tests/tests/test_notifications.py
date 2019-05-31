@@ -262,7 +262,7 @@ def test_keystone_notifications(salt_actions, os_clients, es_client,
     project = client.projects.create(utils.rand_name("tenant-"), domain)
     destructive.append(lambda: client.projects.delete(project))
 
-    password = "123456"
+    password = "Stacklight_pytest_password_123456!"
     name = utils.rand_name("user-")
     logger.info("Creating a test user")
     user = client.users.create(name, domain=domain, password=password,

@@ -220,7 +220,8 @@ class TestPrometheusSmoke(object):
         skip_list = ['SystemDiskFullWarning', 'SystemDiskFullCritical',
                      'NetdevBudgetRanOutsWarning', 'MemcachedItemsNoneMinor',
                      'SystemMemoryFullMajor', 'SystemMemoryFullWarning',
-                     'SystemLoadTooHighCritical', 'SystemLoadTooHighWarning']
+                     'SystemLoadTooHighCritical', 'SystemLoadTooHighWarning',
+                     'ContrailBGPSessionsDown']
         for alert in alerts:
             msg = "Alert {} is fired".format(alert.name)
             if alert.host:
