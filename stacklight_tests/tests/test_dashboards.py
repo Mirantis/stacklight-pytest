@@ -363,7 +363,8 @@ def get_all_grafana_dashboards_names():
         "Keepalived": "I@keepalived:cluster",
         "Keystone": "I@keystone:server",
         "Kibana": "I@kibana:server",
-        "KPI Downtime": "I@nova:controller",
+        "KPI Downtime":
+            "I@linux:network:bridge:openvswitch or I@opencontrail:*",
         "KPI Provisioning": "I@nova:controller",
         "Kubernetes cluster monitoring": "I@kubernetes:pool",
         "Memcached": "I@memcached:server",

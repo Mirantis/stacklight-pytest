@@ -1,7 +1,6 @@
 import logging
 import pytest
 import re
-import time
 
 from stacklight_tests import file_cache
 from stacklight_tests import settings
@@ -262,20 +261,36 @@ class TestOpenstackMetrics(object):
     @pytest.mark.run(order=2)
     def test_libvirt_metrics(self, prometheus_api, salt_actions, os_clients,
                              os_actions, destructive):
-        def wait_for_metrics(inst_id):
-            def _get_current_value(q):
-                output = prometheus_api.get_query(q)
-                logger.info("Got {} libvirt metrics".format(len(output)))
-                return output
+        def _check_metrics(inst_id):
+            logger.info("Getting libvirt metrics")
             query = '{{__name__=~"^libvirt.*", instance_uuid="{}"}}'.format(
                 inst_id)
-            output = []
-            for i in xrange(5):
-                output = _get_current_value(query)
-                if len(output) != 0:
-                    return output
-                time.sleep(5)
-            return output
+            output = prometheus_api.get_query(query)
+            if len(output) == 0:
+                logger.info("Libvirt metrics for the instance {} "
+                            "not found".format(inst_id))
+                return False
+
+            metrics = list(set([m['metric']['__name__'] for m in output]))
+
+            regexes = ['libvirt_domain_block_stats_read.*',
+                       'libvirt_domain_block_stats_write.*',
+                       'libvirt_domain_interface_stats_receive.*',
+                       'libvirt_domain_interface_stats_transmit.*',
+                       'libvirt_domain_info.*',
+                       'libvirt_domain_info_state']
+            for regex in regexes:
+                regex = re.compile(r'{}'.format(regex))
+                logger.info("Check metrics with mask {}".format(regex.pattern))
+                found = filter(regex.search, metrics)
+                logger.info("Found {} metrics for mask {}".format(
+                    found, regex.pattern))
+                msg = "Metrics with mask '{}' not found in list {}".format(
+                    regex.pattern, metrics)
+                if not found:
+                    logger.info(msg)
+                    return False
+            return True
 
         nodes = salt_actions.ping("I@nova:controller")
         if not nodes:
@@ -312,25 +327,11 @@ class TestOpenstackMetrics(object):
         logger.info("Created an instance with id {}".format(server.id))
 
         logger.info("Checking libvirt metrics for the instance")
-        metrics = wait_for_metrics(server.id)
-        metric_names = list(set([m['metric']['__name__'] for m in metrics]))
-        logger.info("Got the following list of libvirt metrics: \n{}".format(
-            metric_names))
 
-        regexes = ['libvirt_domain_block_stats_read*',
-                   'libvirt_domain_block_stats_write*',
-                   'libvirt_domain_interface_stats_receive*',
-                   'libvirt_domain_interface_stats_transmit*',
-                   'libvirt_domain_info*']
-        for regex in regexes:
-            regex = re.compile(r'{}'.format(regex))
-            logger.info("Check metrics with mask {}".format(regex.pattern))
-            found = filter(regex.search, metric_names)
-            logger.info("Found {} metrics for mask {}".format(
-                found, regex.pattern))
-            msg = "Metrics with mask '{}' not found in list {}".format(
-                regex.pattern, metric_names)
-            assert found, msg
+        err_msg = ("Timeout waiting for all libvirt metrics "
+                   "for the instance {}".format(server.id))
+        utils.wait(lambda: _check_metrics(server.id), interval=20,
+                   timeout=2 * 60, timeout_msg=err_msg)
 
         logger.info("Removing the test instance")
         client.servers.delete(server)
