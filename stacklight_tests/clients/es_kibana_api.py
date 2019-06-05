@@ -9,11 +9,14 @@ logger = logging.getLogger(__name__)
 
 
 class ElasticSearchApi(object):
-    def __init__(self, host, port=9200):
+    def __init__(self, scheme, host, port=9200):
         super(ElasticSearchApi, self).__init__()
-        self.url = "http://{host}:{port}".format(host=host, port=port)
-        self.es = elasticsearch.Elasticsearch(
-            [{'host': host, 'port': port}])
+        self.url = "{scheme}://{host}:{port}".format(
+            scheme=scheme, host=host, port=port)
+        auth_dict = {'scheme': scheme, 'host': host, 'port': port}
+        if scheme == 'https':
+            auth_dict.update({'use_ssl': True, 'verify_certs': False})
+        self.es = elasticsearch.Elasticsearch(**auth_dict)
         self._kibana_protocol = None
 
     def query_elasticsearch(self, index_type="log", time_range="now-1h",
@@ -30,6 +33,9 @@ class ElasticSearchApi(object):
 
     def search(self, index='log-*', body={}):
         return self.es.search(index=index, body=body)
+
+    def health(self):
+        return self.es.cluster.health()
 
     def check_notifications(self, expected_notifications,
                             index_type="notification", timeout=5 * 60,

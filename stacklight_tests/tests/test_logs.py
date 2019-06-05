@@ -37,11 +37,7 @@ fluentd_loggers = {
 @pytest.mark.logs
 def test_elasticsearch_status(es_client, salt_actions):
     logger.info("Getting Elasticsearch status")
-    resp = utils.check_http_get_response(
-        "{}/_cluster/health".format(es_client.url))
-    assert resp, ("Cannot get Elasticsearch status through API, "
-                  "check that Elasticsearch is running")
-    status = json.loads(resp.content)
+    status = es_client.health()
     es_nodes = salt_actions.ping("I@elasticsearch:server")
 
     logger.info("Elasticsearch cluster status is \n{}".format(status))
