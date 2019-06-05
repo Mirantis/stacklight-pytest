@@ -79,6 +79,7 @@ def grafana_client(grafana_config, prometheus_api):
 @pytest.fixture(scope="session")
 def es_client(elasticsearch_config):
     elasticsearch_api = es_kibana_api.ElasticSearchApi(
+        scheme=elasticsearch_config["elasticsearch_scheme"],
         host=elasticsearch_config["elasticsearch_vip"],
         port=elasticsearch_config["elasticsearch_port"],
     )

@@ -117,6 +117,8 @@ class MKConfig(object):
             self.get_application_node("elasticsearch_server")['parameters'])
         _kibana_param = _param['kibana']['server']
         return {
+            "elasticsearch_scheme": _param['_param'][
+                'fluentd_elasticsearch_scheme'],
             "elasticsearch_vip": _param['_param']['kibana_elasticsearch_host'],
             "elasticsearch_port": _kibana_param['database']['port'],
             "kibana_port": _kibana_param['bind']['port'],
