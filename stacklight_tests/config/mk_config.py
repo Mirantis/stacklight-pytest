@@ -62,7 +62,8 @@ class MKConfig(object):
                 "kubernetes.control": "k8s_controller",
                 "kubernetes.compute": "k8s_compute",
                 "grafana.client": "grafana_client",
-                "kibana.server": "elasticsearch_server",
+                "elasticsearch.server": "elasticsearch_server",
+                "elasticsearch.client": "elasticsearch_client",
                 "prometheus.server": "prometheus_server",
                 "prometheus.alerta": "alerta",
                 "mongodb.server": "mongodb",
@@ -115,10 +116,11 @@ class MKConfig(object):
     def generate_elasticsearch_config(self):
         _param = (
             self.get_application_node("elasticsearch_server")['parameters'])
+        _client_param = self.get_application_node("elasticsearch_client")[
+            'parameters']['elasticsearch']['client']['server']
         _kibana_param = _param['kibana']['server']
         return {
-            "elasticsearch_scheme": _param['_param'][
-                'fluentd_elasticsearch_scheme'],
+            "elasticsearch_scheme": _client_param.get('scheme', 'http'),
             "elasticsearch_vip": _param['_param']['kibana_elasticsearch_host'],
             "elasticsearch_port": _kibana_param['database']['port'],
             "kibana_port": _kibana_param['bind']['port'],
