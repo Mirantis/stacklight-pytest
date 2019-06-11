@@ -1,7 +1,6 @@
 import logging
 import pytest
 
-from stacklight_tests import file_cache
 from stacklight_tests import settings
 from stacklight_tests import utils
 
@@ -41,21 +40,15 @@ def check_service_notification_by_type(es_client, object_id, event_type):
 @pytest.mark.smoke
 @pytest.mark.notifications
 def test_glance_notifications(salt_actions, destructive, os_clients,
-                              es_client):
+                              es_client, os_actions):
     nodes = salt_actions.ping("I@glance:server")
     if not nodes:
         pytest.skip("Openstack is not installed in the cluster")
 
-    image_name = utils.rand_name("image-")
     client = os_clients.image
 
     logger.info("Creating a test image")
-    image = client.images.create(
-        name=image_name,
-        container_format="bare",
-        disk_format="raw",
-        visibility="public")
-    client.images.upload(image.id, "dummy_data")
+    image = os_actions.create_cirros_image()
     destructive.append(lambda: client.images.delete(image.id))
     utils.wait_for_resource_status(client.images, image.id, "active")
 
@@ -188,12 +181,7 @@ def test_nova_notifications(salt_actions, os_clients, os_actions, es_client,
     client = os_clients.compute
 
     logger.info("Creating a test image")
-    image = os_clients.image.images.create(
-        name="TestVM",
-        disk_format='qcow2',
-        container_format='bare')
-    with file_cache.get_file(settings.CIRROS_QCOW2_URL) as f:
-        os_clients.image.images.upload(image.id, f)
+    image = os_actions.create_cirros_image()
     destructive.append(lambda: os_clients.image.images.delete(image.id))
 
     logger.info("Creating a test flavor")
@@ -321,12 +309,7 @@ def test_heat_notifications(salt_actions, os_clients, es_client, os_actions,
         pytest.skip("Openstack is not installed in the cluster")
 
     logger.info("Creating a test image")
-    image = os_clients.image.images.create(
-        name="TestVM",
-        disk_format='qcow2',
-        container_format='bare')
-    with file_cache.get_file(settings.CIRROS_QCOW2_URL) as f:
-        os_clients.image.images.upload(image.id, f)
+    image = os_actions.create_cirros_image()
     destructive.append(lambda: os_clients.image.images.delete(image.id))
 
     logger.info("Creating a test flavor")

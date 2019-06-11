@@ -341,14 +341,6 @@ ignored_queries_for_fail = [
     'rate(ceph_pool_wr{pool_id=~"[[pool_id]]"}[1m])) + '
     'on(pool_id,instance) group_left(name) '
     'ceph_pool_metadata{pool_id=~"[[pool_id]]"}) without (instance)',
-
-    # KPI Downtime
-    '1 - avg_over_time(total:openstack_nova_instance_failed[1d]) / '
-    'avg_over_time(total:openstack_nova_instance_all[1d])',
-    'avg_over_time(total:openstack_nova_instance_failed[$time_frame])',
-    '1 - avg_over_time(total:openstack_nova_instance_failed[$time_frame]) / '
-    'avg_over_time(total:openstack_nova_instance_all[$time_frame])',
-    'avg_over_time(total:openstack_nova_instance_failed[1d])',
 ]
 
 

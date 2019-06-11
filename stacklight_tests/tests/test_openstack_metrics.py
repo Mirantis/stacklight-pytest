@@ -2,7 +2,6 @@ import logging
 import pytest
 import re
 
-from stacklight_tests import file_cache
 from stacklight_tests import settings
 from stacklight_tests import utils
 
@@ -12,17 +11,12 @@ logger = logging.getLogger(__name__)
 @pytest.mark.openstack_metrics
 class TestOpenstackMetrics(object):
     @pytest.mark.run(order=2)
-    def test_glance_metrics(self, destructive, prometheus_api, os_clients):
-        image_name = utils.rand_name("image-")
+    def test_glance_metrics(self, destructive, prometheus_api, os_clients,
+                            os_actions):
         client = os_clients.image
 
         logger.info("Creating a test image")
-        image = client.images.create(
-            name=image_name,
-            container_format="bare",
-            disk_format="raw",
-            visibility="public")
-        client.images.upload(image.id, "dummy_data")
+        image = os_actions.create_cirros_image()
         destructive.append(lambda: client.images.delete(image.id))
         utils.wait_for_resource_status(client.images, image.id, "active")
 
@@ -299,12 +293,7 @@ class TestOpenstackMetrics(object):
         client = os_clients.compute
 
         logger.info("Creating a test image")
-        image = os_clients.image.images.create(
-            name="TestVM",
-            disk_format='qcow2',
-            container_format='bare')
-        with file_cache.get_file(settings.CIRROS_QCOW2_URL) as f:
-            os_clients.image.images.upload(image.id, f)
+        image = os_actions.create_cirros_image()
         destructive.append(lambda: os_clients.image.images.delete(image.id))
 
         logger.info("Creating a test flavor")
@@ -333,6 +322,105 @@ class TestOpenstackMetrics(object):
                    "for the instance {}".format(server.id))
         utils.wait(lambda: _check_metrics(server.id), interval=20,
                    timeout=2 * 60, timeout_msg=err_msg)
+
+        logger.info("Removing the test instance")
+        client.servers.delete(server)
+        utils.wait(
+            lambda: (server.id not in [s.id for s in client.servers.list()])
+        )
+
+        logger.info("Removing the test network and subnet")
+        os_clients.network.delete_subnet(subnet['id'])
+        os_clients.network.delete_network(net['id'])
+
+        logger.info("Removing the test image")
+        os_clients.image.images.delete(image.id)
+
+        logger.info("Removing the test flavor")
+        client.flavors.delete(flavor)
+
+    def test_kpi_metrics(self, prometheus_api, salt_actions, os_clients,
+                         os_actions, destructive):
+        def _get_event_metric(query):
+            value = prometheus_api.get_query(query)[0]['value'][1]
+            logger.info("The current value of metric `{}` is {}".format(
+                query, value))
+            return value
+
+        nova = salt_actions.ping("I@nova:controller")
+        if not nova:
+            pytest.skip("Openstack is not installed in the cluster")
+
+        neutron_nodes = salt_actions.ping(
+            "I@neutron:gateway:enabled:True or "
+            "I@neutron:compute:dhcp_agent_enabled:True", short=True)
+        oc_nodes = salt_actions.ping("I@opencontrail:compute:enabled:True",
+                                     short=True)
+        if oc_nodes:
+            metric = 'instance_ping_success'
+            for node in oc_nodes:
+                q = 'instance_ping_check_up{{host="{}"}}'.format(node)
+                prometheus_api.check_metric_values(q, 1)
+        if neutron_nodes:
+            metric = 'instance_arping_success'
+            for node in neutron_nodes:
+                q = 'instance_arping_check_up{{host="{}"}}'.format(node)
+                prometheus_api.check_metric_values(q, 1)
+
+        start_event = 'compute_instance_create_start_event_doc_count'
+        end_event = 'compute_instance_create_end_event_doc_count'
+        logger.info("Getting a current value for `{}` metric".format(
+            start_event))
+        start_value = _get_event_metric(start_event)
+        logger.info("Getting a current value for `{}` metric".format(
+            end_event))
+        end_value = _get_event_metric(end_event)
+
+        client = os_clients.compute
+        logger.info("Creating a test image")
+        image = os_actions.create_cirros_image()
+        destructive.append(lambda: os_clients.image.images.delete(image.id))
+
+        logger.info("Creating a test flavor")
+        flavor = os_actions.create_flavor(
+            name="test_flavor", ram='64')
+        destructive.append(lambda: client.flavors.delete(flavor))
+
+        logger.info("Creating test network and subnet")
+        project_id = os_clients.auth.projects.find(name='admin').id
+        net = os_actions.create_network(project_id)
+        subnet = os_actions.create_subnet(net, project_id, "192.168.100.0/24")
+
+        logger.info("Creating a test instance")
+        server = os_actions.create_basic_server(image, flavor, net)
+        destructive.append(lambda: client.servers.delete(server))
+        destructive.append(lambda: os_clients.network.delete_subnet(
+            subnet['id']))
+        destructive.append(lambda: os_clients.network.delete_network(
+            net['id']))
+        utils.wait_for_resource_status(client.servers, server, 'ACTIVE')
+        logger.info("Created an instance with id {}".format(server.id))
+
+        logger.info("Checking KPI metrics for the instance")
+        logger.info("Checking the {} metric".format(metric))
+        q = '{}{{id="{}"}}'.format(metric, server.id)
+        prometheus_api.check_metric_values(q, 1)
+        logger.info("Checking the {} metric".format(
+            'instance_id:{}'.format(metric)))
+        q = 'instance_id:{}{{id="{}"}}'.format(metric, server.id)
+        prometheus_api.check_metric_values(q, 1)
+
+        err_msg = "Value of `{}` metric was not increased"
+        logger.info("Checking the `{}` metric".format(start_event))
+        utils.wait(
+            lambda: _get_event_metric(start_event) > start_value,
+            interval=30, timeout=2 * 60,
+            timeout_msg=err_msg.format(start_event))
+        logger.info("Checking the `{}` metric".format(end_event))
+        utils.wait(
+            lambda: _get_event_metric(end_event) > end_value,
+            interval=30, timeout=2 * 60,
+            timeout_msg=err_msg.format(end_event))
 
         logger.info("Removing the test instance")
         client.servers.delete(server)

@@ -237,17 +237,15 @@ class OSCliActions(object):
     def get_admin_tenant(self):
         return self.os_clients.auth.tenants.find(name="admin")
 
-    def get_cirros_image(self):
-        images_list = list(self.os_clients.image.images.list(name='TestVM'))
-        if images_list:
-            image = images_list[0]
-        else:
-            image = self.os_clients.image.images.create(
-                name="TestVM",
-                disk_format='qcow2',
-                container_format='bare')
-            with file_cache.get_file(settings.CIRROS_QCOW2_URL) as f:
-                self.os_clients.image.images.upload(image.id, f)
+    def create_cirros_image(self, name=None):
+        name = name if name else utils.rand_name("image-")
+        image = self.os_clients.image.images.create(
+            name=name,
+            disk_format='qcow2',
+            container_format='bare',
+            visibility='public')
+        with file_cache.get_file(settings.CIRROS_QCOW2_URL) as f:
+            self.os_clients.image.images.upload(image.id, f)
         return image
 
     def get_micro_flavor(self):
@@ -311,7 +309,7 @@ class OSCliActions(object):
                             availability_zone=None, sec_groups=(),
                             wait_timeout=3 * 60):
         os_conn = self.os_clients
-        image = image or self.get_cirros_image()
+        image = image or self.create_cirros_image()
         flavor = flavor or self.get_micro_flavor()
         net = net or self.get_internal_network()
         kwargs = {}
