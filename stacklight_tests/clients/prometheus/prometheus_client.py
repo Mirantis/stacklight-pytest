@@ -141,7 +141,7 @@ class PrometheusClient(http_client.HttpClient):
                 v, output))
             if not output:
                 logger.error('Empty results received, '
-                             'check a query {0}'.format(q))
+                             'check a query "{0}"'.format(q))
                 return False
             return v in output[0]["value"]
         msg = msg if msg else 'Incorrect value in metric {}'.format(query)
