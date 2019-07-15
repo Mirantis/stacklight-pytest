@@ -29,6 +29,8 @@ fluentd_loggers = {
     "rabbitmq": ("I@rabbitmq:cluster", 'rabbitmq'),
     "system": ("I@linux:system", 'systemd.systemd'),
     "zookeeper": ("I@opencontrail:control", 'opencontrail.zookeeper'),
+    "jenkins_master": ("I@jenkins:client:audittrail",
+                       'docker.jenkins_master.*'),
 }
 
 
