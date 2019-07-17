@@ -3,6 +3,9 @@ import collections
 import pytest
 
 
+pytestmark = pytest.mark.skip("Temporary skip")
+
+
 ignored_queries_for_fail = [
     # Cinder. Default installation does not contain cinder-volume
     'max(openstack_cinder_services{state="down", service="cinder-volume"})',

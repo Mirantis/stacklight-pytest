@@ -5,6 +5,9 @@ import os
 logger = logging.getLogger(__name__)
 
 
+pytestmark = pytest.mark.skip("Temporary skip")
+
+
 @pytest.mark.metrics
 class TestMetrics(object):
     target_metrics = {

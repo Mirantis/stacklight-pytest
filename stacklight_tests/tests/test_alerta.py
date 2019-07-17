@@ -6,6 +6,9 @@ from stacklight_tests import utils
 logger = logging.getLogger(__name__)
 
 
+pytestmark = pytest.mark.skip("Temporary skip")
+
+
 @pytest.mark.alerta
 @pytest.mark.smoke
 def test_alerta_smoke(alerta_api):

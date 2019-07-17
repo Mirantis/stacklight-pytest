@@ -151,10 +151,6 @@ class PrometheusClient(http_client.HttpClient):
         )
 
 
-def get_prometheus_client_from_config(config):
-    api_client = PrometheusClient(
-        "http://{0}:{1}/".format(
-            config["prometheus_vip"],
-            config["prometheus_server_port"])
-    )
+def get_prometheus_client(ip, port):
+    api_client = PrometheusClient("http://{0}:{1}/".format(ip, port))
     return api_client

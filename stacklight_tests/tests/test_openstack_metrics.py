@@ -8,6 +8,9 @@ from stacklight_tests import utils
 logger = logging.getLogger(__name__)
 
 
+pytestmark = pytest.mark.skip("Temporary skip")
+
+
 @pytest.mark.openstack_metrics
 class TestOpenstackMetrics(object):
     @pytest.mark.run(order=2)

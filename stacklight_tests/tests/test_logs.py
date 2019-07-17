@@ -9,6 +9,9 @@ from stacklight_tests import utils
 logger = logging.getLogger(__name__)
 
 
+pytestmark = pytest.mark.skip("Temporary skip")
+
+
 fluentd_loggers = {
     "calico": ("I@kubernetes:master:network:calico:enabled:True",
                "kubernetes.calico.*"),
@@ -29,26 +32,20 @@ fluentd_loggers = {
     "rabbitmq": ("I@rabbitmq:cluster", 'rabbitmq'),
     "system": ("I@linux:system", 'systemd.systemd'),
     "zookeeper": ("I@opencontrail:control", 'opencontrail.zookeeper'),
-    "jenkins_master": ("I@jenkins:client:audittrail",
-                       'docker.jenkins_master.*'),
 }
 
 
 @pytest.mark.run(order=1)
 @pytest.mark.smoke
 @pytest.mark.logs
-def test_elasticsearch_status(es_client, salt_actions):
+def test_elasticsearch_status(es_client):
     logger.info("Getting Elasticsearch status")
     status = es_client.health()
-    es_nodes = salt_actions.ping("I@elasticsearch:server")
 
     logger.info("Elasticsearch cluster status is \n{}".format(status))
     assert status['status'] == 'green', \
         "Elasticsearch status is not 'green', current status is '{}'".format(
             status['status'])
-    assert status['number_of_nodes'] == len(es_nodes), \
-        ("Some of Elasticsearch nodes not in cluster, expected {} nodes, "
-         "actual: {}".format(len(es_nodes), status['number_of_nodes']))
     assert str(status['active_shards_percent_as_number']) == '100.0', \
         "Some shards are not in 'active' state"
 
@@ -74,24 +71,6 @@ def test_kibana_status(kibana_client):
     for plugin in status['status']['statuses']:
         assert plugin['state'] == "green", msg.format(
             plugin["id"], plugin["state"])
-
-
-@pytest.mark.run(order=1)
-def test_log_helper(salt_actions):
-    # Helper methods to generate logs that may not be present right after
-    # deployment
-    kibana_nodes = salt_actions.ping("I@kibana:server")
-    log_address = salt_actions.get_pillar_item(
-        kibana_nodes[0], "_param:stacklight_log_address")[0]
-    salt_actions.run_cmd(
-        kibana_nodes[0], "curl -XGET http://{}:5601/status -I".format(
-            log_address))
-    nginx_nodes = salt_actions.ping("I@nginx:server")
-    if nginx_nodes:
-        salt_actions.run_cmd(
-            nginx_nodes[0], "curl http://127.0.0.1/nginx_status")
-        salt_actions.run_cmd(
-            nginx_nodes[0], "curl http://127.0.0.1:15010/nginx_status")
 
 
 @pytest.mark.smoke

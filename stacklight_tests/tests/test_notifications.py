@@ -7,6 +7,9 @@ from stacklight_tests import utils
 logger = logging.getLogger(__name__)
 
 
+pytestmark = pytest.mark.skip("Temporary skip")
+
+
 def check_service_notification_by_type(es_client, object_id, event_type):
     logger.info("Checking {} notification".format(event_type))
     q = {

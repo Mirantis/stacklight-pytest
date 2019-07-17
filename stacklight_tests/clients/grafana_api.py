@@ -123,7 +123,7 @@ class GrafanaApi(object):
 
     def get_all_dashboards_names(self):
         search_url = self.get_api_url("/search")
-        result = check_http_get_response(search_url, auth=self.auth)
+        result = check_http_get_response(search_url)
         return [dash["uri"].replace("db/", "") for dash in result.json()]
 
     def is_dashboard_exists(self, name):
