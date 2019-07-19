@@ -1,7 +1,7 @@
 import logging
 from logging import config
 
-from stacklight_tests.settings import CONSOLE_LOG_LEVEL
+from stacklight_tests import settings
 
 logging.getLogger("paramiko.transport").setLevel(logging.WARNING)
 logging.getLogger("paramiko.hostkeys").setLevel(logging.INFO)
@@ -28,7 +28,7 @@ config.dictConfig({
 
     'handlers': {
         'console': {
-            'level': CONSOLE_LOG_LEVEL,
+            'level': settings.CONSOLE_LOG_LEVEL,
             'class': 'logging.StreamHandler',
             'formatter': 'minimal',
             'stream': 'ext://sys.stdout',
@@ -36,7 +36,7 @@ config.dictConfig({
         'file': {
             'level': logging.DEBUG,
             'class': 'logging.FileHandler',
-            'filename': 'test.log',
+            'filename': settings.LOG_FILE,
             'formatter': 'default',
         },
     },

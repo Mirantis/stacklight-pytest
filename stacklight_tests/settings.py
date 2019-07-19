@@ -4,6 +4,7 @@ import os
 
 # Logging settings
 CONSOLE_LOG_LEVEL = os.environ.get('LOG_LEVEL', logging.DEBUG)
+LOG_FILE = os.environ.get('LOG_FILE', 'test.log')
 
 # Plugins info
 SL_NAMESPACE = os.environ.get("SL_NAMESPACE", 'stacklight')

@@ -8,7 +8,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 USER root
 
-WORKDIR /kaas-stacklight-pytest
+WORKDIR /stacklight-pytest
 
 COPY . ./
 
@@ -32,7 +32,7 @@ RUN apt-get -y purge libx11-data xauth libxmuu1 libxcb1 libx11-6 libxext6 ppp pp
     apt-get -y autoremove; apt-get -y clean ; rm -rf /root/.cache; rm -rf /var/lib/apt/lists/* && \
     rm -rf /tmp/* ; rm -rf /var/tmp/* ; rm -rfv /etc/apt/sources.list.d/* ; echo > /etc/apt/sources.list
 
-COPY entrypoint.sh /entrypoint.sh
+COPY entrypoint.sh ./entrypoint.sh
 
-#ENTRYPOINT ["entrypoint.sh"]
+CMD ./entrypoint.sh
 # docker build --no-cache -t cvp-sanity-checks:test_latest .
