@@ -86,14 +86,10 @@ class Dashboard(object):
 
 
 class GrafanaApi(object):
-    def __init__(self, address, port, username, password, datasource,
-                 tls=False):
+    def __init__(self, address, port, datasource, tls=False):
         super(GrafanaApi, self).__init__()
         self.address = address
         self.port = port
-        self.username = username
-        self.password = password
-        self.auth = (username, password)
         scheme = "https" if tls else "http"
         self.grafana_api_url = "{scheme}://{host}:{port}/api".format(
             scheme=scheme, host=address, port=port)
@@ -104,12 +100,11 @@ class GrafanaApi(object):
 
     def check_grafana_online(self):
         check_http_get_response(self.grafana_api_url.replace("/api", "/login"))
-        check_http_get_response(self.get_api_url('/org'), auth=self.auth)
+        check_http_get_response(self.get_api_url('/org'))
 
     def _get_raw_dashboard(self, name):
         dashboard_url = self.get_api_url("/dashboards/db/{}".format(name))
-        response = check_http_get_response(
-            dashboard_url, expected_codes=[], auth=self.auth)
+        response = check_http_get_response(dashboard_url, expected_codes=[])
         if response.status_code == 200:
             return response
         else:

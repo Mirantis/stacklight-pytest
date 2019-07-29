@@ -78,25 +78,3 @@ def test_firing_alerts(prometheus_alerting):
     assert len(alerts) == 0, \
         "There are some firing alerts in the cluster: {}".format(
             " ".join([a.name for a in alerts]))
-
-
-@pytest.mark.dashboards
-def test_panels_fixture(grafana_client):
-    def idfy_name(name):
-        return name.lower().replace(" ", "-").replace("(", "").replace(")", "")
-
-    expected_dashboards = ["Alertmanager", "ElasticSearch", "Grafana",
-                           "Kubernetes Calico", "Kubernetes Cluster",
-                           "Kubernetes Container", "Kubernetes Deployments",
-                           "Kubernetes Node", "Node Exporter Full",
-                           "Prometheus Performances", "Prometheus Stats",
-                           "Pushgateway"]
-
-    dashboards = grafana_client.get_all_dashboards_names()
-    fixture_dashboards = [idfy_name(dashboard)
-                          for dashboard in expected_dashboards]
-    missing_dashboards = set(dashboards).difference(set(fixture_dashboards))
-
-    assert len(missing_dashboards) == 0, \
-        ("Update test data fixture with the missing dashboards: "
-         "{}".format(missing_dashboards))

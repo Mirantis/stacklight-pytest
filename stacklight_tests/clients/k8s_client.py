@@ -30,6 +30,16 @@ class K8sClient(object):
                                                'port': item.spec.ports[0].port}
         return sl_services
 
+    def nodes(self):
+        nodes = self.k8s_api.list_node()
+        nodes_dict = {}
+        for node in nodes.items:
+            nodes_dict[node.metadata.name] = {
+                'internal_ip': node.status.addresses[0].address,
+                'external_ip': node.status.addresses[1].address,
+            }
+        return nodes_dict
+
     def get_sl_service_ip(self, namespace, svc_name):
         ip = None
         try:

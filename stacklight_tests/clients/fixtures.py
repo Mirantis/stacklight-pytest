@@ -24,6 +24,11 @@ def sl_services(k8s_api):
 
 
 @pytest.fixture(scope="session")
+def nodes(k8s_api):
+    return k8s_api.nodes()
+
+
+@pytest.fixture(scope="session")
 def prometheus_api(sl_services):
     sl_services.get('prometheus-server')
     api_client = prometheus_client.get_prometheus_client(
@@ -55,8 +60,6 @@ def grafana_client(sl_services, prometheus_api):
     grafana = grafana_api.GrafanaApi(
         address=sl_services['grafana']['ip'],
         port=sl_services['grafana']['port'],
-        username=None,
-        password=None,
         datasource=prometheus_api,
     )
     return grafana
