@@ -31,7 +31,7 @@ class ElasticSearchApi(object):
             }
             })
 
-    def search(self, index='log-*', body={}):
+    def search(self, index='logstash-*', body={}):
         return self.es.search(index=index, body=body)
 
     def health(self):

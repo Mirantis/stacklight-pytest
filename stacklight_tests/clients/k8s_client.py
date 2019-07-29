@@ -66,6 +66,12 @@ class K8sClient(object):
     def list_namespaced_service(self, namespace):
         return self.k8s_api.list_namespaced_service(namespace)
 
+    def list_pod_for_all_namespaces(self):
+        return self.k8s_api.list_pod_for_all_namespaces()
+
+    def list_namespaced_pod(self, namespace):
+        return self.k8s_api.list_namespaced_pod(namespace)
+
 
 def get_k8s_client():
     if "TOKEN" in os.environ.keys() and "URL" in os.environ.keys():

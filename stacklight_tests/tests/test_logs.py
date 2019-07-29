@@ -1,38 +1,11 @@
 import json
 import logging
 import pytest
-import re
 
 from stacklight_tests import utils
 
 
 logger = logging.getLogger(__name__)
-
-
-pytestmark = pytest.mark.skip("Temporary skip")
-
-
-fluentd_loggers = {
-    "calico": ("I@kubernetes:master:network:calico:enabled:True",
-               "kubernetes.calico.*"),
-    "cassandra": ("I@opencontrail:database", 'opencontrail.cassandra.*'),
-    "cinder": ("I@cinder:controller", 'openstack.cinder'),
-    "elasticsearch": ("I@elasticsearch:server", 'elasticsearch.*'),
-    "glance": ("I@glance:server", 'openstack.glance'),
-    "glusterfs": ("I@glusterfs:server", 'glusterfs.*'),
-    "haproxy": ("I@haproxy:proxy", 'haproxy.general'),
-    "heat": ("I@heat:server", 'openstack.heat'),
-    "keystone": ("I@keystone:server", 'openstack.keystone'),
-    "kibana": ("I@kibana:server", 'kibana.*'),
-    "kubernetes": ("I@kubernetes:pool", "kubernetes.*"),
-    "neutron": ("I@neutron:server", 'openstack.neutron'),
-    "nginx": ("I@nginx:server", 'nginx.*'),
-    "nova": ("I@nova:controller", 'openstack.nova'),
-    "opencontrail": ("I@opencontrail:common", 'opencontrail.contrail-*'),
-    "rabbitmq": ("I@rabbitmq:cluster", 'rabbitmq'),
-    "system": ("I@linux:system", 'systemd.systemd'),
-    "zookeeper": ("I@opencontrail:control", 'opencontrail.zookeeper'),
-}
 
 
 @pytest.mark.run(order=1)
@@ -75,40 +48,35 @@ def test_kibana_status(kibana_client):
 
 @pytest.mark.smoke
 @pytest.mark.logs
-@pytest.mark.parametrize(argnames="input_data",
-                         argvalues=fluentd_loggers.values(),
-                         ids=fluentd_loggers.keys())
-@pytest.mark.run(order=-1)
-def test_fluentd_logs(es_client, salt_actions, input_data):
-    pillar, es_logger = input_data
-    if not salt_actions.ping("I@fluentd:agent"):
-        pytest.skip("Fluentd is not installed in the cluster")
-    if not salt_actions.ping(pillar):
-        pytest.skip("No required nodes with pillar {}".format(pillar))
-
-    logger_list = es_client.list_loggers()
-    regex = re.compile(r'{}'.format(es_logger))
-
-    logger.info("\nCheck logger with mask '{}' in logger list".format(
-        regex.pattern))
-    found_loggers = filter(regex.search, logger_list)
-    logger.info("Found {} loggers for mask '{}'".format(
-        found_loggers, regex.pattern))
-    msg = "Loggers with mask '{}' not found in logger list {}".format(
-        regex.pattern, logger_list)
-
-    assert found_loggers, msg
+def test_pod_logs(k8s_api, es_client):
+    ret = k8s_api.list_pod_for_all_namespaces()
+    pods = [pod.metadata.name for pod in ret.items]
+    q = {"size": "0",
+         "aggs": {
+             "uniq_logger": {
+                 "terms":
+                     {"field": "kubernetes.pod_name", "size": 500}}}}
+    output = es_client.search(body=q)
+    kibana_loggers = [log["key"] for log in
+                      output["aggregations"]["uniq_logger"]["buckets"]]
+    missing_loggers = []
+    for pod in pods:
+        if pod not in kibana_loggers:
+            missing_loggers.append(pod)
+    msg = ('Logs from {} pods not found in Kibana'.format(', '.join(
+        missing_loggers)))
+    assert len(missing_loggers) == 0, msg
 
 
 @pytest.mark.smoke
 @pytest.mark.logs
-def test_node_count_in_es(es_client, salt_actions):
-    expected_nodes = salt_actions.ping(short=True)
+def test_node_count_in_es(es_client, nodes):
+    expected_nodes = nodes.keys()
     q = {"size": "0",
          "aggs": {
              "uniq_hostnames": {
-                 "terms": {"field": "Hostname.keyword", "size": 500}}}}
-    output = es_client.search(index='log-*', body=q)
+                 "terms": {"field": "kubernetes.host", "size": 500}}}}
+    output = es_client.search(body=q)
     found_nodes = [host["key"] for host in
                    output["aggregations"]["uniq_hostnames"]["buckets"]]
     logger.info("\nFound the following nodes in Elasticsearch: \n{}".format(
