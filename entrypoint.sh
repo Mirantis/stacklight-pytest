@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+POD_REPORT_DIR="${POD_REPORT_DIR:-report}"
+
 function activate_venv(){
   set +x
   if [[ -f venv/bin/activate ]]; then
@@ -15,4 +17,4 @@ function activate_venv(){
 cd /stacklight-pytest
 activate_venv
 
-exec pytest --junitxml=/report/report.xml --tb=short -sv stacklight_tests/tests/test_smoke.py
+exec pytest --junitxml=/${POD_REPORT_DIR}/report.xml --html=/${POD_REPORT_DIR}/sl-tests.html --self-contained-html --tb=short -sv stacklight_tests/tests/

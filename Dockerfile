@@ -35,4 +35,3 @@ RUN apt-get -y purge libx11-data xauth libxmuu1 libxcb1 libx11-6 libxext6 ppp pp
 COPY entrypoint.sh ./entrypoint.sh
 
 CMD ./entrypoint.sh
-# docker build --no-cache -t cvp-sanity-checks:test_latest .

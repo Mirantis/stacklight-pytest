@@ -1,12 +1,10 @@
-from alertaclient.api import Client  # noqa
-from pymongo import MongoClient  # noqa
+from alertaclient.api import Client
+from pymongo import MongoClient
 import pytest
 
 from stacklight_tests.clients import es_kibana_api
 from stacklight_tests.clients import grafana_api
 from stacklight_tests.clients.openstack import client_manager  # noqa
-from stacklight_tests.clients import influxdb_api  # noqa
-from stacklight_tests.clients import salt_api  # noqa
 from stacklight_tests.clients.prometheus import alertmanager_client  # noqa
 from stacklight_tests.clients.prometheus import prometheus_client
 from stacklight_tests.clients import k8s_client
@@ -65,6 +63,20 @@ def grafana_client(sl_services, prometheus_api):
     return grafana
 
 
+@pytest.fixture(scope="session")
+def mongodb_api(sl_services):
+    return MongoClient("mongodb://root:r00tme@{}:{}/admin".format(
+        sl_services["mongodb"]["ip"], sl_services["mongodb"]["port"]))
+
+
+@pytest.fixture(scope="session")
+def alerta_api(sl_services):
+    endpoint = "http://{0}:{1}/api".format(sl_services["alerta"]["ip"],
+                                           sl_services["alerta"]["port"])
+    client = Client(endpoint=endpoint, ssl_verify=False)
+    return client
+
+
 # @pytest.fixture(scope="session")
 # def prometheus_native_alerting(prometheus_config):
 #     alerting = alertmanager_client.AlertManagerClient(
@@ -88,38 +100,6 @@ def grafana_client(sl_services, prometheus_api):
 #             )
 #         )
 #     return alerting
-#
-#
-# @pytest.fixture(scope="session")
-# def alerta_api(alerta_config):
-#     endpoint = "http://{0}:{1}/api".format(alerta_config["alerta_host"],
-#                                            alerta_config["alerta_port"])
-#     client = Client(endpoint=endpoint, ssl_verify=False)
-#     return client
-#
-#
-# @pytest.fixture(scope="session")
-# def influxdb_client(influxdb_config):
-#     influxdb = influxdb_api.InfluxdbApi(
-#         address=influxdb_config["influxdb_vip"],
-#         port=influxdb_config["influxdb_port"],
-#         username=influxdb_config["influxdb_username"],
-#         password=influxdb_config["influxdb_password"],
-#         db_name=influxdb_config["influxdb_db_name"]
-#     )
-#     return influxdb
-#
-#
-# @pytest.fixture(scope="session")
-# def grafana_client(grafana_config, prometheus_api):
-#     grafana = grafana_api.GrafanaApi(
-#         address=grafana_config["grafana_vip"],
-#         port=grafana_config["grafana_port"],
-#         username=grafana_config["grafana_username"],
-#         password=grafana_config["grafana_password"],
-#         datasource=prometheus_api,
-#     )
-#     return grafana
 #
 #
 # @pytest.fixture(scope="session")
@@ -148,14 +128,3 @@ def grafana_client(sl_services, prometheus_api):
 # @pytest.fixture(scope="session")
 # def os_actions(os_clients):
 #     return client_manager.OSCliActions(os_clients)
-#
-#
-# @pytest.fixture(scope="session")
-# def salt_actions():
-#     return salt_api.SaltApi()
-#
-#
-# @pytest.fixture(scope="session")
-# def mongodb_api(mongodb_config):
-#     return MongoClient(mongodb_config["mongodb_primary"],
-#                        mongodb_config["mongodb_port"])
