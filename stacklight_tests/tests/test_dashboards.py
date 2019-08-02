@@ -27,6 +27,7 @@ def get_all_grafana_dashboards_names():
         "Kubernetes Container": False,
         "Kubernetes Deployments": False,
         "Kubernetes Node": True,
+        "MongoDB": False,
         "Node Exporter Full": True,
         "Prometheus Performances": False,
         "Prometheus Stats": False,

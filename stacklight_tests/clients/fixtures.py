@@ -77,14 +77,14 @@ def alerta_api(sl_services):
     return client
 
 
-# @pytest.fixture(scope="session")
-# def prometheus_native_alerting(prometheus_config):
-#     alerting = alertmanager_client.AlertManagerClient(
-#         "http://{0}:{1}/".format(
-#             prometheus_config["prometheus_vip"],
-#             prometheus_config["prometheus_alertmanager"])
-#     )
-#     return alerting
+@pytest.fixture(scope="session")
+def prometheus_native_alerting(sl_services):
+    alerting = alertmanager_client.AlertManagerClient(
+        "http://{0}:{1}/".format(
+            sl_services["prometheus-alertmanager"]["ip"],
+            sl_services["prometheus-alertmanager"]["port"])
+    )
+    return alerting
 #
 #
 # @pytest.fixture(scope="session")

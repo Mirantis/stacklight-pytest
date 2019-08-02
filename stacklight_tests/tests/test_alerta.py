@@ -33,18 +33,17 @@ def test_mongodb_status(mongodb_api):
 
 @pytest.mark.alerta
 @pytest.mark.smoke
-@pytest.mark.skip("Temporary skip")
 def test_alerta_alerts_consistency(prometheus_native_alerting, alerta_api):
     def check_alerts():
-        alerta_alerts = {"{0} {1}".format(i.event, i.resource)
-                         for i in alerta_api.get_alerts({"status": "open"})}
+        alerta_alerts = {"{0} {1}".format(i.event, i.resource).replace(
+            "n/a", "") for i in alerta_api.get_alerts({"status": "open"})}
         alertmanager_alerts = {
             "{0} {1}".format(i.name, i.instance)
             for i in prometheus_native_alerting.list_alerts()}
         if alerta_alerts == alertmanager_alerts:
             return True
         else:
-            logger.info(
+            logger.warning(
                 "Alerts in Alerta and NOT in AlertManager: {0}\n"
                 "Alerts in AlertManager and NOT in Alerta: {1}".format(
                     alerta_alerts.difference(alertmanager_alerts),

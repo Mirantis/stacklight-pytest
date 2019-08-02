@@ -17,4 +17,4 @@ function activate_venv(){
 cd /stacklight-pytest
 activate_venv
 
-exec pytest --junitxml=/${POD_REPORT_DIR}/report.xml --html=/${POD_REPORT_DIR}/sl-tests.html --self-contained-html --tb=short -sv stacklight_tests/tests/
+exec pytest --junit-xml=/"${POD_REPORT_DIR}"/report.xml --html=/"${POD_REPORT_DIR}"/sl-tests.html --self-contained-html --tb=short -v --show-capture=stdout stacklight_tests/tests/

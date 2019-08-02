@@ -150,6 +150,24 @@ class PrometheusClient(http_client.HttpClient):
             interval=30, timeout=5 * 60, timeout_msg=msg
         )
 
+    def get_rules(self):
+        _, resp = self.get("/api/v1/rules")
+
+        targets = json.loads(resp)
+        return targets["data"]['groups']
+
+    def get_all_defined_alerts(self):
+        rules = self.get_rules()
+        alerts = {}
+        for rule in rules:
+            alerting_rules = filter(
+                lambda x: x['type'] == 'alerting', rule['rules'])
+            for alert in alerting_rules:
+                alerts[alert['name']] = {
+                    'query': alert['query'],
+                    'severity': alert['labels']['severity']}
+        return alerts
+
 
 def get_prometheus_client(ip, port):
     api_client = PrometheusClient("http://{0}:{1}/".format(ip, port))

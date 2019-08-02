@@ -167,9 +167,9 @@ def get_alert_from_alert_manager_dict(json_repr):
     return AlertManagerAlert(
         name=json_repr["labels"]["alertname"],
         time=(json_repr["startsAt"], json_repr["endsAt"]),
-        instance=json_repr["labels"]["instance"],
+        instance=json_repr["labels"].get("instance", ""),
         host=json_repr["labels"].get("host", ""),
-        service=json_repr["labels"]["service"],
+        service=json_repr["labels"].get("service", ""),
         severity=json_repr["labels"]["severity"],
         annotations=json_repr["annotations"],
     )
