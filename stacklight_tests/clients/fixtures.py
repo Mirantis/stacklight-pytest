@@ -5,7 +5,7 @@ import pytest
 from stacklight_tests.clients import es_kibana_api
 from stacklight_tests.clients import grafana_api
 from stacklight_tests.clients.openstack import client_manager  # noqa
-from stacklight_tests.clients.prometheus import alertmanager_client  # noqa
+from stacklight_tests.clients.prometheus import alertmanager_client
 from stacklight_tests.clients.prometheus import prometheus_client
 from stacklight_tests.clients import k8s_client
 
@@ -24,6 +24,26 @@ def sl_services(k8s_api):
 @pytest.fixture(scope="session")
 def nodes(k8s_api):
     return k8s_api.nodes()
+
+
+@pytest.fixture(scope="session")
+def daemonsets(k8s_api):
+    return k8s_api.daemonsets()
+
+
+@pytest.fixture(scope="session")
+def deployments(k8s_api):
+    return k8s_api.deployments()
+
+
+@pytest.fixture(scope="session")
+def replicasets(k8s_api):
+    return k8s_api.replicasets()
+
+
+@pytest.fixture(scope="session")
+def statefulsets(k8s_api):
+    return k8s_api.statefulsets()
 
 
 @pytest.fixture(scope="session")

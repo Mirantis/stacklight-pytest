@@ -47,3 +47,83 @@ def test_metrics(prometheus_api, nodes, target, metrics):
             msg = "Metric {} not found".format(q)
             output = prometheus_api.get_query(q)
             assert len(output) != 0, msg
+
+
+@pytest.mark.metrics
+@pytest.mark.run(order=1)
+def test_daemonsets_metrics(prometheus_api, daemonsets):
+    for ds in daemonsets.items():
+        logger.info('Checking metrics for {} daemonset'.format(ds[0]))
+        labels = '{{daemonset="{}", namespace="{}"}}'.format(
+            ds[0], ds[1]['namespace'])
+        q = 'kube_daemonset_updated_number_scheduled' + labels
+        prometheus_api.check_metric_values(
+            q, ds[1]['updated_number_scheduled'])
+        q = 'kube_daemonset_created' + labels
+        logger.info('Checking {} metric'.format(q))
+        assert len(prometheus_api.get_query(q)) != 0
+        for status in ds[1]['status'].items():
+            query = 'kube_daemonset_status_{}'.format(status[0]) + labels
+            prometheus_api.check_metric_values(query, status[1])
+
+
+@pytest.mark.metrics
+@pytest.mark.run(order=1)
+def test_deployments_metrics(prometheus_api, deployments):
+    for dm in deployments.items():
+        logger.info('Checking metrics for {} daemonset'.format(dm[0]))
+        labels = '{{deployment="{}", namespace="{}"}}'.format(
+            dm[0], dm[1]['namespace'])
+        q = 'kube_deployment_created' + labels
+        logger.info('Checking {} metric'.format(q))
+        assert len(prometheus_api.get_query(q)) != 0
+        for status in dm[1]['status'].items():
+            query = 'kube_deployment_status_{}'.format(status[0]) + labels
+            prometheus_api.check_metric_values(query, status[1])
+        for spec in dm[1]['spec'].items():
+            query = 'kube_deployment_spec_{}'.format(spec[0]) + labels
+            prometheus_api.check_metric_values(query, spec[1])
+
+
+@pytest.mark.metrics
+@pytest.mark.run(order=1)
+def test_replicasets_metrics(prometheus_api, replicasets):
+    for rs in replicasets.items():
+        logger.info('Checking metrics for {} daemonset'.format(rs[0]))
+        labels = '{{replicaset="{}", namespace="{}"}}'.format(
+            rs[0], rs[1]['namespace'])
+        q = 'kube_replicaset_created' + labels
+        logger.info('Checking {} metric'.format(q))
+        assert len(prometheus_api.get_query(q)) != 0
+        logger.info('Checking {} metric'.format(q))
+        q = 'kube_replicaset_spec_replicas' + labels
+        prometheus_api.check_metric_values(
+            q, rs[1]['spec_replicas'])
+        for status in rs[1]['status'].items():
+            query = 'kube_replicaset_status_{}'.format(status[0]) + labels
+            prometheus_api.check_metric_values(query, status[1])
+
+
+@pytest.mark.metrics
+@pytest.mark.run(order=1)
+def test_statefulsets_metrics(prometheus_api, statefulsets):
+    for sfs in statefulsets.items():
+        logger.info('Checking metrics for {} daemonset'.format(sfs[0]))
+        labels = 'statefulset="{}", namespace="{}"'.format(
+            sfs[0], sfs[1]['namespace'])
+        q = 'kube_statefulset_created{' + labels + '}'
+        logger.info('Checking {} metric'.format(q))
+        assert len(prometheus_api.get_query(q)) != 0
+        q = 'kube_statefulset_replicas{' + labels + '}'
+        prometheus_api.check_metric_values(
+            q, sfs[1]['spec_replicas'])
+        q = ('kube_statefulset_status_current_revision{' + labels +
+             ',revision="{}"'.format(sfs[1]['current_revision']) + '}')
+        prometheus_api.check_metric_values(q, 1)
+        q = ('kube_statefulset_status_update_revision{' + labels +
+             ',revision="{}"'.format(sfs[1]['update_revision']) + '}')
+        prometheus_api.check_metric_values(q, 1)
+        for status in sfs[1]['status'].items():
+            query = ('kube_statefulset_status_{}'.format(status[0]) +
+                     '{' + labels + '}')
+            prometheus_api.check_metric_values(query, status[1])
