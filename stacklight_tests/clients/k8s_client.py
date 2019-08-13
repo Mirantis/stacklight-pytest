@@ -1,9 +1,13 @@
 import logging
 import os
+import pytest
+import yaml
 
-from kubernetes import client
+from kubernetes import client, config
+from kubernetes.client import Configuration
 from kubernetes.client.rest import ApiException
 
+from stacklight_tests import custom_exceptions as exceptions
 from stacklight_tests import settings
 
 logger = logging.getLogger(__name__)
@@ -14,22 +18,56 @@ class NoApplication(Exception):
 
 
 class K8sClient(object):
-    def __init__(self, url, token):
-        aConfiguration = client.Configuration()
-        aConfiguration.host = url
-        aConfiguration.verify_ssl = False
-        aConfiguration.api_key = {"authorization": "Bearer " + token}
-        aApiClient = client.ApiClient(aConfiguration)
-        self.core_api = client.CoreV1Api(aApiClient)
-        self.extension_api = client.ExtensionsV1beta1Api(aApiClient)
-        self.apps_api = client.AppsV1beta1Api(aApiClient)
+    def __init__(self, kubeconfig=None, url=None, token=None):
+        if kubeconfig:
+            logger.info("Initializing using kubeconfig")
+            validate_kubeconfig(kubeconfig)
+            config.load_kube_config(config_file=kubeconfig)
+            self.configuration = client.Configuration()
+            Configuration.set_default(self.configuration)
+        elif url and token:
+            logger.info("Initializing using url and token")
+            self.configuration = client.Configuration()
+            self.configuration.host = url
+            self.configuration.api_key = {"authorization": "Bearer " + token}
+        self.configuration.assert_hostname = False
+        self.configuration.verify_ssl = False
+        api_client = client.ApiClient(self.configuration)
+        self.core_api = client.CoreV1Api(api_client)
+        self.extension_api = client.ExtensionsV1beta1Api(api_client)
+        self.apps_api = client.AppsV1beta1Api(api_client)
+        self.sl_namespace = settings.SL_NAMESPACE
 
-    def sl_services(self, namespace=settings.SL_NAMESPACE):
-        services = self.core_api.list_namespaced_service(namespace)
+    def get_sl_service_ip(self, svc_name, namespace):
+        ip = None
+        port = None
+        try:
+            service = self.core_api.read_namespaced_service(
+                namespace=namespace, name=svc_name)
+            if service is None:
+                logger.error(
+                    "Couldn't find {} service in "
+                    "namespace {}".format(svc_name, namespace))
+                return None
+            if not service.spec.ports:
+                logger.error("Service spec appears invalid. Erroring.")
+                return None
+            ip = service.spec.cluster_ip
+            port = str(service.spec.ports[0].port)
+
+        except ApiException as e:
+            print("Exception occurred trying to find %s service in "
+                  "namespace %s: %s" % (svc_name, namespace, e))
+            return None
+        service_dict = {'ip': ip, 'port': port}
+        return service_dict
+
+    def sl_services(self):
+        services = self.core_api.list_namespaced_service(self.sl_namespace)
         sl_services = {}
         for item in services.items:
-            sl_services[item.metadata.name] = {'ip': item.spec.cluster_ip,
-                                               'port': item.spec.ports[0].port}
+            sl_services[item.metadata.name] = self.get_sl_service_ip(
+                item.metadata.name, self.sl_namespace)
         return sl_services
 
     def nodes(self):
@@ -122,29 +160,6 @@ class K8sClient(object):
             }
         return sfs_dict
 
-    def get_sl_service_ip(self, namespace, svc_name):
-        ip = None
-        try:
-            service = self.core_api.read_namespaced_service(
-                namespace=namespace, name=svc_name)
-            if service is None:
-                logger.error(
-                    "Couldn't find {} service in "
-                    "namespace {}".format(svc_name, namespace))
-                return None
-            if not service.spec.ports:
-                logger.error("Service spec appears invalid. Erroring.")
-                return None
-            ip = service.spec.cluster_ip + ":" + str(
-                service.spec.ports[0].port)
-            logger.info("Found {} IP at: ".format(svc_name) + ip)
-
-        except ApiException as e:
-            print("Exception occurred trying to find %s service in "
-                  "namespace %s: %s" % (svc_name, namespace, e))
-            return None
-        return ip
-
     def list_namespaced_service(self, namespace):
         return self.core_api.list_namespaced_service(namespace)
 
@@ -155,11 +170,30 @@ class K8sClient(object):
         return self.core_api.list_namespaced_pod(namespace)
 
 
-def get_k8s_client():
-    if "TOKEN" in os.environ.keys() and "URL" in os.environ.keys():
-        api_client = K8sClient(os.environ['URL'], os.environ['TOKEN'])
-        return api_client
+def validate_kubeconfig(path):
+    err_msg = ("There is an 'auth-provider' option in the provided kubeconfig."
+               " Kubernetes python client doesn't support such kubeconfigs, "
+               "please provide a supported kubeconfig file or specify "
+               "URL and TOKEN environment variables to initialize "
+               "kubernetes client.")
+    if os.path.isfile(path):
+        with open(path, 'r') as kubeconfig:
+            template = yaml.safe_load(kubeconfig)
     else:
+        raise exceptions.NotFound("File {} not found".format(path))
+    if 'auth-provider' in template['users'][0]['user'].keys():
+        pytest.fail(err_msg)
+
+
+def get_k8s_client():
+    try:
+        if "TOKEN" in os.environ.keys() and "URL" in os.environ.keys():
+            api_client = K8sClient(
+                url=os.environ['URL'], token=os.environ['TOKEN'])
+        elif "KUBECONFIG" in os.environ.keys():
+            api_client = K8sClient(kubeconfig=os.environ['KUBECONFIG'])
+        return api_client
+    except Exception:
         raise EnvironmentError(
-            "401 Not Authorised. Please specify URL and TOKEN "
-            "environment variables.")
+            "401 Not Authorised. Please specify correct KUBECONFIG or "
+            "URL and TOKEN environment variables.")
