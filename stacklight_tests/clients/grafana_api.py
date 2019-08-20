@@ -1,6 +1,7 @@
 import logging
 
 from stacklight_tests.clients import grafana_templates_builder
+from stacklight_tests.clients import http_client
 from stacklight_tests import utils
 
 
@@ -86,25 +87,24 @@ class Dashboard(object):
 
 
 class GrafanaApi(object):
-    def __init__(self, address, port, datasource, tls=False):
+    def __init__(self, address, port, datasource, tls=False,
+                 user=None, password=None, keycloak_url=None):
         super(GrafanaApi, self).__init__()
         self.address = address
         self.port = port
-        scheme = "https" if tls else "http"
-        self.grafana_api_url = "{scheme}://{host}:{port}/api".format(
-            scheme=scheme, host=address, port=port)
         self.datasource = datasource
-
-    def get_api_url(self, resource=""):
-        return "{}{}".format(self.grafana_api_url, resource)
+        scheme = "https" if tls else "http"
+        self.grafana_api_url = "{scheme}://{host}:{port}/".format(
+            scheme=scheme, host=address, port=port)
+        self.http = http_client.HttpClient(
+            self.grafana_api_url, user, password, keycloak_url)
 
     def check_grafana_online(self):
-        check_http_get_response(self.grafana_api_url.replace("/api", "/login"))
-        check_http_get_response(self.get_api_url('/org'))
+        self.http.get("/login")
+        self.http.get("/api/org")
 
     def _get_raw_dashboard(self, name):
-        dashboard_url = self.get_api_url("/dashboards/db/{}".format(name))
-        response = check_http_get_response(dashboard_url, expected_codes=[])
+        response = self.http.get("/api/dashboards/db/{}".format(name))
         if response.status_code == 200:
             return response
         else:
@@ -117,11 +117,16 @@ class GrafanaApi(object):
                              self.datasource)
 
     def get_all_dashboards_names(self):
-        search_url = self.get_api_url("/search")
-        result = check_http_get_response(search_url)
+        result = self.http.get("/api/search")
         return [dash["uri"].replace("db/", "") for dash in result.json()]
 
     def is_dashboard_exists(self, name):
         if self._get_raw_dashboard(name):
             return True
         return False
+
+
+def get_grafana_client(address, port, datasource, user, password,
+                       keycloak_url):
+    return GrafanaApi(address=address, port=port, datasource=datasource,
+                      user=user, password=password, keycloak_url=keycloak_url)

@@ -1,8 +1,8 @@
 import logging
-import time
 
 import elasticsearch
 
+from stacklight_tests.clients import http_client
 from stacklight_tests import utils
 
 logger = logging.getLogger(__name__)
@@ -76,19 +76,26 @@ class ElasticSearchApi(object):
                 output["aggregations"]["uniq_logger"]["buckets"]]
 
 
-class KibanaApi(object):
-    def __init__(self, host, port=5601):
-        self.url = "http://{host}:{port}".format(host=host, port=port)
+class KibanaApi(http_client.HttpClient):
+    def get_query(self, query, path='_search', method='POST'):
+        url = "/api/console/proxy?path={}&method={}".format(path, method)
+        resp = self.post(url, body=query)
+        return resp.content
 
-    def check_logs_dashboard(self):
-        url = "{}/app/kibana#/dashboard/logs".format(self.url)
-        response = utils.check_http_get_response(url)
-        return response
+    def get_elasticsearch_status(self):
+        status = self.get_query(
+            query='{}', path='_cluster/health', method='GET')
+        return status
 
-    def check_internal_kibana_api(self):
-        timestamp = int(time.time() * 1000)
-        url = (
-            "{url}/elasticsearch/.kibana/_mapping/*/field/"
-            "_source?_={timestamp}".format(url=self.url, timestamp=timestamp))
-        response = utils.check_http_get_response(url)
-        return response
+    def get_kibana_status(self):
+        status = self.get('/api/status')
+        return status.content
+
+
+def get_kibana_client(ip, port, user, password, url):
+    api_client = KibanaApi(
+        base_url="http://{0}:{1}/".format(ip, port),
+        user=user, password=password, keycloak_url=url,
+        headers={'kbn-version': '7.1.0'}
+    )
+    return api_client

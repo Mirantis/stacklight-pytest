@@ -39,8 +39,7 @@ class K8sClient(object):
         self.sl_namespace = settings.SL_NAMESPACE
 
     def get_sl_service_ip(self, svc_name, namespace):
-        ip = None
-        port = None
+        service_dict = {}
         try:
             service = self.core_api.read_namespaced_service(
                 namespace=namespace, name=svc_name)
@@ -52,14 +51,16 @@ class K8sClient(object):
             if not service.spec.ports:
                 logger.error("Service spec appears invalid. Erroring.")
                 return None
-            ip = service.spec.cluster_ip
-            port = str(service.spec.ports[0].port)
+            service_dict['ip'] = service.spec.cluster_ip
+            service_dict['port'] = str(service.spec.ports[0].port)
+            if svc_name.startswith("iam"):
+                service_dict['external_ip'] = \
+                    service.status.load_balancer.ingress[0].ip
 
         except ApiException as e:
             print("Exception occurred trying to find %s service in "
                   "namespace %s: %s" % (svc_name, namespace, e))
             return None
-        service_dict = {'ip': ip, 'port': port}
         return service_dict
 
     def sl_services(self):
@@ -168,6 +169,10 @@ class K8sClient(object):
 
     def list_namespaced_pod(self, namespace):
         return self.core_api.list_namespaced_pod(namespace)
+
+    def read_namespaced_service(self, service, namespace):
+        return self.core_api.read_namespaced_service(
+            namespace=namespace, name=service)
 
 
 def validate_kubeconfig(path):

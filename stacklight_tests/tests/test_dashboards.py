@@ -31,7 +31,8 @@ def get_all_grafana_dashboards_names():
         "Node Exporter Full": True,
         "Prometheus Performances": False,
         "Prometheus Stats": False,
-        "Pushgateway": True
+        "Pushgateway": True,
+        "Relay": True
     }
 
     return {idfy_name(k): v for k, v in dashboards.items()}
@@ -110,7 +111,7 @@ def dashboard_name(request):
 def test_grafana_dashboard_panel_queries(
         dashboard_name, grafana_client, prometheus_api):
 
-    # grafana_client.check_grafana_online()
+    grafana_client.check_grafana_online()
     dashboard = grafana_client.get_dashboard(dashboard_name)
 
     assert grafana_client.is_dashboard_exists(dashboard_name), \

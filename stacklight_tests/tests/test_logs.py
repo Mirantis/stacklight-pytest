@@ -2,18 +2,15 @@ import json
 import logging
 import pytest
 
-from stacklight_tests import utils
-
-
 logger = logging.getLogger(__name__)
 
 
 @pytest.mark.run(order=1)
 @pytest.mark.smoke
 @pytest.mark.logs
-def test_elasticsearch_status(es_client):
+def test_elasticsearch_status(kibana_client):
     logger.info("Getting Elasticsearch status")
-    status = es_client.health()
+    status = json.loads(kibana_client.get_elasticsearch_status())
 
     logger.info("Elasticsearch cluster status is \n{}".format(status))
     assert status['status'] == 'green', \
@@ -28,11 +25,7 @@ def test_elasticsearch_status(es_client):
 @pytest.mark.logs
 def test_kibana_status(kibana_client):
     logger.info("Getting Kibana status")
-    resp = utils.check_http_get_response(
-        "{}/api/status".format(kibana_client.url))
-    assert resp, ("Cannot get Kibana status through API, "
-                  "check that Kibana is running")
-    status = json.loads(resp.content)
+    status = json.loads(kibana_client.get_kibana_status())
 
     logger.info("Check overall Kibana status")
     assert status['status']['overall']['state'] == "green", \
@@ -48,15 +41,12 @@ def test_kibana_status(kibana_client):
 
 @pytest.mark.smoke
 @pytest.mark.logs
-def test_pod_logs(k8s_api, es_client):
+def test_pod_logs(k8s_api, kibana_client):
     ret = k8s_api.list_pod_for_all_namespaces()
     pods = [pod.metadata.name for pod in ret.items]
-    q = {"size": "0",
-         "aggs": {
-             "uniq_logger": {
-                 "terms":
-                     {"field": "kubernetes.pod_name", "size": 500}}}}
-    output = es_client.search(body=q)
+    q = ('{"size": "0", "aggs": {"uniq_logger": {"terms": '
+         '{"field": "kubernetes.pod_name", "size": 500}}}}')
+    output = json.loads(kibana_client.get_query(q))
     kibana_loggers = [log["key"] for log in
                       output["aggregations"]["uniq_logger"]["buckets"]]
     missing_loggers = []
@@ -70,13 +60,11 @@ def test_pod_logs(k8s_api, es_client):
 
 @pytest.mark.smoke
 @pytest.mark.logs
-def test_node_count_in_es(es_client, nodes):
+def test_node_count_in_es(kibana_client, nodes):
     expected_nodes = nodes.keys()
-    q = {"size": "0",
-         "aggs": {
-             "uniq_hostnames": {
-                 "terms": {"field": "kubernetes.host", "size": 500}}}}
-    output = es_client.search(body=q)
+    q = ('{"size": "0", "aggs": {"uniq_hostnames": {"terms": '
+         '{"field": "kubernetes.host", "size": 500}}}}')
+    output = json.loads(kibana_client.get_query(q))
     found_nodes = [host["key"] for host in
                    output["aggregations"]["uniq_hostnames"]["buckets"]]
     logger.info("\nFound the following nodes in Elasticsearch: \n{}".format(

@@ -38,17 +38,17 @@ class AlertBehaviorMixin(object):
 
 class AlertManagerClient(AlertBehaviorMixin, http_client.HttpClient):
     def get_status(self):
-        _, resp = self.get("/api/v1/status")
+        resp = self.get("/api/v1/status").content
         status = json.loads(resp)
         return status["data"]
 
     def list_alert_groups(self):
-        _, resp = self.get("/api/v1/alerts/groups")
+        resp = self.get("/api/v1/alerts/groups").content
         status = json.loads(resp)
         return status["data"]
 
     def list_alerts(self):
-        _, resp = self.get("/api/v1/alerts")
+        resp = self.get("/api/v1/alerts").content
         status = json.loads(resp)
         return [get_alert_from_alert_manager_dict(item)
                 for item in status["data"]]
@@ -57,7 +57,7 @@ class AlertManagerClient(AlertBehaviorMixin, http_client.HttpClient):
     #     return self.post("/api/v1/alerts")
 
     def list_silences(self):
-        _, resp = self.get("/api/v1/silences")
+        resp = self.get("/api/v1/silences").content
         status = json.loads(resp)
         return status["data"]
 
@@ -65,7 +65,7 @@ class AlertManagerClient(AlertBehaviorMixin, http_client.HttpClient):
     #     return self.post("/api/v1/silences")
 
     def get_silence(self, silence_id):
-        return self.get("/api/v1/silence/{}".format(silence_id))
+        return self.get("/api/v1/silence/{}".format(silence_id)).content
 
     def delete_silence(self, silence_id):
         return self.delete("/api/v1/silence/{}".format(silence_id))

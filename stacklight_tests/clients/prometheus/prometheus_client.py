@@ -19,9 +19,10 @@ class PrometheusClient(http_client.HttpClient):
         if timestamp is not None:
             params.update({"time": timestamp})
 
-        _, resp = self.get("/api/v1/query", params=params)
+        resp = self.get("/api/v1/query", params=params).content
 
         query_result = json.loads(resp)
+
         if query_result["status"] != "success":
             raise Exception("Failed resp: {}".format(resp))
 
@@ -36,7 +37,7 @@ class PrometheusClient(http_client.HttpClient):
         }
 
         # TODO: Add proper return
-        return self.get("/api/v1/query_range", params=params)
+        return self.get("/api/v1/query_range", params=params).content
 
     def get_series(self, match):
         if issubclass(list, match):
@@ -47,10 +48,10 @@ class PrometheusClient(http_client.HttpClient):
         }
 
         # TODO: Add proper return
-        return self.get("/api/v1/series", params=params)
+        return self.get("/api/v1/series", params=params).content
 
     def get_label_values(self, label_name):
-        _, resp = self.get("/api/v1/label/{}/values".format(label_name))
+        resp = self.get("/api/v1/label/{}/values".format(label_name)).content
         query_result = json.loads(resp)
         if query_result["status"] != "success":
             raise Exception("Failed resp: {}".format(resp))
@@ -67,13 +68,13 @@ class PrometheusClient(http_client.HttpClient):
         self.delete("/api/v1/series", params=params)
 
     def get_targets(self):
-        _, resp = self.get("/api/v1/targets")
+        resp = self.get("/api/v1/targets").content
 
         targets = json.loads(resp)
         return targets["data"]["activeTargets"]
 
     def get_alertmanagers(self):
-        _, resp = self.get("/api/v1/alertmanagers")
+        resp = self.get("/api/v1/alertmanagers").content
 
         alertmanagers = json.loads(resp)
         return alertmanagers["data"]["activeAlertmanagers"]
@@ -151,7 +152,7 @@ class PrometheusClient(http_client.HttpClient):
         )
 
     def get_rules(self):
-        _, resp = self.get("/api/v1/rules")
+        resp = self.get("/api/v1/rules").content
 
         targets = json.loads(resp)
         return targets["data"]['groups']
@@ -169,6 +170,9 @@ class PrometheusClient(http_client.HttpClient):
         return alerts
 
 
-def get_prometheus_client(ip, port):
-    api_client = PrometheusClient("http://{0}:{1}/".format(ip, port))
+def get_prometheus_client(ip, port, user, password, url):
+    api_client = PrometheusClient(
+        base_url="http://{0}:{1}/".format(ip, port),
+        user=user, password=password, keycloak_url=url
+    )
     return api_client

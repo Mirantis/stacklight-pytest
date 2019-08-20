@@ -1,13 +1,15 @@
-from alertaclient.api import Client
 from pymongo import MongoClient
 import pytest
 
+from stacklight_tests import settings
+from stacklight_tests.clients import alerta_client
 from stacklight_tests.clients import es_kibana_api
 from stacklight_tests.clients import grafana_api
 from stacklight_tests.clients.openstack import client_manager  # noqa
 from stacklight_tests.clients.prometheus import alertmanager_client
 from stacklight_tests.clients.prometheus import prometheus_client
 from stacklight_tests.clients import k8s_client
+from stacklight_tests.clients import keycloak_client
 
 
 @pytest.fixture(scope="session")
@@ -47,11 +49,20 @@ def statefulsets(k8s_api):
 
 
 @pytest.fixture(scope="session")
+def keycloak_api():
+    client = keycloak_client.get_keycloak_client(
+        settings.KEYCLOAK_USER, settings.KEYCLOAK_PASSWORD,
+        settings.KEYCLOAK_URL)
+    return client
+
+
+@pytest.fixture(scope="session")
 def prometheus_api(sl_services):
-    sl_services.get('prometheus-server')
     api_client = prometheus_client.get_prometheus_client(
-        sl_services['prometheus-server']['ip'],
-        sl_services['prometheus-server']['port'])
+        sl_services['iam-proxy-prometheus']['external_ip'],
+        sl_services['iam-proxy-prometheus']['port'],
+        settings.KEYCLOAK_USER, settings.KEYCLOAK_PASSWORD,
+        settings.KEYCLOAK_URL)
     return api_client
 
 
@@ -66,20 +77,22 @@ def es_client(sl_services):
 
 @pytest.fixture(scope="session")
 def kibana_client(sl_services):
-    kibana_api = es_kibana_api.KibanaApi(
-        host=sl_services['kibana']['ip'],
-        port=sl_services['kibana']['port'],
-    )
+    kibana_api = es_kibana_api.get_kibana_client(
+        sl_services['iam-proxy-kibana']['external_ip'],
+        sl_services['iam-proxy-kibana']['port'],
+        settings.KEYCLOAK_USER, settings.KEYCLOAK_PASSWORD,
+        settings.KEYCLOAK_URL)
     return kibana_api
 
 
 @pytest.fixture(scope="session")
 def grafana_client(sl_services, prometheus_api):
-    grafana = grafana_api.GrafanaApi(
-        address=sl_services['grafana']['ip'],
-        port=sl_services['grafana']['port'],
+    grafana = grafana_api.get_grafana_client(
+        address=sl_services['iam-proxy-grafana']['external_ip'],
+        port=sl_services['iam-proxy-grafana']['port'],
         datasource=prometheus_api,
-    )
+        user=settings.KEYCLOAK_USER, password=settings.KEYCLOAK_PASSWORD,
+        keycloak_url=settings.KEYCLOAK_URL)
     return grafana
 
 
@@ -91,18 +104,22 @@ def mongodb_api(sl_services):
 
 @pytest.fixture(scope="session")
 def alerta_api(sl_services):
-    endpoint = "http://{0}:{1}/api".format(sl_services["alerta"]["ip"],
-                                           sl_services["alerta"]["port"])
-    client = Client(endpoint=endpoint, ssl_verify=False)
-    return client
+    api_client = alerta_client.get_alerta_client(
+        sl_services['iam-proxy-alerta']['external_ip'],
+        sl_services['iam-proxy-alerta']['port'],
+        settings.KEYCLOAK_USER, settings.KEYCLOAK_PASSWORD,
+        settings.KEYCLOAK_URL)
+    return api_client
 
 
 @pytest.fixture(scope="session")
 def prometheus_native_alerting(sl_services):
     alerting = alertmanager_client.AlertManagerClient(
-        "http://{0}:{1}/".format(
-            sl_services["prometheus-alertmanager"]["ip"],
-            sl_services["prometheus-alertmanager"]["port"])
+        base_url="http://{0}:{1}/".format(
+            sl_services["iam-proxy-alertmanager"]["external_ip"],
+            sl_services["iam-proxy-alertmanager"]["port"]),
+        user=settings.KEYCLOAK_USER, password=settings.KEYCLOAK_PASSWORD,
+        keycloak_url=settings.KEYCLOAK_URL
     )
     return alerting
 #

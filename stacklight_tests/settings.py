@@ -17,3 +17,8 @@ CIRROS_QCOW2_URL = os.environ.get(
 )
 
 VOLUME_STATUS = os.environ.get("VOLUME_STATUS", "available")
+
+# Keycloak settings
+KEYCLOAK_URL = os.environ.get('KEYCLOAK_URL', "https://172.19.116.60")
+KEYCLOAK_USER = os.environ.get('KEYCLOAK_USER', "writer")
+KEYCLOAK_PASSWORD = os.environ.get('KEYCLOAK_PASSWORD', "password")
