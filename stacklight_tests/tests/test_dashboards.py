@@ -2,10 +2,45 @@ import collections
 
 import pytest
 
-ignored_queries_for_fail = []
+ignored_queries_for_fail = [
+    # Elasticsearch
+    'count(elasticsearch_breakers_tripped{cluster="$cluster",name=~"$name"}'
+    '>0)',
+    # MongoDB
+    'mongodb_replset_oplog_size_bytes{instance=~"$env"}',
+    # Prometheus. Skip 1.x prometheus metric
+    'prometheus_local_storage_target_heap_size_bytes'
+    '{instance=~"$instance:[1-9][0-9]*"}',
+    # Kubernetes cluster
+    'sum(kube_node_status_condition{condition="OutOfDisk", node=~"$node", '
+    'status="true"})',
+    'sum(kube_job_status_succeeded{namespace=~"$namespace"})',
+    'sum(kube_job_status_active{namespace=~"$namespace"})',
+    'sum(kube_job_status_failed{namespace=~"$namespace"})',
+]
 
 
-ignored_queries_for_partial_fail = []
+ignored_queries_for_partial_fail = [
+    # Kubernetes deployments
+    'kube_deployment_status_observed_generation{namespace=~"$namespace"}',
+    # Kubernetes Cluster
+    'sum(kube_pod_status_phase{namespace=~"$namespace", phase="Unknown"})',
+    'sum(kube_deployment_status_replicas_unavailable'
+    '{namespace=~"$namespace"})',
+    'sum(kube_job_status_succeeded{namespace=~"$namespace"})',
+    'sum(kube_pod_status_phase{namespace=~"$namespace", phase="Pending"})',
+    'sum(kube_pod_container_status_running{namespace=~"$namespace"})',
+    'kube_deployment_status_replicas{namespace=~"$namespace"}',
+    'sum(kube_pod_status_phase{namespace=~"$namespace", phase="Succeeded"})',
+    'sum(kube_job_status_active{namespace=~"$namespace"})',
+    'sum(kube_pod_container_status_terminated{namespace=~"$namespace"})',
+    'sum(kube_job_status_failed{namespace=~"$namespace"})',
+    'sum(kube_pod_status_phase{namespace=~"$namespace", phase="Running"})',
+    'sum(kube_pod_container_status_waiting{namespace=~"$namespace"})',
+    'sum(kube_pod_status_phase{namespace=~"$namespace", phase="Failed"})',
+    'sum(kube_deployment_status_replicas_updated{namespace=~"$namespace"})',
+    'sum(kube_deployment_status_replicas{namespace=~"$namespace"})'
+]
 
 
 def idfy_name(name):
@@ -20,19 +55,19 @@ def query_dict_to_string(query_dict):
 def get_all_grafana_dashboards_names():
     dashboards = {
         "Alertmanager": True,
-        "ElasticSearch": False,
+        "ElasticSearch": True,
         "Grafana": True,
-        "Kubernetes Calico": False,
-        "Kubernetes Cluster": False,
+        "Kubernetes Calico": True,
+        "Kubernetes Cluster": True,
         "Kubernetes Container": False,
-        "Kubernetes Deployments": False,
+        "Kubernetes Deployments": True,
         "Kubernetes Node": True,
-        "MongoDB": False,
-        "Node Exporter Full": True,
-        "Prometheus Performances": False,
-        "Prometheus Stats": False,
+        "MongoDB": True,
+        "Prometheus Performances": True,
+        "Prometheus Stats": True,
         "Pushgateway": True,
-        "Relay": True
+        "Relay": True,
+        "System": True
     }
 
     return {idfy_name(k): v for k, v in dashboards.items()}
@@ -125,6 +160,10 @@ def test_grafana_dashboard_panel_queries(
         panel = Panel(location, raw_query)
 
         for template in possible_templates:
+            # W/A for Elasticsearch dashboard
+            if ("$interval" in template.keys() and
+                    template['$interval'] == '$__auto_interval'):
+                template['$interval'] = '3m'
             query = prometheus_api.compile_query(raw_query, template)
             try:
                 result = prometheus_api.do_query(query)
