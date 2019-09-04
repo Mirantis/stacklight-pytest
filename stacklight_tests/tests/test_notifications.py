@@ -11,7 +11,7 @@ def check_service_notification_by_type(es_client, object_id, event_type):
     logger.info("Checking {} notification".format(event_type))
     q = {
         "_source": "Payload",
-        "size": 100,
+        "size": 1000,
         "query": {
             "bool": {
                 "must": [
