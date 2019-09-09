@@ -36,7 +36,11 @@ class K8sClient(object):
         self.core_api = client.CoreV1Api(api_client)
         self.extension_api = client.ExtensionsV1beta1Api(api_client)
         self.apps_api = client.AppsV1beta1Api(api_client)
+        self.crd_api = client.CustomObjectsApi(api_client)
         self.sl_namespace = settings.SL_NAMESPACE
+        self.crd_group = 'lcm.mirantis.com'
+        self.crd_version = 'v1alpha1'
+        self.crd_plural = 'helmbundles'
 
     def get_sl_service_ip(self, svc_name, namespace):
         service_dict = {}
@@ -160,6 +164,19 @@ class K8sClient(object):
                 'status': status
             }
         return sfs_dict
+
+    def get_stacklight_chart(self, chart_name):
+        crd = self.crd_api.list_namespaced_custom_object(
+            group=self.crd_group,
+            version=self.crd_version,
+            namespace=self.sl_namespace,
+            plural=self.crd_plural,
+            pretty=True)
+        assert crd, "Stacklight CRD not found"
+        charts = crd['items'][0]['spec']['releases']
+        target_chart = filter(lambda x: x['name'] == chart_name, charts)
+        assert target_chart, "Chart {} not found".format(chart_name)
+        return target_chart[0]
 
     def list_namespaced_service(self, namespace):
         return self.core_api.list_namespaced_service(namespace)

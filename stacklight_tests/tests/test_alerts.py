@@ -324,7 +324,6 @@ alert_metrics = {
         '{device!~"veth.+",job="node-exporter"}[2m]) <= 0'
     ],
     "TargetDown": ['up != 0'],
-    "Watchdog": ['absent(vector(1))'],
     "etcdGRPCRequestsSlow": [
         'histogram_quantile(0.99, sum by(job, instance, grpc_service, '
         'grpc_method, le) (rate(grpc_server_handling_seconds_bucket'
@@ -418,6 +417,25 @@ def test_alert(prometheus_api, prometheus_native_alerting, alert, metrics):
 
 
 @pytest.mark.alerts
+def test_alert_watchdog(k8s_api, prometheus_api, prometheus_native_alerting):
+    prometheus_chart = k8s_api.get_stacklight_chart("prometheus")
+    override_alerts = prometheus_chart['values']['alertsOverride']
+
+    if (not override_alerts.get('general', '') or
+            "Watchdog" not in override_alerts['general'].keys()):
+        pytest.skip("Watchdog alert is disabled on this environment")
+    err_msg = "Something wrong with Watchdog alert. It should be always firing"
+    logger.info('Checking that Watchdog alert is firing')
+    firing_alerts = [a.name
+                     for a in prometheus_native_alerting.list_alerts()]
+    assert "Watchdog" in firing_alerts, err_msg
+    metric = 'vector(1)'
+    logger.info('Checking metric "{}"'.format(metric))
+    output = prometheus_api.get_query(metric)
+    assert len(output) != 0, err_msg
+
+
+@pytest.mark.alerts
 @pytest.mark.smoke
 def test_firing_alerts(prometheus_native_alerting):
     logger.info("Getting a list of firing alerts")
@@ -425,8 +443,8 @@ def test_firing_alerts(prometheus_native_alerting):
     skip_list = ['Watchdog']
     for alert in alerts:
         msg = "Alert {} is fired".format(alert.name)
-        if alert.host:
-            msg += " for the instance {}".format(alert.instance)
+        if alert.node:
+            msg += " for the node {}".format(alert.node)
         logger.warning(msg)
     alerts = filter(lambda x: x.name not in skip_list, alerts)
     assert len(alerts) == 0, \
