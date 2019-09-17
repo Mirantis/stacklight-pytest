@@ -63,7 +63,7 @@ def get_all_grafana_dashboards_names():
         "Kubernetes Deployments": True,
         "Kubernetes Node": True,
         "MongoDB": True,
-        "NGINX": False,
+        "NGINX": True,
         "Prometheus Performances": True,
         "Prometheus Stats": True,
         "Pushgateway": True,
