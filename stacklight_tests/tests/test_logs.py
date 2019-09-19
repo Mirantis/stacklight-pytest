@@ -39,6 +39,7 @@ def test_kibana_status(kibana_client):
             plugin["id"], plugin["state"])
 
 
+@pytest.mark.run(order=1)
 @pytest.mark.smoke
 @pytest.mark.logs
 def test_pod_logs(k8s_api, kibana_client):
@@ -58,6 +59,7 @@ def test_pod_logs(k8s_api, kibana_client):
     assert len(missing_loggers) == 0, msg
 
 
+@pytest.mark.run(order=1)
 @pytest.mark.smoke
 @pytest.mark.logs
 def test_node_count_in_es(kibana_client, nodes):

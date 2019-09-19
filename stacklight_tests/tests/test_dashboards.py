@@ -59,9 +59,9 @@ def get_all_grafana_dashboards_names():
         "Grafana": True,
         "Kubernetes Calico": True,
         "Kubernetes Cluster": True,
-        "Kubernetes Container": False,
         "Kubernetes Deployments": True,
         "Kubernetes Node": True,
+        "Kubernetes Pod": True,
         "MongoDB": True,
         "NGINX": True,
         "Prometheus Performances": True,
@@ -143,7 +143,7 @@ def dashboard_name(request):
 
 
 @pytest.mark.dashboards
-@pytest.mark.run(order=-1)
+@pytest.mark.run(order=-2)
 def test_grafana_dashboard_panel_queries(
         dashboard_name, grafana_client, prometheus_api):
 
@@ -196,6 +196,7 @@ def test_grafana_dashboard_panel_queries(
 
 @pytest.mark.smoke
 @pytest.mark.dashboards
+@pytest.mark.run(order=-2)
 def test_panels_fixture(grafana_client):
     fixture_dashboards = get_all_grafana_dashboards_names().keys()
 
