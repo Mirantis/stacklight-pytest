@@ -53,22 +53,44 @@ def query_dict_to_string(query_dict):
 
 
 def get_all_grafana_dashboards_names():
+    # { Name in Grafana: name in Stacklight CRD }
     dashboards = {
-        "Alertmanager": True,
-        "ElasticSearch": True,
-        "Grafana": True,
-        "Kubernetes Calico": True,
-        "Kubernetes Cluster": True,
-        "Kubernetes Deployments": True,
-        "Kubernetes Node": True,
-        "Kubernetes Pod": True,
-        "MongoDB": True,
-        "NGINX": True,
-        "Prometheus Performances": True,
-        "Prometheus Stats": True,
-        "Pushgateway": True,
-        "Relay": True,
-        "System": True
+        "Alertmanager": 'alertmanager',
+        "ElasticSearch": 'elasticsearch',
+        "Grafana": 'grafana',
+        "Kubernetes Calico": 'calico',
+        "Kubernetes Cluster": 'kubernetes-cluster',
+        "Kubernetes Deployments": 'kubernetes-deployment',
+        "Kubernetes Node": 'kubernetes-node',
+        "Kubernetes Pod": 'kubernetes-pod',
+        "MongoDB": 'mongodb',
+        "NGINX": 'nginx',
+        "Prometheus Performances": 'prometheus-performance',
+        "Prometheus Stats": 'prometheus-stats',
+        "Pushgateway": 'pushgateway',
+        "Relay": 'relay',
+        "System": 'node-exporter',
+        # Ceph
+        "Ceph Cluster": 'ceph-cluster',
+        "Ceph Hosts Overview": 'ceph-hosts-overview',
+        "Ceph OSD device details": 'ceph-osds-details',
+        "Ceph OSD Overview": 'ceph-osds-overview',
+        "Ceph Pools Overview": 'ceph-pool-overview',
+        # Openstack
+        "MySQL": 'mysql',
+        "Memcached": 'memcached',
+        "RabbitMQ": 'rabbitmq',
+        "Cinder": 'cinder',
+        "Glance": 'glance',
+        "Heat": 'heat',
+        "Keystone": 'keystone',
+        "Neutron": 'neutron',
+        "Nova Hypervisor Overview": 'nova-hypervisor',
+        "Nova Instances": 'nova-instances',
+        "Nova Overview": 'nova-overview',
+        "Nova Utilization": 'nova-utilization',
+        "Openstack Overview": 'openstack-overview',
+        "Openstack Tenants": 'openstack-tenants'
     }
 
     return {idfy_name(k): v for k, v in dashboards.items()}
@@ -132,11 +154,13 @@ class Panel(object):
 @pytest.fixture(scope="module",
                 params=get_all_grafana_dashboards_names().items(),
                 ids=get_all_grafana_dashboards_names().keys())
-def dashboard_name(request):
-    dash_name, requirement = request.param
+def dashboard_name(request, k8s_api):
+    dash_name, chart_dash_name = request.param
+    grafana_chart = k8s_api.get_stacklight_chart('grafana')
+    chart_dashboards = grafana_chart['values']['dashboards']['default'].keys()
 
-    if not requirement:
-        pytest.skip("Temporary skip test for {} grafana dashboard".format(
+    if chart_dash_name not in chart_dashboards:
+        pytest.skip("Dashboard {} not found in Stacklight CRD".format(
             dash_name))
 
     return dash_name
