@@ -110,12 +110,15 @@ class PrometheusQueryAlertClient(AlertBehaviorMixin,
 
 
 class Alert(object):
-    def __init__(self, name, time, host, node, service, severity, instance,
-                 value=None, annotations=None):
+    def __init__(self, name, time, host, node, pod, pod_name, namespace,
+                 service, severity, instance, value=None, annotations=None):
         self.name = name
         self.time = time
         self.host = host
         self.node = node
+        self.pod = pod
+        self.pod_name = pod_name
+        self.namespace = namespace
         self.service = service
         self.severity = severity
         self.instance = instance
@@ -171,6 +174,9 @@ def get_alert_from_alert_manager_dict(json_repr):
         instance=json_repr["labels"].get("instance", ""),
         host=json_repr["labels"].get("host", ""),
         node=json_repr["labels"].get("node", ""),
+        pod=json_repr["labels"].get("pod", ""),
+        pod_name=json_repr["labels"].get("pod_name", ""),
+        namespace=json_repr["labels"].get("namespace", ""),
         service=json_repr["labels"].get("service", ""),
         severity=json_repr["labels"]["severity"],
         annotations=json_repr["annotations"],

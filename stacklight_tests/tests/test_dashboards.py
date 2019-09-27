@@ -11,7 +11,7 @@ ignored_queries_for_fail = [
     # Prometheus. Skip 1.x prometheus metric
     'prometheus_local_storage_target_heap_size_bytes'
     '{instance=~"$instance:[1-9][0-9]*"}',
-    # Kubernetes cluster
+    # Kubernetes Cluster
     'sum(kube_node_status_condition{condition="OutOfDisk", node=~"$node", '
     'status="true"})',
     'sum(kube_job_status_succeeded{namespace=~"$namespace"})',
@@ -21,7 +21,7 @@ ignored_queries_for_fail = [
 
 
 ignored_queries_for_partial_fail = [
-    # Kubernetes deployments
+    # Kubernetes Deployments
     'kube_deployment_status_observed_generation{namespace=~"$namespace"}',
     # Kubernetes Cluster
     'sum(kube_pod_status_phase{namespace=~"$namespace", phase="Unknown"})',
@@ -39,7 +39,23 @@ ignored_queries_for_partial_fail = [
     'sum(kube_pod_container_status_waiting{namespace=~"$namespace"})',
     'sum(kube_pod_status_phase{namespace=~"$namespace", phase="Failed"})',
     'sum(kube_deployment_status_replicas_updated{namespace=~"$namespace"})',
-    'sum(kube_deployment_status_replicas{namespace=~"$namespace"})'
+    'sum(kube_deployment_status_replicas{namespace=~"$namespace"})',
+    # Kubernetes Pod
+    'sum(container_memory_usage_bytes{pod=~"$pod",container=~".+"}) by (pod)',
+    'sum(rate(container_fs_writes_bytes_total{pod=~"$pod",container=~".+"}'
+    '[$rate_interval])) by (pod)',
+    'sum(rate(container_cpu_usage_seconds_total{pod=~"$pod",container=~".+"}'
+    '[$rate_interval])) by (pod)',
+    'sum(rate(container_fs_reads_bytes_total{pod=~"$pod",container=~".+"}'
+    '[$rate_interval])) by (pod)',
+    'sum(rate(container_fs_reads_total{pod=~"$pod",container=~".+"}'
+    '[$rate_interval])) by (pod)',
+    'sum(rate(container_fs_writes_total{pod=~"$pod",container=~".+"}'
+    '[$rate_interval])) by (pod)',
+    'sum(rate(container_network_transmit_bytes_total'
+    '{pod=~"$pod",interface=~".+"}[$rate_interval])) by (pod)',
+    'sum(rate(container_network_receive_bytes_total'
+    '{pod=~"$pod",interface=~".+"}[$rate_interval])) by (pod)'
 ]
 
 

@@ -55,6 +55,23 @@ alert_metrics = {
         '{container_name!=""}[5m])) / sum by(container_name, pod_name, '
         'namespace) (increase(container_cpu_cfs_periods_total[5m])) <= 25'
     ],
+    "ElasticClusterRed": [
+        'elasticsearch_cluster_health_status{color="red"} != 1'
+    ],
+    "ElasticClusterYellow": [
+        'elasticsearch_cluster_health_status{color="yellow"} != 1'
+    ],
+    "ElasticHeapUsageTooHigh": [
+        '(elasticsearch_jvm_memory_used_bytes{area="heap"} / '
+        'elasticsearch_jvm_memory_max_bytes{area="heap"}) * 100 <= 90'
+    ],
+    "ElasticHeapUsageWarning": [
+        '(elasticsearch_jvm_memory_used_bytes{area="heap"} / '
+        'elasticsearch_jvm_memory_max_bytes{area="heap"}) * 100 <= 80'
+    ],
+    "ElasticNoNewDocuments": [
+        'rate(elasticsearch_indices_docs[10m]) >= 1'
+    ],
     "KubeAPIErrorsHighCritical": [
         'sum(rate(apiserver_request_count{code=~"^(?:5..)$",'
         'job="apiserver"}[5m])) / '
@@ -233,6 +250,11 @@ alert_metrics = {
         'sum by(pod) (mongodb_memory{type="virtual"}) < 0.8 * sum by(pod) '
         '(container_memory_max_usage_bytes{container_name="mongodb"})'
     ],
+    "NginxDroppedIncomingConnections": [
+        'irate(nginx_connections_accepted[5m]) - '
+        'irate(nginx_connections_handled[5m]) <= 0'
+    ],
+    "NginxServiceDown": ['nginx_up == 1'],
     "NodeDown": [
         'up{job="kubelet"} != 0 or on(node) kube_node_status_condition'
         '{condition="Ready",job="kube-state-metrics",status="true"} != 0'
@@ -240,6 +262,18 @@ alert_metrics = {
     "NodeNetworkInterfaceFlapping": [
         'changes(node_network_up{device!~"veth.+",job="node-exporter"}[2m]) '
         '<= 2'
+    ],
+    "NumberOfInitializingShards": [
+        'elasticsearch_cluster_health_initializing_shards <= 0'
+    ],
+    "NumberOfPendingTasks": [
+        'elasticsearch_cluster_health_number_of_pending_tasks <= 0'
+    ],
+    "NumberOfRelocationShards": [
+        'elasticsearch_cluster_health_relocating_shards <= 0'
+    ],
+    "NumberOfUnassignedShards": [
+        'elasticsearch_cluster_health_unassigned_shards <= 0'
     ],
     "PrometheusConfigReloadFailed": [
         'prometheus_config_last_reload_successful != 0'
@@ -399,8 +433,8 @@ def test_alert(prometheus_api, prometheus_native_alerting, alert, metrics):
     prometheus_alerts = prometheus_api.get_all_defined_alerts().keys()
     firing_alerts = [a.name
                      for a in prometheus_native_alerting.list_alerts()]
-    assert alert in prometheus_alerts, \
-        "{} alert not found in Prometheus".format(alert)
+    if alert not in prometheus_alerts:
+        pytest.skip("{} alert not found in Prometheus".format(alert))
     for metric in metrics:
         logger.info('\nChecking metric/expression "{}"'.format(metric))
         msg = 'Metric/expression "{}" not found'.format(metric)
@@ -439,13 +473,23 @@ def test_alert_watchdog(k8s_api, prometheus_api, prometheus_native_alerting):
 @pytest.mark.smoke
 def test_firing_alerts(prometheus_native_alerting):
     logger.info("Getting a list of firing alerts")
-    alerts = prometheus_native_alerting.list_alerts()
+    alerts = sorted(prometheus_native_alerting.list_alerts(),
+                    key=lambda x: x.name)
     skip_list = ['Watchdog']
+    logger.warning(
+        "+" + "+".join(["-" * 45, "-" * 50, "-" * 20, "-" * 50]) + "+")
+    logger.warning("|{:^45}|{:^50}|{:^20}|{:^50}|".format(
+        "Name", "Pod", "Namespace", "Node"))
+    logger.warning(
+        "+" + "+".join(["-" * 45, "-" * 50, "-" * 20, "-" * 50]) + "+")
     for alert in alerts:
-        msg = "Alert {} is fired".format(alert.name)
-        if alert.node:
-            msg += " for the node {}".format(alert.node)
-        logger.warning(msg)
+        logger.warning("|{:^45}|{:^50}|{:^20}|{:^50}|".format(
+            alert.name,
+            alert.pod or alert.pod_name,
+            alert.namespace,
+            alert.node))
+    logger.warning(
+        "+" + "+".join(["-" * 45, "-" * 50, "-" * 20, "-" * 50]) + "+")
     alerts = filter(lambda x: x.name not in skip_list, alerts)
     assert len(alerts) == 0, \
         "There are some firing alerts in the cluster: {}".format(
