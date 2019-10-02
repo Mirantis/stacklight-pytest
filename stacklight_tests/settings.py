@@ -2,12 +2,22 @@ import logging
 import os
 
 
+_boolean_states = {'1': True, 'yes': True, 'true': True, 'on': True,
+                   '0': False, 'no': False, 'false': False, 'off': False}
+
+
+def get_var_as_bool(name, default):
+    value = os.environ.get(name, '')
+    return _boolean_states.get(value.lower(), default)
+
+
 # Logging settings
 CONSOLE_LOG_LEVEL = os.environ.get('LOG_LEVEL', logging.DEBUG)
 LOG_FILE = os.environ.get('LOG_FILE', 'test.log')
 
-# Plugins info
+# Test settings
 SL_NAMESPACE = os.environ.get("SL_NAMESPACE", 'stacklight')
+TEST_FIRING_ALERTS = get_var_as_bool("TEST_FIRING_ALERTS", True)
 
 # Images dir
 IMAGES_PATH = os.environ.get("IMAGES_PATH", os.path.expanduser('~/images'))

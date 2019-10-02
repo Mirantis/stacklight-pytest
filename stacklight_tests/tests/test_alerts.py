@@ -1,6 +1,8 @@
 import logging
 import pytest
 
+from stacklight_tests import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -471,7 +473,10 @@ def test_alert_watchdog(k8s_api, prometheus_api, prometheus_native_alerting):
 
 @pytest.mark.alerts
 @pytest.mark.smoke
+@pytest.mark.xfail
 def test_firing_alerts(prometheus_native_alerting):
+    if not settings.TEST_FIRING_ALERTS:
+        pytest.skip('Test for firing alerts is disabled')
     logger.info("Getting a list of firing alerts")
     alerts = sorted(prometheus_native_alerting.list_alerts(),
                     key=lambda x: x.name)

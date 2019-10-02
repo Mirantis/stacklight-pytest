@@ -79,10 +79,24 @@ class K8sClient(object):
         nodes = self.core_api.list_node()
         nodes_dict = {}
         for node in nodes.items:
-            nodes_dict[node.metadata.name] = {
-                'internal_ip': node.status.addresses[0].address,
-                'external_ip': node.status.addresses[1].address,
+            name = node.metadata.name
+            nodes_dict[name] = {
+                'internal_ip': '',
+                'external_ip': '',
             }
+            addr = node.status.addresses
+            int_ip = filter(lambda x: x.type == 'InternalIP', addr)
+            ext_ip = filter(lambda x: x.type == 'ExternalIP', addr)
+            if int_ip:
+                nodes_dict[name]['internal_ip'] = int_ip[0].address
+            else:
+                logger.warning("Internal ip for the node {} not found".format(
+                    name))
+            if ext_ip:
+                nodes_dict[name]['external_ip'] = ext_ip[0].address
+            else:
+                logger.warning("External ip for the node {} not found".format(
+                    name))
         return nodes_dict
 
     def daemonsets(self):
