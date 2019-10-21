@@ -2,6 +2,8 @@ import json
 import logging
 import pytest
 
+from stacklight_tests import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -54,6 +56,8 @@ def test_pod_logs(k8s_api, kibana_client):
     for pod in pods:
         if pod not in kibana_loggers:
             missing_loggers.append(pod)
+    if settings.SL_TEST_POD in missing_loggers:
+        missing_loggers.remove(settings.SL_TEST_POD)
     msg = ('Logs from {} pods not found in Kibana'.format(', '.join(
         missing_loggers)))
     assert len(missing_loggers) == 0, msg
