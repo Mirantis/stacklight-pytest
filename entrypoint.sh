@@ -26,4 +26,4 @@ function activate_venv(){
 cd /stacklight-pytest
 activate_venv
 
-exec pytest --junit-xml="${REPORT_DIR}"/report.xml --html="${REPORT_DIR}"/sl-tests.html --self-contained-html --tb=short -v --show-capture=stdout stacklight_tests/tests/
+exec pytest --reruns 2 --reruns-delay 30 --junit-xml="${REPORT_DIR}"/report.xml --html="${REPORT_DIR}"/sl-tests.html --self-contained-html --tb=short -v --show-capture=stdout stacklight_tests/tests/
