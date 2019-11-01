@@ -11,6 +11,10 @@ from stacklight_tests import file_cache
 from stacklight_tests import settings
 from stacklight_tests import utils
 import os
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class OfficialClientManager(object):
@@ -237,14 +241,15 @@ class OSCliActions(object):
     def get_admin_tenant(self):
         return self.os_clients.auth.tenants.find(name="admin")
 
-    def create_cirros_image(self, name=None):
+    def create_cirros_image(self, name=None, url=settings.CIRROS_QCOW2_URL):
         name = name if name else utils.rand_name("image-")
         image = self.os_clients.image.images.create(
             name=name,
             disk_format='qcow2',
             container_format='bare',
             visibility='public')
-        with file_cache.get_file(settings.CIRROS_QCOW2_URL) as f:
+        logger.info("Using {} link to download cirros image".format(url))
+        with file_cache.get_file(url) as f:
             self.os_clients.image.images.upload(image.id, f)
         return image
 

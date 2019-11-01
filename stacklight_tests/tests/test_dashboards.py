@@ -413,6 +413,7 @@ def get_all_grafana_dashboards_names():
         "Heat": "I@heat:server",
         "InfluxDB": "I@influxdb:server",
         "InfluxDB Relay": "I@influxdb:relay",
+        "Ironic": "I@ironic:conductor",
         "Jenkins": "I@jenkins:client and I@docker:swarm:role:master",
         "Keepalived": "I@keepalived:cluster",
         "Keystone": "I@keystone:server",

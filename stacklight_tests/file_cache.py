@@ -51,7 +51,7 @@ def get_file_path(url, name=None):
         headers['If-Modified-Since'] = email.utils.formatdate(file_date,
                                                               usegmt=True)
 
-    response = requests.get(url, stream=True, headers=headers)
+    response = requests.get(url, stream=True, headers=headers, timeout=300)
 
     if response.status_code == 304:
         logger.info("Image file is up to date")
