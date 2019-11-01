@@ -12,11 +12,14 @@ logger = logging.getLogger(__name__)
 class TestOpenstackMetrics(object):
     @pytest.mark.run(order=2)
     def test_glance_metrics(self, destructive, prometheus_api, os_clients,
-                            os_actions):
+                            os_actions, salt_actions):
         client = os_clients.image
 
         logger.info("Creating a test image")
-        image = os_actions.create_cirros_image()
+        image_url = salt_actions.get_pillar_item(
+            "I@glance:*", "_param:glance_image_cirros_location")
+        image_url = image_url[0] if image_url else settings.CIRROS_QCOW2_URL
+        image = os_actions.create_cirros_image(url=image_url)
         destructive.append(lambda: client.images.delete(image.id))
         utils.wait_for_resource_status(client.images, image.id, "active")
 
@@ -293,7 +296,10 @@ class TestOpenstackMetrics(object):
         client = os_clients.compute
 
         logger.info("Creating a test image")
-        image = os_actions.create_cirros_image()
+        image_url = salt_actions.get_pillar_item(
+            "I@glance:*", "_param:glance_image_cirros_location")
+        image_url = image_url[0] if image_url else settings.CIRROS_QCOW2_URL
+        image = os_actions.create_cirros_image(url=image_url)
         destructive.append(lambda: os_clients.image.images.delete(image.id))
 
         logger.info("Creating a test flavor")
@@ -378,7 +384,10 @@ class TestOpenstackMetrics(object):
 
         client = os_clients.compute
         logger.info("Creating a test image")
-        image = os_actions.create_cirros_image()
+        image_url = salt_actions.get_pillar_item(
+            "I@glance:*", "_param:glance_image_cirros_location")
+        image_url = image_url[0] if image_url else settings.CIRROS_QCOW2_URL
+        image = os_actions.create_cirros_image(url=image_url)
         destructive.append(lambda: os_clients.image.images.delete(image.id))
 
         logger.info("Creating a test flavor")

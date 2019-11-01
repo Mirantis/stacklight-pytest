@@ -48,7 +48,10 @@ def test_glance_notifications(salt_actions, destructive, os_clients,
     client = os_clients.image
 
     logger.info("Creating a test image")
-    image = os_actions.create_cirros_image()
+    image_url = salt_actions.get_pillar_item(
+        "I@glance:*", "_param:glance_image_cirros_location")
+    image_url = image_url[0] if image_url else settings.CIRROS_QCOW2_URL
+    image = os_actions.create_cirros_image(url=image_url)
     destructive.append(lambda: client.images.delete(image.id))
     utils.wait_for_resource_status(client.images, image.id, "active")
 
@@ -181,7 +184,10 @@ def test_nova_notifications(salt_actions, os_clients, os_actions, es_client,
     client = os_clients.compute
 
     logger.info("Creating a test image")
-    image = os_actions.create_cirros_image()
+    image_url = salt_actions.get_pillar_item(
+        "I@glance:*", "_param:glance_image_cirros_location")
+    image_url = image_url[0] if image_url else settings.CIRROS_QCOW2_URL
+    image = os_actions.create_cirros_image(url=image_url)
     destructive.append(lambda: os_clients.image.images.delete(image.id))
 
     logger.info("Creating a test flavor")
@@ -309,7 +315,10 @@ def test_heat_notifications(salt_actions, os_clients, es_client, os_actions,
         pytest.skip("Openstack is not installed in the cluster")
 
     logger.info("Creating a test image")
-    image = os_actions.create_cirros_image()
+    image_url = salt_actions.get_pillar_item(
+        "I@glance:*", "_param:glance_image_cirros_location")
+    image_url = image_url[0] if image_url else settings.CIRROS_QCOW2_URL
+    image = os_actions.create_cirros_image(url=image_url)
     destructive.append(lambda: os_clients.image.images.delete(image.id))
 
     logger.info("Creating a test flavor")
