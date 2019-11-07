@@ -298,6 +298,9 @@ alert_metrics = {
         'predict_linear(prometheus_notifications_queue_length[5m], 60 * 30) '
         '<= prometheus_notifications_queue_capacity'
     ],
+    "PrometheusRuleEvaluationsFailed": [
+        'rate(prometheus_rule_evaluation_failures_total[5m]) <= 0'
+    ],
     "PrometheusTSDBCompactionsFailing": [
         'increase(prometheus_tsdb_compactions_failed_total[2h]) <= 0'
     ],
