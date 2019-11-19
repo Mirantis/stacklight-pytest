@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 def test_alerta_smoke(alerta_api):
     count = alerta_api.get_count()
     assert count['status'] == 'ok'
-    assert count['total'] != 0
 
 
 @pytest.mark.alerta

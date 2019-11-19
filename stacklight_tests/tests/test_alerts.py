@@ -281,12 +281,12 @@ alert_metrics = {
         'prometheus_config_last_reload_successful != 0'
     ],
     "PrometheusErrorSendingAlertsCritical": [
-        'rate(prometheus_notifications_errors_total[5m]) / '
-        'rate(prometheus_notifications_sent_total[5m]) <= 0.03'
+        'prometheus_notifications_errors_total',
+        'prometheus_notifications_sent_total'
     ],
     "PrometheusErrorSendingAlertsWarning": [
-        'rate(prometheus_notifications_errors_total[5m]) / '
-        'rate(prometheus_notifications_sent_total[5m]) <= 0.01'
+        'prometheus_notifications_errors_total',
+        'prometheus_notifications_sent_total'
     ],
     "PrometheusNotConnectedToAlertmanagers": [
         'prometheus_notifications_alertmanagers_discovered >= 1'

@@ -41,26 +41,26 @@ ignored_queries_for_partial_fail = [
     'sum(kube_deployment_status_replicas_updated{namespace=~"$namespace"})',
     'sum(kube_deployment_status_replicas{namespace=~"$namespace"})',
     # Kubernetes Namespace
-    'sum(container_memory_usage_bytes{exported_namespace=~"$namespace",'
-    'pod=~".+",container=~".+"}) by (exported_namespace)',
-    'sum(rate(container_fs_reads_total{exported_namespace=~"$namespace",'
-    'pod=~".+",container=~".+"}[$rate_interval])) by (exported_namespace)',
+    'sum(container_memory_usage_bytes{namespace=~"$namespace",'
+    'pod=~".+",container=~".+"}) by (namespace)',
+    'sum(rate(container_fs_reads_total{namespace=~"$namespace",'
+    'pod=~".+",container=~".+"}[$rate_interval])) by (namespace)',
     'sum(rate(container_cpu_usage_seconds_total'
-    '{exported_namespace=~"$namespace",pod=~".+",container=~".+"}'
-    '[$rate_interval])) by (exported_namespace)',
+    '{namespace=~"$namespace",pod=~".+",container=~".+"}'
+    '[$rate_interval])) by (namespace)',
     'sum(rate(container_fs_writes_bytes_total'
-    '{exported_namespace=~"$namespace",pod=~".+",container=~".+"}'
-    '[$rate_interval])) by (exported_namespace)',
-    'sum(rate(container_fs_writes_total{exported_namespace=~"$namespace",'
-    'pod=~".+",container=~".+"}[$rate_interval])) by (exported_namespace)',
-    'sum(rate(container_fs_reads_bytes_total{exported_namespace=~"$namespace",'
-    'pod=~".+",container=~".+"}[$rate_interval])) by (exported_namespace)',
+    '{namespace=~"$namespace",pod=~".+",container=~".+"}'
+    '[$rate_interval])) by (namespace)',
+    'sum(rate(container_fs_writes_total{namespace=~"$namespace",'
+    'pod=~".+",container=~".+"}[$rate_interval])) by (namespace)',
+    'sum(rate(container_fs_reads_bytes_total{namespace=~"$namespace",'
+    'pod=~".+",container=~".+"}[$rate_interval])) by (namespace)',
     'sum(rate(container_network_receive_bytes_total'
-    '{exported_namespace=~"$namespace",pod=~".+",interface=~".+"}'
-    '[$rate_interval])) by (exported_namespace)',
+    '{namespace=~"$namespace",pod=~".+",interface=~".+"}'
+    '[$rate_interval])) by (namespace)',
     'sum(rate(container_network_transmit_bytes_total'
-    '{exported_namespace=~"$namespace",pod=~".+",interface=~".+"}'
-    '[$rate_interval])) by (exported_namespace)',
+    '{namespace=~"$namespace",pod=~".+",interface=~".+"}'
+    '[$rate_interval])) by (namespace)',
     # Kubernetes Pod
     'sum(container_memory_usage_bytes{pod=~"$pod",container=~".+"}) by (pod)',
     'sum(rate(container_fs_writes_bytes_total{pod=~"$pod",container=~".+"}'
