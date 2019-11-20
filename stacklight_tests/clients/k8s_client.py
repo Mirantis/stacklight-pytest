@@ -58,8 +58,9 @@ class K8sClient(object):
             service_dict['ip'] = service.spec.cluster_ip
             service_dict['port'] = str(service.spec.ports[0].port)
             if svc_name.startswith("iam"):
-                service_dict['external_ip'] = \
-                    service.status.load_balancer.ingress[0].ip
+                ext_ip = service.status.load_balancer.ingress[0].ip
+                service_dict['external_ip'] = ext_ip if ext_ip else \
+                    service.status.load_balancer.ingress[0].hostname
 
         except ApiException as e:
             print("Exception occurred trying to find %s service in "
