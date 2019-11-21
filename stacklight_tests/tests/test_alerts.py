@@ -449,7 +449,7 @@ def test_alert(prometheus_api, prometheus_native_alerting, alert, metrics):
         except AssertionError:
             logger.warning(msg)
             logger.info("Checking that {} alert is firing".format(alert))
-            err_msg = ("Something wrong with {} alert. Please check alert "
+            err_msg = ("Something wrong with '{}' alert. Please check alert "
                        "definition and ensure alert expression is correct".
                        format(alert))
             assert alert in firing_alerts, err_msg
