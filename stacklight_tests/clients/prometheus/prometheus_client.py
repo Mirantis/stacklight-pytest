@@ -79,8 +79,12 @@ class PrometheusClient(http_client.HttpClient):
         return alertmanagers["data"]["activeAlertmanagers"]
 
     def _do_label_values_query(self, label_values_query):
+        # W/A for "Nova - Instances" dashboard
+        if "$ident" in label_values_query:
+            label_values_query = label_values_query.replace(
+                "$ident", "instance_name")
         pattern = (r"label_values\("
-                   r"((?P<query>\w*({.*}){0,1}),\s*){0,1}"
+                   r"((?P<query>(\w|:)*({.*}){0,1}),\s*){0,1}"
                    r"(?P<label>\w*)\)")
         m = re.match(pattern, label_values_query)
         query = m.group("query")

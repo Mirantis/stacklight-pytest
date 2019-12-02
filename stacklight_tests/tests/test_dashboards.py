@@ -279,6 +279,30 @@ ignored_queries_for_fail = [
     'rate(ceph_pool_wr{pool_id=~"[[pool_id]]"}[$rate_interval])) + '
     'on(pool_id,instance) group_left(name) '
     'ceph_pool_metadata{pool_id=~"[[pool_id]]"}) without (instance)',
+    'avg(rate(ceph_pool_rd{pool_id=~"[[pool_id]]"}[$rate_interval]) * '
+    'on(pool_id,instance) group_left(name) '
+    'ceph_pool_metadata{pool_id=~"[[pool_id]]"}) without (instance)',
+    'avg(rate(ceph_pool_rd_bytes{pool_id=~"[[pool_id]]"}[$rate_interval]) * '
+    'on(pool_id,instance) group_left(name) '
+    'ceph_pool_metadata{pool_id=~"[[pool_id]]"}) without (instance)',
+    'avg(rate(ceph_pool_wr{pool_id=~"[[pool_id]]"}[$rate_interval]) * '
+    'on(pool_id,instance) group_left(name) '
+    'ceph_pool_metadata{pool_id=~"[[pool_id]]"}) without (instance)',
+    'topk(5,avg(rate(ceph_pool_wr{pool_id=~"[[pool_id]]"}[$rate_interval]) * '
+    'on(pool_id) group_left(instance,name) '
+    'ceph_pool_metadata{pool_id=~"[[pool_id]]"}) without (instance))',
+    'topk(5,avg(rate(ceph_pool_rd{pool_id=~"[[pool_id]]"}[$rate_interval]) * '
+    'on(pool_id) group_left(instance,name) '
+    'ceph_pool_metadata{pool_id=~"[[pool_id]]"}) without (instance))',
+    'avg(rate(ceph_pool_wr_bytes{pool_id=~"[[pool_id]]"}[$rate_interval]) * '
+    'on(pool_id,instance) group_left(name) '
+    'ceph_pool_metadata{pool_id=~"[[pool_id]]"}) without (instance)',
+    'topk(5,avg(rate(ceph_pool_wr_bytes{pool_id=~"[[pool_id]]"}'
+    '[$rate_interval]) * on(pool_id) group_left(instance,name) '
+    'ceph_pool_metadata{pool_id=~"[[pool_id]]"}) without (instance))',
+    'topk(5,avg(rate(ceph_pool_rd_bytes{pool_id=~"[[pool_id]]"}'
+    '[$rate_interval]) * on(pool_id) group_left(instance,name) '
+    'ceph_pool_metadata{pool_id=~"[[pool_id]]"}) without (instance))',
 
     # Ceph, compatibility with 2019.2.x, x<4
     # ceph-rgw-instance-detail
@@ -429,13 +453,14 @@ def get_all_grafana_dashboards_names():
         "Nova Hypervisor Overview": "I@nova:compute",
         "Nova Instances": "I@nova:controller",
         "Nova Overview": "I@nova:controller",
+        "Nova Tenants": "I@nova:controller",
+        "Nova Users": "I@nova:controller",
         "Nova Utilization": "I@nova:controller",
         "Ntp": "I@linux:system",
         "Octavia": "I@octavia:api",
         "OpenContrail Controller": "I@opencontrail:control",
         "OpenContrail vRouter": "I@opencontrail:compute",
         "Openstack overview": "I@nova:controller",
-        "Openstack tenants": "I@nova:controller",
         "Prometheus Performances": "I@prometheus:server",
         "Prometheus Relay": "I@prometheus:relay",
         "Prometheus Stats": "I@prometheus:server",
