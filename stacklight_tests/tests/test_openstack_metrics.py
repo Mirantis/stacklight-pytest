@@ -276,7 +276,8 @@ class TestOpenstackMetrics(object):
                        'libvirt_domain_interface_stats_receive.*',
                        'libvirt_domain_interface_stats_transmit.*',
                        'libvirt_domain_info.*',
-                       'libvirt_domain_info_state']
+                       'libvirt_domain_info_state',
+                       'libvirt_domain_memory.*']
             for regex in regexes:
                 regex = re.compile(r'{}'.format(regex))
                 logger.info("Check metrics with mask {}".format(regex.pattern))
@@ -312,8 +313,18 @@ class TestOpenstackMetrics(object):
         net = os_actions.create_network(project_id)
         subnet = os_actions.create_subnet(net, project_id, "192.168.100.0/24")
 
+        logger.info("Creating test host aggregate and availability zone")
+        aggr_name = "test-aggr"
+        az = "test-az"
+        host = "cmp1"
+        aggr = client.aggregates.create(aggr_name, az)
+        client.aggregates.add_host(aggr, host)
+        destructive.append(lambda: client.aggregates.remove_host(
+            aggr, host))
+        destructive.append(lambda: client.aggregates.delete(aggr.id))
+
         logger.info("Creating a test instance")
-        server = os_actions.create_basic_server(image, flavor, net)
+        server = os_actions.create_basic_server(image, flavor, net, az)
         destructive.append(lambda: client.servers.delete(server))
         destructive.append(lambda: os_clients.network.delete_subnet(
             subnet['id']))
@@ -328,6 +339,11 @@ class TestOpenstackMetrics(object):
                    "for the instance {}".format(server.id))
         utils.wait(lambda: _check_metrics(server.id), interval=20,
                    timeout=2 * 60, timeout_msg=err_msg)
+
+        logger.info("Checking metrics for the host aggregate")
+        q = 'openstack_nova_aggregate_metadata{{name="{}", host="{}"}}'.format(
+            aggr_name, host)
+        prometheus_api.check_metric_values(q, 1)
 
         logger.info("Removing the test instance")
         client.servers.delete(server)
@@ -344,6 +360,10 @@ class TestOpenstackMetrics(object):
 
         logger.info("Removing the test flavor")
         client.flavors.delete(flavor)
+
+        logger.info("Removing the test host aggregate and availability zone")
+        client.aggregates.remove_host(aggr, host)
+        client.aggregates.delete(aggr.id)
 
     def test_kpi_metrics(self, prometheus_api, salt_actions, os_clients,
                          os_actions, destructive):

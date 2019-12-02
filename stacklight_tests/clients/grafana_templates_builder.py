@@ -104,6 +104,9 @@ class TemplatesTree(object):
                 if node.name == name)
 
     def find_closest_parent_level(self, dependencies):
+        # W/A for "Nova - Instances" dashboard
+        if "$ident" in dependencies:
+            dependencies.remove("$ident")
         return max(self.levels_by_name[dep]
                    for dep in dependencies) if dependencies else 0
 
