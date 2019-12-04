@@ -313,10 +313,15 @@ class TestOpenstackMetrics(object):
         net = os_actions.create_network(project_id)
         subnet = os_actions.create_subnet(net, project_id, "192.168.100.0/24")
 
-        logger.info("Creating test host aggregate and availability zone")
         aggr_name = "test-aggr"
         az = "test-az"
-        host = "cmp1"
+        services = client.services.list()
+        computes = [h.host for h in services
+                    if h.binary == 'nova-compute' and h.status == 'enabled' and
+                    h.state == 'up']
+        host = computes[0]
+        logger.info("Creating test host aggregate '{}' with availability zone "
+                    "'{}' and compute '{}'".format(aggr_name, az, host))
         aggr = client.aggregates.create(aggr_name, az)
         client.aggregates.add_host(aggr, host)
         destructive.append(lambda: client.aggregates.remove_host(
