@@ -151,6 +151,35 @@ def prometheus_native_alerting(sl_services):
                 sl_services["prometheus-alertmanager"]["ip"],
                 sl_services["prometheus-alertmanager"]["port"]))
     return alerting
+
+
+@pytest.fixture(scope="session")
+def os_clients(k8s_api):
+    related_release = 'telegraf-openstack'
+    releases = k8s_api.get_stacklight_chart_releases()
+    if related_release in releases:
+        creds = k8s_api.get_openstack_credentials()
+        openstack_clients = client_manager.OfficialClientManager(
+            username=creds["OS_USERNAME"],
+            password=creds["OS_PASSWORD"],
+            tenant_name=creds["OS_PROJECT_NAME"],
+            auth_url=creds["OS_AUTH_URL"],
+            cert=False,
+            domain=creds["OS_DEFAULT_DOMAIN"],
+        )
+        return openstack_clients
+
+
+@pytest.fixture(scope="session")
+def os_actions(os_clients):
+    return client_manager.OSCliActions(os_clients)
+
+
+@pytest.fixture(scope="session")
+def chart_releases(k8s_api):
+    return k8s_api.get_stacklight_chart_releases()
+
+
 #
 #
 # @pytest.fixture(scope="session")
@@ -168,29 +197,3 @@ def prometheus_native_alerting(sl_services):
 #     return alerting
 #
 #
-# @pytest.fixture(scope="session")
-# def os_clients(keystone_config):
-#     auth_url = "{}://{}:{}/".format(
-#         keystone_config["private_protocol"],
-#         keystone_config["private_address"],
-#         keystone_config["private_port"])
-#     if "OS_ENDPOINT_TYPE" in os.environ.keys():
-#         if os.environ["OS_ENDPOINT_TYPE"] in ["public", "publicURL"]:
-#             auth_url = "{}://{}:{}/".format(
-#                 keystone_config["private_protocol"],
-#                 keystone_config["public_address"],
-#                 keystone_config["private_port"])
-#     openstack_clients = client_manager.OfficialClientManager(
-#         username=keystone_config["admin_name"],
-#         password=keystone_config["admin_password"],
-#         tenant_name=keystone_config["admin_tenant"],
-#         auth_url=auth_url,
-#         cert=False,
-#         domain=keystone_config.get("domain", "Default"),
-#     )
-#     return openstack_clients
-#
-#
-# @pytest.fixture(scope="session")
-# def os_actions(os_clients):
-#     return client_manager.OSCliActions(os_clients)

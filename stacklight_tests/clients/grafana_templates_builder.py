@@ -13,6 +13,7 @@ class TemplatesTree(object):
         self.default_templates = {
             "$interval": "1m",
             "$timeFilter": "time > now() - 1h",
+            "$topk": "5"
         }
         self.default_templates.update(append_default)
         self.dependencies = {

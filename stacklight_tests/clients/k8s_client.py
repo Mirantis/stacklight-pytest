@@ -1,3 +1,4 @@
+import base64
 import logging
 import os
 import pytest
@@ -180,6 +181,17 @@ class K8sClient(object):
         return sfs_dict
 
     def get_stacklight_chart(self, chart_name):
+        charts = self.get_stacklight_charts()
+        target_chart = filter(lambda x: x['name'] == chart_name, charts)
+        assert target_chart, "Chart {} not found".format(chart_name)
+        return target_chart[0]
+
+    def get_stacklight_chart_releases(self):
+        charts = self.get_stacklight_charts()
+        releases = [x['name'] for x in charts]
+        return releases
+
+    def get_stacklight_charts(self):
         crd = self.crd_api.list_namespaced_custom_object(
             group=self.crd_group,
             version=self.crd_version,
@@ -187,10 +199,9 @@ class K8sClient(object):
             plural=self.crd_plural,
             pretty=True)
         assert crd, "Stacklight CRD not found"
-        charts = crd['items'][0]['spec']['releases']
-        target_chart = filter(lambda x: x['name'] == chart_name, charts)
-        assert target_chart, "Chart {} not found".format(chart_name)
-        return target_chart[0]
+        charts = filter(lambda x: x['metadata']['name'] == 'stacklight-bundle',
+                        crd['items'])[0]['spec']['releases']
+        return charts
 
     def list_namespaced_service(self, namespace):
         return self.core_api.list_namespaced_service(namespace)
@@ -205,6 +216,14 @@ class K8sClient(object):
     def read_namespaced_service(self, service, namespace):
         return self.core_api.read_namespaced_service(
             namespace=namespace, name=service)
+
+    def get_openstack_credentials(self):
+        secret = self.core_api.read_namespaced_secret(
+            "keystone-keystone-admin", "openstack")
+        creds = {}
+        for k, v in secret.data.items():
+            creds[k] = base64.b64decode(v).decode()
+        return creds
 
 
 def validate_kubeconfig(path):

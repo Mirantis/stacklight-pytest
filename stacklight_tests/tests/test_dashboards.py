@@ -106,7 +106,11 @@ def get_all_grafana_dashboards_names():
         "Glance": 'glance',
         "Heat": 'heat',
         "Keystone": 'keystone',
+        "KPI Provisioning": 'kpi-provisioning',
+        "KPI Downtime": 'kpi-downtime',
         "Neutron": 'neutron',
+        "NGINX Ingress controller": 'nginx-ingress-controller',
+        "Nova Availability Zones": 'nova-availability-zones',
         "Nova Hypervisor Overview": 'nova-hypervisor',
         "Nova Instances": 'nova-instances',
         "Nova Overview": 'nova-overview',
@@ -211,6 +215,9 @@ def test_grafana_dashboard_panel_queries(
             # W/A for Elasticsearch dashboard
             if ("$interval" in template.keys() and
                     template['$interval'] == '$__auto_interval'):
+                template['$interval'] = '3m'
+            if ("$interval" in template.keys() and
+                    template['$interval'] == '$__auto_interval_interval'):
                 template['$interval'] = '3m'
             query = prometheus_api.compile_query(raw_query, template)
             try:

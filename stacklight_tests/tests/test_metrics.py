@@ -127,3 +127,19 @@ def test_statefulsets_metrics(prometheus_api, statefulsets):
             query = ('kube_statefulset_status_{}'.format(status[0]) +
                      '{' + labels + '}')
             prometheus_api.check_metric_values(query, status[1])
+
+
+@pytest.mark.run(order=1)
+@pytest.mark.metrics
+@pytest.mark.smoke
+def test_up_metrics(prometheus_api):
+    q = '{__name__=~".*_up", __name__!~"node_network_up"}'
+    metrics = prometheus_api.get_query(q)
+    for metric in metrics:
+        msg = 'Metric {} has value {}'.format(
+            metric['metric']['__name__'], metric['value'])
+        if metric.get('metric').get('host', ''):
+            msg = msg + ' on the node {}'.format(metric['metric']['host'])
+        logger.info(msg)
+        err_msg = 'Incorrect value in metric {}'.format(metric)
+        assert '1' in metric['value'], err_msg

@@ -79,12 +79,12 @@ def test_node_count_in_es(kibana_client, nodes):
     logger.info("\nFound the following nodes in Elasticsearch: \n{}".format(
         found_nodes))
     missing_nodes = []
+    for node in expected_nodes:
+        if node not in found_nodes:
+            missing_nodes.append(node)
     msg = (
         'Logs from not all nodes are in Elasticsearch. '
         'Found {} nodes, expected {}. Missing nodes: {}'.format(
             len(found_nodes), len(expected_nodes), missing_nodes)
     )
-    for node in expected_nodes:
-        if node not in found_nodes:
-            missing_nodes.append(node)
     assert len(missing_nodes) == 0, msg

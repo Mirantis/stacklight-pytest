@@ -419,7 +419,158 @@ alert_metrics = {
         '(etcd_network_peer_round_trip_time_seconds_bucket'
         '{job=~".*etcd.*"}[5m])) <= 0.15'
     ],
-    "etcdNoLeader": ['etcd_server_has_leader{job=~".*etcd.*"} != 0']
+    "etcdNoLeader": ['etcd_server_has_leader{job=~".*etcd.*"} != 0'],
+    # Ceph alerts
+    "CephClusterCriticallyFull": [
+        'sum(ceph_osd_stat_bytes_used) / sum(ceph_osd_stat_bytes) <= 0.95'
+    ],
+    "CephClusterHealthCritical": ['ceph_health_status < 1'],
+    "CephClusterHealthMinor": ['ceph_health_status != 1'],
+    "CephClusterNearFull": [
+        'sum(ceph_osd_stat_bytes_used) / sum(ceph_osd_stat_bytes) <= 0.85'
+    ],
+    "CephDataRecoveryTakingTooLong": ['ceph_pg_undersized <= 0'],
+    "CephMdsMissingReplicas": [
+        'sum(ceph_mds_metadata{job="rook-ceph-mgr"} == 1) >= 2'
+    ],
+    "CephMonHighNumberOfLeaderChanges": [
+        'rate(ceph_mon_num_elections{job="rook-ceph-mgr"}[5m]) * 60 <= 0.95'
+    ],
+    "CephMonQuorumAtRisk": [
+        'count(ceph_mon_quorum_status{job="rook-ceph-mgr"} == 1) > '
+        '((count(ceph_mon_metadata{job="rook-ceph-mgr"}) % 2) + 1)'
+    ],
+    "CephMonVersionMismatch": [
+        'count(count by(ceph_version) '
+        '(ceph_mon_metadata{job="rook-ceph-mgr"})) <= 1'
+    ],
+    "CephNodeDown": ['cluster:ceph_node_down:join_kube != 0'],
+    "CephOSDDiskNotResponding": [
+        'label_replace((ceph_osd_in != 1 or ceph_osd_up != 0), "disk", "$1", '
+        '"ceph_daemon", "osd.(.*)") + on(ceph_daemon) group_left(host, device)'
+        ' label_replace(ceph_disk_occupation, "host", "$1", '
+        '"exported_instance", "(.*)")'
+    ],
+    "CephOSDDiskUnavailable": [
+        'label_replace((ceph_osd_in != 0 or ceph_osd_up != 0), "disk", "$1", '
+        '"ceph_daemon", "osd.(.*)") + on(ceph_daemon) group_left(host, device)'
+        ' label_replace(ceph_disk_occupation, "host", "$1", '
+        '"exported_instance", "(.*)")'
+    ],
+    "CephOSDVersionMismatch": [
+        'count(count by(ceph_version) '
+        '(ceph_osd_metadata{job="rook-ceph-mgr"})) <= 1'
+    ],
+    "CephOsdDownMinor": ['count(ceph_osd_up) - sum(ceph_osd_up) <= 0'],
+    "CephOsdPgNumTooHighCritical": ['max(ceph_osd_numpg) <= 300'],
+    "CephOsdPgNumTooHighWarning": ['max(ceph_osd_numpg) <= 200'],
+    "CephPGRepairTakingTooLong": ['ceph_pg_inconsistent <= 0'],
+    # Openstack alerts
+    "CinderApiDown": ['openstack_api_check_status{name=~"cinder.*"} != 0'],
+    "CinderApiOutage": [
+        'max(openstack_api_check_status{name=~"cinder.*"}) != 0'
+    ],
+    "CinderServiceDown": ['openstack_cinder_service_state != 0'],
+    "CinderServiceOutage": [
+        'count by(binary) (openstack_cinder_service_state != 0) == on(binary) '
+        'count by(binary) (openstack_cinder_service_state)'
+    ],
+    "CinderServicesDownMajor": [
+        'count by(binary) (openstack_cinder_service_state != 0) >= on(binary) '
+        'count by(binary) (openstack_cinder_service_state) * 0.6'
+    ],
+    "CinderServicesDownMinor": [
+        'count by(binary) (openstack_cinder_service_state != 0) >= on(binary) '
+        'count by(binary) (openstack_cinder_service_state) * 0.3'
+    ],
+    "GlanceApiOutage": ['openstack_api_check_status{name="glance"} != 0'],
+    "HeatApiDown": ['openstack_api_check_status{name=~"heat.*"} != 0'],
+    "HeatApiOutage": ['max(openstack_api_check_status{name=~"heat.*"}) != 0'],
+    "KeystoneApiOutage": [
+        'openstack_api_check_status{name=~"keystone.*"} != 0'
+    ],
+    "LibvirtDown": ['libvirt_up != 0'],
+    "MemcachedConnectionsNoneMajor": [
+        'count(memcached_current_connections != 0) == count(memcached_up)'
+    ],
+    "MemcachedConnectionsNoneMinor": ['memcached_current_connections != 0'],
+    "MemcachedEvictionsLimit": [
+        'increase(memcached_items_evicted_total[1m]) <= 10'
+    ],
+    "MemcachedServiceDown": ['memcached_up != 0'],
+    "MysqlGaleraDonorFallingBehind": [
+        '(mysql_global_status_wsrep_local_state != 2 or '
+        'mysql_global_status_wsrep_local_recv_queue <= 100)'
+    ],
+    "MysqlGaleraNotReady": ['mysql_global_status_wsrep_ready == 1'],
+    "MysqlGaleraOutOfSync": [
+        '(mysql_global_status_wsrep_local_state == 4 or '
+        'mysql_global_variables_wsrep_desync != 0)'
+    ],
+    "MysqlInnoDBLogWaits": [
+        'rate(mysql_global_status_innodb_log_waits[15m]) <= 10'
+    ],
+    "MysqlInnodbReplicationFallenBehind": [
+        '(mysql_global_variables_innodb_replication_delay <= 30) or '
+        'on(instance) (predict_linear'
+        '(mysql_global_variables_innodb_replication_delay[5m], 60 * 2) <= 0)'
+    ],
+    "MysqlTableLockWaitHigh": [
+        '100 * mysql_global_status_table_locks_waited / '
+        '(mysql_global_status_table_locks_waited + '
+        'mysql_global_status_table_locks_immediate) <= 30'
+    ],
+    "NeutronAgentDown": ['openstack_neutron_agent_state != 0'],
+    "NeutronAgentsDownMajor": [
+        'count by(binary) (openstack_neutron_agent_state != 0) >= on(binary) '
+        'count by(binary) (openstack_neutron_agent_state) * 0.6'
+    ],
+    "NeutronAgentsDownMinor": [
+        'count by(binary) (openstack_neutron_agent_state != 0) >= on(binary) '
+        'count by(binary) (openstack_neutron_agent_state) * 0.3'
+    ],
+    "NeutronAgentsOutage": [
+        'count by(binary) (openstack_neutron_agent_state != 0) == on(binary) '
+        'count by(binary) (openstack_neutron_agent_state)'
+    ],
+    "NeutronApiOutage": ['openstack_api_check_status{name="neutron"} != 0'],
+    "NovaApiDown": [
+        'openstack_api_check_status{name=~"nova.*|placement"} != 0'
+    ],
+    "NovaApiOutage": [
+        'max(openstack_api_check_status{name=~"nova.*|placement"}) != 0'
+    ],
+    "NovaComputeServicesDownMajor": [
+        'count(openstack_nova_service_state{binary="nova-compute"} != 0) >= '
+        'count(openstack_nova_service_state{binary="nova-compute"}) * 0.5'
+    ],
+    "NovaComputeServicesDownMinor": [
+        'count(openstack_nova_service_state{binary="nova-compute"} != 0) >= '
+        'count(openstack_nova_service_state{binary="nova-compute"}) * 0.25'
+    ],
+    "NovaServiceDown": ['openstack_nova_service_state != 0'],
+    "NovaServiceOutage": [
+        'count by(binary) (openstack_nova_service_state != 0) == on(binary) '
+        'count by(binary) (openstack_nova_service_state)'],
+    "NovaServicesDownMajor": [
+        'count by(binary) (openstack_nova_service_state'
+        '{binary!~"nova-compute"} != 0) >= on(binary) count by(binary) '
+        '(openstack_nova_service_state{binary!~"nova-compute"}) * 0.6'
+    ],
+    "NovaServicesDownMinor": [
+        'count by(binary) (openstack_nova_service_state'
+        '{binary!~"nova-compute"} != 0) >= on(binary) count by(binary) '
+        '(openstack_nova_service_state{binary!~"nova-compute"}) * 0.3'
+    ],
+    "RabbitMQDown": ['min by(pod) (rabbitmq_up) == 1'],
+    "RabbitMQFileDescriptorUsagehigh": [
+        'rabbitmq_fd_used * 100 / rabbitmq_fd_total <= 80'
+    ],
+    "RabbitMQNetworkPartitionsDetected": [
+        'min by(pod) (rabbitmq_partitions) <= 0'
+    ],
+    "RabbitMQNodeDiskFreeAlarm": ['rabbitmq_node_disk_free_alarm <= 0'],
+    "RabbitMQNodeMemoryAlarm": ['rabbitmq_node_mem_alarm <= 0'],
 }
 
 

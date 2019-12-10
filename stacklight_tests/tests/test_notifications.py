@@ -1,3 +1,4 @@
+import json
 import logging
 import pytest
 
@@ -7,46 +8,23 @@ from stacklight_tests import utils
 logger = logging.getLogger(__name__)
 
 
-pytestmark = pytest.mark.skip("Temporary skip")
-
-
-def check_service_notification_by_type(es_client, object_id, event_type):
+def check_service_notification_by_type(kibana_client, object_id, event_type):
     logger.info("Checking {} notification".format(event_type))
-    q = {
-        "_source": "Payload",
-        "size": 100,
-        "query": {
-            "bool": {
-                "must": [
-                    {
-                        "match": {
-                            "event_type.keyword": "{0}".format(event_type)
-                        }
-                    },
-                    {
-                        "range": {
-                            "Timestamp": {
-                                "gte": "now-1h",
-                                "lte": "now"
-                            }
-                        }
-                    }
-                ]
-            }
-        }
-    }
-    output = es_client.search(index='notification-*', body=q)
+    q = ('{{"_source": "Payload", "size": "1000", "query": {{"bool": '
+         '{{"must": [{{"match": {{"event_type": "{0}"}}}}, {{"range": '
+         '{{"Timestamp": {{"gte": "now-1h","lte": "now"'
+         '}}}}}}]}}}}}}'.format(event_type))
+    output = json.loads(kibana_client.get_query(q, "notification-*/_search"))
     return any(object_id in x for x in [
         p['_source']['Payload'] for p in output['hits']['hits']])
 
 
 @pytest.mark.smoke
 @pytest.mark.notifications
-def test_glance_notifications(salt_actions, destructive, os_clients,
-                              es_client, os_actions):
-    nodes = salt_actions.ping("I@glance:server")
-    if not nodes:
-        pytest.skip("Openstack is not installed in the cluster")
+def test_glance_notifications(destructive, os_clients, kibana_client,
+                              os_actions, chart_releases):
+    related_release = 'fluentd-notifications'
+    utils.skip_test(related_release, chart_releases)
 
     client = os_clients.image
 
@@ -71,18 +49,17 @@ def test_glance_notifications(salt_actions, destructive, os_clients,
             event, image.id)
         utils.wait(
             lambda: check_service_notification_by_type(
-                es_client, image.id, event),
-            interval=10, timeout=2 * 60, timeout_msg=msg
+                kibana_client, image.id, event),
+            interval=10, timeout=3 * 60, timeout_msg=msg
         )
 
 
 @pytest.mark.smoke
 @pytest.mark.notifications
-def test_neutron_notifications(salt_actions, destructive, os_clients,
-                               os_actions, es_client):
-    nodes = salt_actions.ping("I@neutron:server")
-    if not nodes:
-        pytest.skip("Openstack is not installed in the cluster")
+def test_neutron_notifications(destructive, os_clients, os_actions,
+                               kibana_client, chart_releases):
+    related_release = 'fluentd-notifications'
+    utils.skip_test(related_release, chart_releases)
 
     logger.info("Creating test network and subnet")
     project_id = os_clients.auth.projects.find(name='admin').id
@@ -109,42 +86,41 @@ def test_neutron_notifications(salt_actions, destructive, os_clients,
             event, net['name'])
         utils.wait(
             lambda: check_service_notification_by_type(
-                es_client, net['name'], event),
-            interval=10, timeout=2 * 60, timeout_msg=msg
+                kibana_client, net['name'], event),
+            interval=10, timeout=3 * 60, timeout_msg=msg
         )
     for event in net_delete_event_list:
         msg = "Didn't get a notification {} with expected net id {}".format(
             event, net['id'])
         utils.wait(
             lambda: check_service_notification_by_type(
-                es_client, net['id'], event),
-            interval=10, timeout=2 * 60, timeout_msg=msg
+                kibana_client, net['id'], event),
+            interval=10, timeout=3 * 60, timeout_msg=msg
         )
     for event in subnet_create_event_list:
         msg = ("Didn't get a notification {} with expected subnet "
                "name {}".format(event, subnet['name']))
         utils.wait(
             lambda: check_service_notification_by_type(
-                es_client, subnet['name'], event),
-            interval=10, timeout=2 * 60, timeout_msg=msg
+                kibana_client, subnet['name'], event),
+            interval=10, timeout=3 * 60, timeout_msg=msg
         )
     for event in subnet_delete_event_list:
         msg = "Didn't get a notification {} with expected subnet id {}".format(
             event, subnet['id'])
         utils.wait(
             lambda: check_service_notification_by_type(
-                es_client, subnet['id'], event),
-            interval=10, timeout=2 * 60, timeout_msg=msg
+                kibana_client, subnet['id'], event),
+            interval=10, timeout=3 * 60, timeout_msg=msg
         )
 
 
 @pytest.mark.smoke
 @pytest.mark.notifications
-def test_cinder_notifications(salt_actions, destructive, os_clients,
-                              es_client):
-    nodes = salt_actions.ping("I@cinder:controller")
-    if not nodes:
-        pytest.skip("Openstack is not installed in the cluster")
+def test_cinder_notifications(destructive, os_clients, kibana_client,
+                              chart_releases):
+    related_release = 'fluentd-notifications'
+    utils.skip_test(related_release, chart_releases)
 
     volume_name = utils.rand_name("volume-")
     expected_volume_status = settings.VOLUME_STATUS
@@ -169,18 +145,18 @@ def test_cinder_notifications(salt_actions, destructive, os_clients,
             event, volume.id)
         utils.wait(
             lambda: check_service_notification_by_type(
-                es_client, volume.id, event),
-            interval=10, timeout=2 * 60, timeout_msg=msg
+                kibana_client, volume.id, event),
+            interval=10, timeout=3 * 60, timeout_msg=msg
         )
 
 
 @pytest.mark.smoke
 @pytest.mark.notifications
-def test_nova_notifications(salt_actions, os_clients, os_actions, es_client,
-                            destructive):
-    nodes = salt_actions.ping("I@nova:controller")
-    if not nodes:
-        pytest.skip("Openstack is not installed in the cluster")
+def test_nova_notifications(os_clients, os_actions, kibana_client,
+                            destructive, chart_releases):
+    related_release = 'fluentd-notifications'
+    utils.skip_test(related_release, chart_releases)
+
     client = os_clients.compute
 
     logger.info("Creating a test image")
@@ -233,18 +209,17 @@ def test_nova_notifications(salt_actions, os_clients, os_actions, es_client,
                "{}".format(event, server.id))
         utils.wait(
             lambda: check_service_notification_by_type(
-                es_client, server.id, event),
-            interval=10, timeout=2 * 60, timeout_msg=msg
+                kibana_client, server.id, event),
+            interval=10, timeout=3 * 60, timeout_msg=msg
         )
 
 
 @pytest.mark.smoke
 @pytest.mark.notifications
-def test_keystone_notifications(salt_actions, os_clients, es_client,
-                                destructive):
-    nodes = salt_actions.ping("I@keystone:server")
-    if not nodes:
-        pytest.skip("Openstack is not installed in the cluster")
+def test_keystone_notifications(os_clients, kibana_client, destructive,
+                                chart_releases):
+    related_release = 'fluentd-notifications'
+    utils.skip_test(related_release, chart_releases)
 
     client = os_clients.auth
     domain = os_clients.auth.project_domain_id
@@ -282,34 +257,33 @@ def test_keystone_notifications(salt_actions, os_clients, es_client,
                "{}".format(event, role.id))
         utils.wait(
             lambda: check_service_notification_by_type(
-                es_client, role.id, event),
-            interval=10, timeout=2 * 60, timeout_msg=msg
+                kibana_client, role.id, event),
+            interval=10, timeout=3 * 60, timeout_msg=msg
         )
     for event in user_event_list:
         msg = ("Didn't get a notification {} with expected user id "
                "{}".format(event, user.id))
         utils.wait(
             lambda: check_service_notification_by_type(
-                es_client, user.id, event),
-            interval=10, timeout=2 * 60, timeout_msg=msg
+                kibana_client, user.id, event),
+            interval=10, timeout=3 * 60, timeout_msg=msg
         )
     for event in project_event_list:
         msg = ("Didn't get a notification {} with expected project id "
                "{}".format(event, project.id))
         utils.wait(
             lambda: check_service_notification_by_type(
-                es_client, project.id, event),
-            interval=10, timeout=2 * 60, timeout_msg=msg
+                kibana_client, project.id, event),
+            interval=10, timeout=3 * 60, timeout_msg=msg
         )
 
 
 @pytest.mark.smoke
 @pytest.mark.notifications
-def test_heat_notifications(salt_actions, os_clients, es_client, os_actions,
-                            destructive):
-    nodes = salt_actions.ping("I@heat:server")
-    if not nodes:
-        pytest.skip("Openstack is not installed in the cluster")
+def test_heat_notifications(os_clients, kibana_client, os_actions,
+                            destructive, chart_releases):
+    related_release = 'fluentd-notifications'
+    utils.skip_test(related_release, chart_releases)
 
     logger.info("Creating a test image")
     image = os_actions.create_cirros_image()
@@ -374,6 +348,6 @@ def test_heat_notifications(salt_actions, os_clients, es_client, os_actions,
                "{}".format(event, stack.id))
         utils.wait(
             lambda: check_service_notification_by_type(
-                es_client, stack.id, event),
-            interval=10, timeout=2 * 60, timeout_msg=msg
+                kibana_client, stack.id, event),
+            interval=10, timeout=3 * 60, timeout_msg=msg
         )

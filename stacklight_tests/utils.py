@@ -7,6 +7,7 @@ import time
 import requests
 from requests.packages.urllib3 import poolmanager
 import yaml
+import pytest
 
 from stacklight_tests import custom_exceptions as exceptions
 
@@ -133,3 +134,9 @@ def wait_for_resource_status(resource_client, resource,
         timeout=timeout,
         timeout_msg=msg
     )
+
+
+def skip_test(related_release, releases):
+    if related_release not in releases:
+        pytest.skip("Related release '{}' is not found in Stacklight CRD"
+                    .format(related_release))
