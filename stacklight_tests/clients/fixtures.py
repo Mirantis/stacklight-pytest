@@ -58,11 +58,17 @@ def keycloak_api():
 
 @pytest.fixture(scope="session")
 def prometheus_api(sl_services):
-    api_client = prometheus_client.get_prometheus_client(
-        sl_services['iam-proxy-prometheus']['external_ip'],
-        sl_services['iam-proxy-prometheus']['port'],
-        settings.KEYCLOAK_USER, settings.KEYCLOAK_PASSWORD,
-        settings.KEYCLOAK_URL)
+    if 'iam-proxy-prometheus' in sl_services.keys():
+        api_client = prometheus_client.get_prometheus_client(
+            sl_services['iam-proxy-prometheus']['external_ip'],
+            sl_services['iam-proxy-prometheus']['port'],
+            settings.KEYCLOAK_USER, settings.KEYCLOAK_PASSWORD,
+            settings.KEYCLOAK_URL)
+    else:
+        api_client = prometheus_client.get_prometheus_client(
+            sl_services['prometheus-server']['ip'],
+            sl_services['prometheus-server']['port']
+        )
     return api_client
 
 
@@ -77,22 +83,34 @@ def es_client(sl_services):
 
 @pytest.fixture(scope="session")
 def kibana_client(sl_services):
-    kibana_api = es_kibana_api.get_kibana_client(
-        sl_services['iam-proxy-kibana']['external_ip'],
-        sl_services['iam-proxy-kibana']['port'],
-        settings.KEYCLOAK_USER, settings.KEYCLOAK_PASSWORD,
-        settings.KEYCLOAK_URL)
+    if 'iam-proxy-kibana' in sl_services.keys():
+        kibana_api = es_kibana_api.get_kibana_client(
+            sl_services['iam-proxy-kibana']['external_ip'],
+            sl_services['iam-proxy-kibana']['port'],
+            settings.KEYCLOAK_USER, settings.KEYCLOAK_PASSWORD,
+            settings.KEYCLOAK_URL)
+    else:
+        kibana_api = es_kibana_api.get_kibana_client(
+            sl_services['kibana']['ip'],
+            sl_services['kibana']['port'])
     return kibana_api
 
 
 @pytest.fixture(scope="session")
 def grafana_client(sl_services, prometheus_api):
-    grafana = grafana_api.get_grafana_client(
-        address=sl_services['iam-proxy-grafana']['external_ip'],
-        port=sl_services['iam-proxy-grafana']['port'],
-        datasource=prometheus_api,
-        user=settings.KEYCLOAK_USER, password=settings.KEYCLOAK_PASSWORD,
-        keycloak_url=settings.KEYCLOAK_URL)
+    if 'iam-proxy-grafana' in sl_services.keys():
+        grafana = grafana_api.get_grafana_client(
+            address=sl_services['iam-proxy-grafana']['external_ip'],
+            port=sl_services['iam-proxy-grafana']['port'],
+            datasource=prometheus_api,
+            user=settings.KEYCLOAK_USER, password=settings.KEYCLOAK_PASSWORD,
+            keycloak_url=settings.KEYCLOAK_URL)
+    else:
+        grafana = grafana_api.get_grafana_client(
+            address=sl_services['grafana']['ip'],
+            port=sl_services['grafana']['port'],
+            datasource=prometheus_api
+        )
     return grafana
 
 
@@ -104,23 +122,34 @@ def mongodb_api(sl_services):
 
 @pytest.fixture(scope="session")
 def alerta_api(sl_services):
-    api_client = alerta_client.get_alerta_client(
-        sl_services['iam-proxy-alerta']['external_ip'],
-        sl_services['iam-proxy-alerta']['port'],
-        settings.KEYCLOAK_USER, settings.KEYCLOAK_PASSWORD,
-        settings.KEYCLOAK_URL)
+    if 'iam-proxy-alerta' in sl_services.keys():
+        api_client = alerta_client.get_alerta_client(
+            sl_services['iam-proxy-alerta']['external_ip'],
+            sl_services['iam-proxy-alerta']['port'],
+            settings.KEYCLOAK_USER, settings.KEYCLOAK_PASSWORD,
+            settings.KEYCLOAK_URL)
+    else:
+        api_client = alerta_client.get_alerta_client(
+            sl_services['alerta']['ip'],
+            sl_services['alerta']['port'])
     return api_client
 
 
 @pytest.fixture(scope="session")
 def prometheus_native_alerting(sl_services):
-    alerting = alertmanager_client.AlertManagerClient(
-        base_url="http://{0}:{1}/".format(
-            sl_services["iam-proxy-alertmanager"]["external_ip"],
-            sl_services["iam-proxy-alertmanager"]["port"]),
-        user=settings.KEYCLOAK_USER, password=settings.KEYCLOAK_PASSWORD,
-        keycloak_url=settings.KEYCLOAK_URL
-    )
+    if 'iam-proxy-alertmanager' in sl_services.keys():
+        alerting = alertmanager_client.AlertManagerClient(
+            base_url="http://{0}:{1}/".format(
+                sl_services["iam-proxy-alertmanager"]["external_ip"],
+                sl_services["iam-proxy-alertmanager"]["port"]),
+            user=settings.KEYCLOAK_USER, password=settings.KEYCLOAK_PASSWORD,
+            keycloak_url=settings.KEYCLOAK_URL
+        )
+    else:
+        alerting = alertmanager_client.AlertManagerClient(
+            base_url="http://{0}:{1}/".format(
+                sl_services["prometheus-alertmanager"]["ip"],
+                sl_services["prometheus-alertmanager"]["port"]))
     return alerting
 #
 #

@@ -432,8 +432,7 @@ alert_metrics = {
                          alert_metrics.items(),
                          ids=alert_metrics.keys())
 def test_alert(prometheus_api, prometheus_native_alerting, alert, metrics):
-    if (alert.startswith("etcd") or
-            any("kube_resourcequota" in m for m in metrics)):
+    if any("kube_resourcequota" in m for m in metrics):
         pytest.skip("Temporary skip test for {} alert".format(alert))
     prometheus_alerts = prometheus_api.get_all_defined_alerts().keys()
     firing_alerts = [a.name

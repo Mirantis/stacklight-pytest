@@ -18,7 +18,7 @@ class AlertaApi(http_client.HttpClient):
         return query_result['alerts']
 
 
-def get_alerta_client(ip, port, user, password, url):
+def get_alerta_client(ip, port, user=None, password=None, url=None):
     api_client = AlertaApi(
         base_url="http://{0}:{1}/".format(ip, port),
         user=user, password=password, keycloak_url=url

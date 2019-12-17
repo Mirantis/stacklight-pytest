@@ -126,7 +126,7 @@ class GrafanaApi(object):
         return False
 
 
-def get_grafana_client(address, port, datasource, user, password,
-                       keycloak_url):
+def get_grafana_client(address, port, datasource, user=None, password=None,
+                       keycloak_url=None):
     return GrafanaApi(address=address, port=port, datasource=datasource,
                       user=user, password=password, keycloak_url=keycloak_url)

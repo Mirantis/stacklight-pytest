@@ -92,7 +92,7 @@ class KibanaApi(http_client.HttpClient):
         return status.content
 
 
-def get_kibana_client(ip, port, user, password, url):
+def get_kibana_client(ip, port, user=None, password=None, url=None):
     api_client = KibanaApi(
         base_url="http://{0}:{1}/".format(ip, port),
         user=user, password=password, keycloak_url=url,
