@@ -2,6 +2,7 @@ alerta<6.0.0
 cryptography>=2.2.1
 cssselect==1.0.1 # BSD License
 elasticsearch  # Apache-2.0
+future
 ipaddress>=1.0.17
 keystoneauth1>=3.8.0
 kubernetes
@@ -32,5 +33,6 @@ PyYAML>=3.12,<4  # MIT
 requests>=2.14.2
 six>=1.11.0  # MIT
 tox>=2.5.0  # MIT
+typing
 urllib3<1.24,>=1.21.1
 warlock<2,>=1.2.0
