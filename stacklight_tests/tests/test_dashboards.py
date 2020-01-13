@@ -77,6 +77,10 @@ ignored_queries_for_partial_fail = [
     '{pod=~"$pod",interface=~".+"}[$rate_interval])) by (pod)',
     'sum(rate(container_network_receive_bytes_total'
     '{pod=~"$pod",interface=~".+"}[$rate_interval])) by (pod)'
+    # Prometheus stats
+    'rate(prometheus_http_request_duration_seconds_count'
+    '{job="prometheus-server",handler=~"/api/v1/(query|query_range)",'
+    'instance=~"$instance:[1-9][0-9]*"}[$rate_interval])'
 ]
 
 
@@ -128,7 +132,8 @@ def get_all_grafana_dashboards_names():
         "Nova Overview": 'nova-overview',
         "Nova Utilization": 'nova-utilization',
         "Openstack Overview": 'openstack-overview',
-        "Openstack Tenants": 'openstack-tenants'
+        "Openstack Tenants": 'openstack-tenants',
+        "Ironic": 'ironic'
     }
 
     return {idfy_name(k): v for k, v in dashboards.items()}

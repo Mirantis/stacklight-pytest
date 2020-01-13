@@ -437,6 +437,9 @@ def test_alert(prometheus_api, prometheus_native_alerting, alert, metrics):
     prometheus_alerts = prometheus_api.get_all_defined_alerts().keys()
     firing_alerts = [a.name
                      for a in prometheus_native_alerting.list_alerts()]
+    query_alerts = prometheus_api.get_query('ALERTS{alertstate="pending"}')
+    pending_alerts = [item["metric"]['alertname'] for item in query_alerts]
+    firing_alerts += pending_alerts
     if alert not in prometheus_alerts:
         pytest.skip("{} alert not found in Prometheus".format(alert))
     for metric in metrics:

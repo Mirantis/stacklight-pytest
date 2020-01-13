@@ -34,8 +34,7 @@ class K8sClient(object):
         self.configuration.verify_ssl = False
         api_client = client.ApiClient(self.configuration)
         self.core_api = client.CoreV1Api(api_client)
-        self.extension_api = client.ExtensionsV1beta1Api(api_client)
-        self.apps_api = client.AppsV1beta1Api(api_client)
+        self.apps_api = client.AppsV1Api(api_client)
         self.crd_api = client.CustomObjectsApi(api_client)
         self.sl_namespace = settings.SL_NAMESPACE
         self.crd_group = 'lcm.mirantis.com'
@@ -101,7 +100,7 @@ class K8sClient(object):
         return nodes_dict
 
     def daemonsets(self):
-        daemonsets = self.extension_api.list_daemon_set_for_all_namespaces()
+        daemonsets = self.apps_api.list_daemon_set_for_all_namespaces()
         ds_dict = {}
         for ds in daemonsets.items:
             status = {
@@ -120,7 +119,7 @@ class K8sClient(object):
         return ds_dict
 
     def deployments(self):
-        deployments = self.extension_api.list_deployment_for_all_namespaces()
+        deployments = self.apps_api.list_deployment_for_all_namespaces()
         dm_dict = {}
         for dm in deployments.items:
             status = {
@@ -128,7 +127,7 @@ class K8sClient(object):
                 'replicas': dm.status.replicas,
                 'replicas_available': dm.status.available_replicas,
                 'replicas_unavailable': dm.status.unavailable_replicas or 0,
-                'replicas_updated': dm.status.updated_replicas,
+                'replicas_updated': dm.status.updated_replicas or 0,
 
             }
             spec = {
@@ -143,7 +142,7 @@ class K8sClient(object):
         return dm_dict
 
     def replicasets(self):
-        replicasets = self.extension_api.list_replica_set_for_all_namespaces()
+        replicasets = self.apps_api.list_replica_set_for_all_namespaces()
         rs_dict = {}
         for rs in replicasets.items:
             status = {
