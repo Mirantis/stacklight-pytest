@@ -7,7 +7,7 @@ from stacklight_tests import settings
 logger = logging.getLogger(__name__)
 
 
-@pytest.mark.run(order=1)
+@pytest.mark.run(order=-1)
 @pytest.mark.smoke
 @pytest.mark.logs
 def test_elasticsearch_status(kibana_client):
@@ -22,7 +22,7 @@ def test_elasticsearch_status(kibana_client):
         "Some shards are not in 'active' state"
 
 
-@pytest.mark.run(order=1)
+@pytest.mark.run(order=-1)
 @pytest.mark.smoke
 @pytest.mark.logs
 def test_kibana_status(kibana_client):
@@ -41,11 +41,12 @@ def test_kibana_status(kibana_client):
             plugin["id"], plugin["state"])
 
 
-@pytest.mark.run(order=1)
+@pytest.mark.run(order=-1)
 @pytest.mark.smoke
 @pytest.mark.logs
 def test_pod_logs(k8s_api, kibana_client):
-    ret = k8s_api.list_pod_for_all_namespaces()
+    field_selector = 'status.phase=Running'
+    ret = k8s_api.list_pod_for_all_namespaces(field_selector=field_selector)
     pods = [pod.metadata.name for pod in ret.items]
     q = ('{"size": "0", "aggs": {"uniq_logger": {"terms": '
          '{"field": "kubernetes.pod_name", "size": 500}}}}')
@@ -58,12 +59,14 @@ def test_pod_logs(k8s_api, kibana_client):
             missing_loggers.append(pod)
     if settings.SL_TEST_POD in missing_loggers:
         missing_loggers.remove(settings.SL_TEST_POD)
+    skip_list = ['mariadb-0']
+    missing_loggers = filter(lambda x: x not in skip_list, missing_loggers)
     msg = ('Logs from {} pods not found in Kibana'.format(', '.join(
         missing_loggers)))
     assert len(missing_loggers) == 0, msg
 
 
-@pytest.mark.run(order=1)
+@pytest.mark.run(order=-1)
 @pytest.mark.smoke
 @pytest.mark.logs
 def test_node_count_in_es(kibana_client, nodes):

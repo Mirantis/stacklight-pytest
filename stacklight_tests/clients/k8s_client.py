@@ -195,8 +195,9 @@ class K8sClient(object):
     def list_namespaced_service(self, namespace):
         return self.core_api.list_namespaced_service(namespace)
 
-    def list_pod_for_all_namespaces(self):
-        return self.core_api.list_pod_for_all_namespaces()
+    def list_pod_for_all_namespaces(self, field_selector=None):
+        return self.core_api.list_pod_for_all_namespaces(
+            field_selector=field_selector)
 
     def list_namespaced_pod(self, namespace):
         return self.core_api.list_namespaced_pod(namespace)
