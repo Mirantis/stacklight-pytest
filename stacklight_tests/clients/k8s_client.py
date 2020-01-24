@@ -124,8 +124,8 @@ class K8sClient(object):
         for dm in deployments.items:
             status = {
                 'observed_generation': dm.status.observed_generation,
-                'replicas': dm.status.replicas,
-                'replicas_available': dm.status.available_replicas,
+                'replicas': dm.status.replicas or 0,
+                'replicas_available': dm.status.available_replicas or 0,
                 'replicas_unavailable': dm.status.unavailable_replicas or 0,
                 'replicas_updated': dm.status.updated_replicas or 0,
 

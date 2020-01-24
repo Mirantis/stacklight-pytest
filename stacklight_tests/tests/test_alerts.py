@@ -52,9 +52,9 @@ alert_metrics = {
     ],
     "ContainerScrapeError": ['container_scrape_error == 0'],
     "CPUThrottlingHigh": [
-        '100 * sum by(container_name, pod_name, namespace) '
+        '100 * sum by(container, pod, namespace) '
         '(increase(container_cpu_cfs_throttled_periods_total'
-        '{container_name!=""}[5m])) / sum by(container_name, pod_name, '
+        '{container!=""}[5m])) / sum by(container, pod, '
         'namespace) (increase(container_cpu_cfs_periods_total[5m])) <= 25'
     ],
     "ElasticClusterRed": [
@@ -75,14 +75,10 @@ alert_metrics = {
         'rate(elasticsearch_indices_docs[10m]) >= 1'
     ],
     "KubeAPIErrorsHighCritical": [
-        'sum(rate(apiserver_request_count{code=~"^(?:5..)$",'
-        'job="apiserver"}[5m])) / '
-        'sum(rate(apiserver_request_count{job="apiserver"}[5m])) * 100 <= 3'
+        'sum(rate(apiserver_request_count{job="apiserver"}[5m]))'
     ],
     "KubeAPIErrorsHighWarning": [
-        'sum(rate(apiserver_request_count{code=~"^(?:5..)$",'
-        'job="apiserver"}[5m])) / '
-        'sum(rate(apiserver_request_count{job="apiserver"}[5m])) * 100 <= 1'
+        'sum(rate(apiserver_request_count{job="apiserver"}[5m]))'
     ],
     "KubeAPILatencyHighCritical": [
         'cluster_quantile:apiserver_request_latencies:histogram_quantile'
@@ -96,15 +92,11 @@ alert_metrics = {
     ],
     "KubeAPIResourceErrorsHighCritical": [
         'sum by(resource, subresource, verb) (rate(apiserver_request_count'
-        '{code=~"^(?:5..)$",job="apiserver"}[5m])) / '
-        'sum by(resource, subresource, verb) (rate(apiserver_request_count'
-        '{job="apiserver"}[5m])) * 100 <= 10'
+        '{job="apiserver"}[5m]))'
     ],
     "KubeAPIResourceErrorsHighWarning": [
         'sum by(resource, subresource, verb) (rate(apiserver_request_count'
-        '{code=~"^(?:5..)$",job="apiserver"}[5m])) / '
-        'sum by(resource, subresource, verb) (rate(apiserver_request_count'
-        '{job="apiserver"}[5m])) * 100 <= 5'
+        '{job="apiserver"}[5m]))'
     ],
     "KubeCPUOvercommitNamespaces": [
         'sum(kube_resourcequota'
@@ -250,7 +242,7 @@ alert_metrics = {
     ],
     "MongodbMemoryUsageWarning": [
         'sum by(pod) (mongodb_memory{type="virtual"}) < 0.8 * sum by(pod) '
-        '(container_memory_max_usage_bytes{container_name="mongodb"})'
+        '(container_memory_max_usage_bytes{container="mongodb"})'
     ],
     "NginxDroppedIncomingConnections": [
         'irate(nginx_connections_accepted[5m]) - '

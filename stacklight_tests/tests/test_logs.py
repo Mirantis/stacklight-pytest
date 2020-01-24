@@ -59,7 +59,7 @@ def test_pod_logs(k8s_api, kibana_client):
             missing_loggers.append(pod)
     if settings.SL_TEST_POD in missing_loggers:
         missing_loggers.remove(settings.SL_TEST_POD)
-    skip_list = ['mariadb-0']
+    skip_list = []
     missing_loggers = filter(lambda x: x not in skip_list, missing_loggers)
     msg = ('Logs from {} pods not found in Kibana'.format(', '.join(
         missing_loggers)))

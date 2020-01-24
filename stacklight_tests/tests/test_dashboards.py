@@ -76,7 +76,7 @@ ignored_queries_for_partial_fail = [
     'sum(rate(container_network_transmit_bytes_total'
     '{pod=~"$pod",interface=~".+"}[$rate_interval])) by (pod)',
     'sum(rate(container_network_receive_bytes_total'
-    '{pod=~"$pod",interface=~".+"}[$rate_interval])) by (pod)'
+    '{pod=~"$pod",interface=~".+"}[$rate_interval])) by (pod)',
     # Prometheus stats
     'rate(prometheus_http_request_duration_seconds_count'
     '{job="prometheus-server",handler=~"/api/v1/(query|query_range)",'
