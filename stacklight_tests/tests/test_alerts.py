@@ -6,6 +6,9 @@ from stacklight_tests import settings
 logger = logging.getLogger(__name__)
 
 
+alert_skip_list = ['SystemDiskErrorsTooHigh']
+
+
 alert_metrics = {
     "AlertmanagerAlertsInvalidWarning": [
         'increase(alertmanager_alerts_invalid_total[2m]) == 0'
@@ -312,10 +315,12 @@ alert_metrics = {
     ],
     "SystemDiskErrorsTooHigh": ['increase(hdd_errors_total[1m]) <= 0'],
     "SystemDiskFullMajor": [
-        'node_filesystem_free_bytes / node_filesystem_size_bytes * 100 < 95'
+        '(1 - node_filesystem_free_bytes / node_filesystem_size_bytes * 100)'
+        ' < 95'
     ],
     "SystemDiskFullWarning": [
-        'node_filesystem_free_bytes / node_filesystem_size_bytes * 100 < 85'
+        '(1 - node_filesystem_free_bytes / node_filesystem_size_bytes * 100)'
+        ' < 85'
     ],
     "SystemDiskInodesFullMajor": [
         '100 - 100 * node_filesystem_files_free / node_filesystem_files < 95'
@@ -424,7 +429,8 @@ alert_metrics = {
                          alert_metrics.items(),
                          ids=alert_metrics.keys())
 def test_alert(prometheus_api, prometheus_native_alerting, alert, metrics):
-    if any("kube_resourcequota" in m for m in metrics):
+    if (any("kube_resourcequota" in m for m in metrics) or
+            alert in alert_skip_list):
         pytest.skip("Temporary skip test for {} alert".format(alert))
     prometheus_alerts = prometheus_api.get_all_defined_alerts().keys()
     firing_alerts = [a.name
