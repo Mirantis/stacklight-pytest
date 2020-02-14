@@ -1,5 +1,6 @@
 import logging
 import pytest
+import datetime
 
 from stacklight_tests import utils
 
@@ -14,15 +15,18 @@ def test_alerta_smoke(alerta_api):
 
 @pytest.mark.alerta
 @pytest.mark.smoke
-@pytest.mark.skip("Skip this test, refactoring is required")
 def test_alerta_alerts_consistency(prometheus_native_alerting, alerta_api):
-    def check_alerts():
+    def check_alerts(alert_age=300):
+        time_now = datetime.datetime.now()
         alerta_alerts = {"{0} {1}".format(i.event, i.resource)
                          for i in alerta_api.get_alerts({"status": "open"})}
         alertmanager_alerts = {
             "{0} {1}".format(i.name, i.instance)
-            for i in prometheus_native_alerting.list_alerts()}
-        if alerta_alerts == alertmanager_alerts:
+            for i in prometheus_native_alerting.list_alerts()
+            if prometheus_native_alerting.get and
+            utils.difference_in_seconds(utils.convert_unicode_to_datetime(
+                                        list(i.time)[0]), time_now, alert_age)}
+        if alertmanager_alerts.issubset(alerta_alerts):
             return True
         else:
             logger.info(
@@ -33,7 +37,7 @@ def test_alerta_alerts_consistency(prometheus_native_alerting, alerta_api):
             return False
 
     utils.wait(check_alerts, interval=30, timeout=6 * 60,
-               timeout_msg="Alerts in Alertmanager and Alerta incosistent")
+               timeout_msg="Alerts in Alertmanager and Alerta inconsistent")
 
 
 @pytest.mark.alerta
