@@ -6,23 +6,16 @@ ignored_queries_for_fail = [
     # Elasticsearch
     'count(elasticsearch_breakers_tripped{cluster="$cluster",name=~"$name"}'
     '>0)',
-    # MongoDB
-    'mongodb_replset_oplog_size_bytes{instance=~"$env"}',
-    # Prometheus. Skip 1.x prometheus metric
-    'prometheus_local_storage_target_heap_size_bytes'
-    '{instance=~"$instance:[1-9][0-9]*"}',
     # Kubernetes Cluster
     'sum(kube_node_status_condition{condition="OutOfDisk", node=~"$node", '
     'status="true"})',
     'sum(kube_job_status_succeeded{namespace=~"$namespace"})',
     'sum(kube_job_status_active{namespace=~"$namespace"})',
-    'sum(kube_job_status_failed{namespace=~"$namespace"})',
+    'sum(kube_job_status_failed{namespace=~"$namespace"})'
 ]
 
 
 ignored_queries_for_partial_fail = [
-    # Kubernetes Deployments
-    'kube_deployment_status_observed_generation{namespace=~"$namespace"}',
     # Kubernetes Cluster
     'sum(kube_pod_status_phase{namespace=~"$namespace", phase="Unknown"})',
     'sum(kube_deployment_status_replicas_unavailable'
@@ -30,7 +23,6 @@ ignored_queries_for_partial_fail = [
     'sum(kube_job_status_succeeded{namespace=~"$namespace"})',
     'sum(kube_pod_status_phase{namespace=~"$namespace", phase="Pending"})',
     'sum(kube_pod_container_status_running{namespace=~"$namespace"})',
-    'kube_deployment_status_replicas{namespace=~"$namespace"}',
     'sum(kube_pod_status_phase{namespace=~"$namespace", phase="Succeeded"})',
     'sum(kube_job_status_active{namespace=~"$namespace"})',
     'sum(kube_pod_container_status_terminated{namespace=~"$namespace"})',
@@ -38,21 +30,18 @@ ignored_queries_for_partial_fail = [
     'sum(kube_pod_status_phase{namespace=~"$namespace", phase="Running"})',
     'sum(kube_pod_container_status_waiting{namespace=~"$namespace"})',
     'sum(kube_pod_status_phase{namespace=~"$namespace", phase="Failed"})',
-    'sum(kube_deployment_status_replicas_updated{namespace=~"$namespace"})',
     'sum(kube_deployment_status_replicas{namespace=~"$namespace"})',
+    'sum(delta(kube_pod_container_status_restarts_total{'
+    'namespace=~"$namespace"}[30m]))',
     # Kubernetes Namespace
     'sum(container_memory_usage_bytes{namespace=~"$namespace",'
     'pod=~".+",container=~".+"}) by (namespace)',
-    'sum(rate(container_fs_reads_total{namespace=~"$namespace",'
-    'pod=~".+",container=~".+"}[$rate_interval])) by (namespace)',
     'sum(rate(container_cpu_usage_seconds_total'
     '{namespace=~"$namespace",pod=~".+",container=~".+"}'
     '[$rate_interval])) by (namespace)',
     'sum(rate(container_fs_writes_bytes_total'
     '{namespace=~"$namespace",pod=~".+",container=~".+"}'
     '[$rate_interval])) by (namespace)',
-    'sum(rate(container_fs_writes_total{namespace=~"$namespace",'
-    'pod=~".+",container=~".+"}[$rate_interval])) by (namespace)',
     'sum(rate(container_fs_reads_bytes_total{namespace=~"$namespace",'
     'pod=~".+",container=~".+"}[$rate_interval])) by (namespace)',
     'sum(rate(container_network_receive_bytes_total'
@@ -61,26 +50,19 @@ ignored_queries_for_partial_fail = [
     'sum(rate(container_network_transmit_bytes_total'
     '{namespace=~"$namespace",pod=~".+",interface=~".+"}'
     '[$rate_interval])) by (namespace)',
+    'sum(rate(container_fs_reads_total{namespace=~"$namespace"}'
+    '[$rate_interval])) by (namespace)',
+    'sum(rate(container_fs_writes_total{namespace=~"$namespace"}'
+    '[$rate_interval])) by (namespace)',
     # Kubernetes Pod
-    'sum(container_memory_usage_bytes{pod=~"$pod",container=~".+"}) by (pod)',
-    'sum(rate(container_fs_writes_bytes_total{pod=~"$pod",container=~".+"}'
+    'sum(rate(container_fs_reads_total{pod=~"$pod"}'
     '[$rate_interval])) by (pod)',
-    'sum(rate(container_cpu_usage_seconds_total{pod=~"$pod",container=~".+"}'
+    'sum(rate(container_fs_writes_bytes_total{pod=~"$pod"}'
     '[$rate_interval])) by (pod)',
-    'sum(rate(container_fs_reads_bytes_total{pod=~"$pod",container=~".+"}'
+    'sum(rate(container_fs_reads_bytes_total{pod=~"$pod"}'
     '[$rate_interval])) by (pod)',
-    'sum(rate(container_fs_reads_total{pod=~"$pod",container=~".+"}'
+    'sum(rate(container_fs_writes_total{pod=~"$pod"}'
     '[$rate_interval])) by (pod)',
-    'sum(rate(container_fs_writes_total{pod=~"$pod",container=~".+"}'
-    '[$rate_interval])) by (pod)',
-    'sum(rate(container_network_transmit_bytes_total'
-    '{pod=~"$pod",interface=~".+"}[$rate_interval])) by (pod)',
-    'sum(rate(container_network_receive_bytes_total'
-    '{pod=~"$pod",interface=~".+"}[$rate_interval])) by (pod)',
-    # Prometheus stats
-    'rate(prometheus_http_request_duration_seconds_count'
-    '{job="prometheus-server",handler=~"/api/v1/(query|query_range)",'
-    'instance=~"$instance:[1-9][0-9]*"}[$rate_interval])'
 ]
 
 
@@ -94,7 +76,7 @@ def query_dict_to_string(query_dict):
 
 
 def get_all_grafana_dashboards_names():
-    # { Name in Grafana: name in Stacklight CRD }
+    # { Name in Grafana: name in Stacklight CR}
     dashboards = {
         "Alertmanager": 'alertmanager',
         "ElasticSearch": 'elasticsearch',
@@ -107,17 +89,15 @@ def get_all_grafana_dashboards_names():
         "Kubernetes Pod": 'kubernetes-pod',
         "MongoDB": 'mongodb',
         "NGINX": 'nginx',
-        "Prometheus Performances": 'prometheus-performance',
-        "Prometheus Stats": 'prometheus-stats',
+        "Prometheus": 'prometheus',
         "Pushgateway": 'pushgateway',
         "Relay": 'relay',
         "System": 'node-exporter',
         # Ceph
         "Ceph Cluster": 'ceph-cluster',
-        "Ceph Hosts Overview": 'ceph-hosts-overview',
-        "Ceph OSD device details": 'ceph-osds-details',
-        "Ceph OSD Overview": 'ceph-osds-overview',
-        "Ceph Pools Overview": 'ceph-pool-overview',
+        "Ceph Nodes": 'ceph-nodes',
+        "Ceph OSD": 'ceph-osds',
+        "Ceph Pools": 'ceph-pools',
         # Openstack
         "MySQL": 'mysql',
         "Memcached": 'memcached',
