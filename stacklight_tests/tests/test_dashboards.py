@@ -450,6 +450,7 @@ def get_all_grafana_dashboards_names():
         "MySQL": "I@galera:master",
         "Neutron": "I@neutron:server",
         "Nginx": "I@nginx:server",
+        "Nova Availability Zones": "I@nova:controller",
         "Nova Hypervisor Overview": "I@nova:compute",
         "Nova Instances": "I@nova:controller",
         "Nova Overview": "I@nova:controller",
