@@ -85,7 +85,7 @@ class OfficialClientManager(object):
                 username=username, password=password, auth_url=auth_url,
                 tenant_name=tenant_name)
         else:
-            auth_url = "{}{}".format(auth_url, "v3/")
+            auth_url = "{}{}".format(auth_url, "/")
             auth = keystone_identity.v3.Password(
                 auth_url=auth_url, user_domain_name=domain,
                 username=username, password=password,
