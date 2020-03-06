@@ -33,3 +33,10 @@ VOLUME_STATUS = os.environ.get("VOLUME_STATUS", "available")
 KEYCLOAK_URL = os.environ.get('KEYCLOAK_URL', "https://172.19.116.60")
 KEYCLOAK_USER = os.environ.get('KEYCLOAK_USER', "writer")
 KEYCLOAK_PASSWORD = os.environ.get('KEYCLOAK_PASSWORD', "password")
+
+IAM_PROXY_ALERTA_SECRET = os.environ.get('IAM_PROXY_ALERTA_SECRET', "")
+IAM_PROXY_ALERTMANAGER_SECRET = os.environ.get('IAM_PROXY_ALERTMANAGER_SECRET',
+                                               "")
+IAM_PROXY_PROMETHEUS_SECRET = os.environ.get('IAM_PROXY_PROMETHEUS_SECRET', "")
+IAM_PROXY_GRAFANA_SECRET = os.environ.get('IAM_PROXY_GRAFANA_SECRET', "")
+IAM_PROXY_KIBANA_SECRET = os.environ.get('IAM_PROXY_KIBANA_SECRET', "")

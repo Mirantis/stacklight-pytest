@@ -143,7 +143,8 @@ def prometheus_native_alerting(sl_services):
                 sl_services["iam-proxy-alertmanager"]["external_ip"],
                 sl_services["iam-proxy-alertmanager"]["port"]),
             user=settings.KEYCLOAK_USER, password=settings.KEYCLOAK_PASSWORD,
-            keycloak_url=settings.KEYCLOAK_URL
+            keycloak_url=settings.KEYCLOAK_URL,
+            secret=settings.IAM_PROXY_ALERTMANAGER_SECRET
         )
     else:
         alerting = alertmanager_client.AlertManagerClient(

@@ -4,6 +4,7 @@ import re
 
 from stacklight_tests import utils
 from stacklight_tests.clients import http_client
+from stacklight_tests import settings
 
 logger = logging.getLogger(__name__)
 
@@ -179,6 +180,7 @@ class PrometheusClient(http_client.HttpClient):
 def get_prometheus_client(ip, port, user=None, password=None, url=None):
     api_client = PrometheusClient(
         base_url="http://{0}:{1}/".format(ip, port),
-        user=user, password=password, keycloak_url=url
+        user=user, password=password, keycloak_url=url,
+        secret=settings.IAM_PROXY_PROMETHEUS_SECRET
     )
     return api_client

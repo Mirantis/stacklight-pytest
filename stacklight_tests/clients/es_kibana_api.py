@@ -3,6 +3,7 @@ import logging
 import elasticsearch
 
 from stacklight_tests.clients import http_client
+from stacklight_tests import settings
 from stacklight_tests import utils
 
 logger = logging.getLogger(__name__)
@@ -96,6 +97,7 @@ def get_kibana_client(ip, port, user=None, password=None, url=None):
     api_client = KibanaApi(
         base_url="http://{0}:{1}/".format(ip, port),
         user=user, password=password, keycloak_url=url,
+        secret=settings.IAM_PROXY_KIBANA_SECRET,
         headers={'kbn-version': '7.1.0'}
     )
     return api_client

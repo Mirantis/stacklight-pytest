@@ -2,6 +2,7 @@ import logging
 
 from stacklight_tests.clients import grafana_templates_builder
 from stacklight_tests.clients import http_client
+from stacklight_tests import settings
 from stacklight_tests import utils
 
 
@@ -97,7 +98,8 @@ class GrafanaApi(object):
         self.grafana_api_url = "{scheme}://{host}:{port}/".format(
             scheme=scheme, host=address, port=port)
         self.http = http_client.HttpClient(
-            self.grafana_api_url, user, password, keycloak_url)
+            self.grafana_api_url, user, password, keycloak_url,
+            secret=settings.IAM_PROXY_GRAFANA_SECRET)
 
     def check_grafana_online(self):
         self.http.get("/login")
