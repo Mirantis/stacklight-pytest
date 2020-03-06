@@ -11,7 +11,116 @@ ignored_queries_for_fail = [
     'status="true"})',
     'sum(kube_job_status_succeeded{namespace=~"$namespace"})',
     'sum(kube_job_status_active{namespace=~"$namespace"})',
-    'sum(kube_job_status_failed{namespace=~"$namespace"})'
+    'sum(kube_job_status_failed{namespace=~"$namespace"})',
+    # Openstack Overview
+    'max(openstack_nova_aggregate_disk - '
+    'openstack_nova_aggregate_disk_available) by (aggregate)',
+    'max(openstack_nova_aggregate_ram - '
+    'openstack_nova_aggregate_free_ram) by (aggregate)',
+    'max(openstack_nova_aggregate_used_vcpus) by (aggregate)',
+    # Neutron
+    'max(count(openstack_neutron_agent_state{binary="neutron-metadata-agent"} '
+    '== 0 and openstack_neutron_agent_status{binary="neutron-metadata-agent"} '
+    '== 0) by (instance))',
+    'max(count(openstack_neutron_agent_state{binary="neutron-metadata-agent"} '
+    '== 0 and openstack_neutron_agent_status{binary="neutron-metadata-agent"} '
+    '== 1) by (instance))',
+    'max(count(openstack_neutron_agent_state{binary="neutron-metadata-agent"} '
+    '== 1 and openstack_neutron_agent_status{binary="neutron-metadata-agent"} '
+    '== 0) by (instance))',
+    'max(count(openstack_neutron_agent_state{binary="neutron-openvswitch-'
+    'agent"} == 1 and openstack_neutron_agent_status{binary="neutron-'
+    'openvswitch-agent"} == 0) by (instance))',
+    'max(count(openstack_neutron_agent_state{binary="neutron-openvswitch-'
+    'agent"} == 0 and openstack_neutron_agent_status{binary="neutron-'
+    'openvswitch-agent"} == 1) by (instance))',
+    'max(count(openstack_neutron_agent_state{binary="neutron-openvswitch-'
+    'agent"} == 0 and openstack_neutron_agent_status{binary="neutron-'
+    'openvswitch-agent"} == 0) by (instance))',
+    'max(count(openstack_neutron_agent_state{binary="neutron-l3-agent"} '
+    '== 1 and openstack_neutron_agent_status{binary="neutron-l3-agent"} '
+    '== 0) by (instance))',
+    'max(count(openstack_neutron_agent_state{binary="neutron-l3-agent"} '
+    '== 0 and openstack_neutron_agent_status{binary="neutron-l3-agent"} '
+    '== 1) by (instance))',
+    'max(count(openstack_neutron_agent_state{binary="neutron-l3-agent"} '
+    '== 0 and openstack_neutron_agent_status{binary="neutron-l3-agent"} '
+    '== 0) by (instance))',
+    'max(count(openstack_neutron_agent_state{binary="neutron-dhcp-agent"} '
+    '== 0 and openstack_neutron_agent_status{binary="neutron-dhcp-agent"} '
+    '== 0) by (instance))',
+    'max(count(openstack_neutron_agent_state{binary="neutron-dhcp-agent"} '
+    '== 0 and openstack_neutron_agent_status{binary="neutron-dhcp-agent"} '
+    '== 1) by (instance))',
+    'max(count(openstack_neutron_agent_state{binary="neutron-dhcp-agent"} '
+    '== 1 and openstack_neutron_agent_status{binary="neutron-dhcp-agent"} '
+    '== 0) by (instance))',
+    # Nova Overview
+    'max(count(openstack_nova_service_state{service="nova-compute"} == 0 and '
+    'openstack_nova_service_status{service="nova-compute"} == 0) '
+    'by (instance))',
+    'max(count(openstack_nova_service_state{service="nova-compute"} == 0 and '
+    'openstack_nova_service_status{service="nova-compute"} == 1) '
+    'by (instance))',
+    'max(count(openstack_nova_service_state{service="nova-compute"} == 1 and '
+    'openstack_nova_service_status{service="nova-compute"} == 0) '
+    'by (instance))',
+    'max(count(openstack_nova_service_state{binary="nova-scheduler"} == 0 and '
+    'openstack_nova_service_status{binary="nova-scheduler"} == 1) '
+    'by (instance))',
+    'max(count(openstack_nova_service_state{binary="nova-scheduler"} == 1 and '
+    'openstack_nova_service_status{binary="nova-scheduler"} == 0) '
+    'by (instance))',
+    'max(count(openstack_nova_service_state{binary="nova-scheduler"} == 0 and '
+    'openstack_nova_service_status{binary="nova-scheduler"} == 0) '
+    'by (instance))',
+    'max(count(openstack_nova_service_state{binary="nova-conductor"} == 0 '
+    'and openstack_nova_service_status{binary="nova-conductor"} == 1) '
+    'by (instance))',
+    'max(count(openstack_nova_service_state{binary="nova-conductor"} == 1 '
+    'and openstack_nova_service_status{binary="nova-conductor"} == 0) '
+    'by (instance))',
+    'max(count(openstack_nova_service_state{binary="nova-conductor"} == 0 '
+    'and openstack_nova_service_status{binary="nova-conductor"} == 0) '
+    'by (instance))',
+    # Nova Utilization
+    'max(sum(openstack_nova_ram and on (hostname) (openstack_nova_service_'
+    'status == 0 and openstack_nova_service_state == 0)) by (instance))',
+    'max(sum(openstack_nova_vcpus and on (hostname) (openstack_nova_service_'
+    'status == 0 and openstack_nova_service_state == 0)) by (instance))',
+    'max(sum(openstack_nova_vcpus and on (hostname) (openstack_nova_service_'
+    'status == 0 and openstack_nova_service_state == 1)) by (instance))',
+    'max(sum(openstack_nova_vcpus and on (hostname) (openstack_nova_service_'
+    'status == 1 and openstack_nova_service_state == 0)) by (instance))',
+    'max(sum(openstack_nova_ram and on (hostname) (openstack_nova_service_'
+    'status == 1 and openstack_nova_service_state == 0)) by (instance))',
+    'max(sum(openstack_nova_ram and on (hostname) (openstack_nova_service_'
+    'status == 0 and openstack_nova_service_state == 1)) by (instance))',
+    'max(avg(openstack_nova_disk and on (hostname) (openstack_nova_service_'
+    'status == 0 and openstack_nova_service_state == 1)) by (instance))',
+    'max(avg(openstack_nova_disk and on (hostname) (openstack_nova_service_'
+    'status == 1 and openstack_nova_service_state == 0)) by (instance))',
+    'max(avg(openstack_nova_disk and on (hostname) (openstack_nova_service_'
+    'status == 0 and openstack_nova_service_state == 0)) by (instance))',
+    # Cinder
+    'max(count(openstack_cinder_service_state{binary="cinder-volume"} == 0 '
+    'and openstack_cinder_service_status{binary="cinder-volume"} == 1) '
+    'by (instance))',
+    'max(count(openstack_cinder_service_state{binary="cinder-volume"} == 0 '
+    'and openstack_cinder_service_status{binary="cinder-volume"} == 0) '
+    'by (instance))',
+    'max(count(openstack_cinder_service_state{binary="cinder-scheduler"} == 0 '
+    'and openstack_cinder_service_status{binary="cinder-scheduler"} == 1) '
+    'by (instance))',
+    'max(count(openstack_cinder_service_state{binary="cinder-scheduler"} == 0 '
+    'and openstack_cinder_service_status{binary="cinder-scheduler"} == 0) '
+    'by (instance))',
+    'max(count(openstack_cinder_service_state{binary="cinder-scheduler"} == 1 '
+    'and openstack_cinder_service_status{binary="cinder-scheduler"} == 0) '
+    'by (instance))',
+    'max(count(openstack_cinder_service_state{binary="cinder-volume"} == 1 '
+    'and openstack_cinder_service_status{binary="cinder-volume"} == 0) '
+    'by (instance))'
 ]
 
 
