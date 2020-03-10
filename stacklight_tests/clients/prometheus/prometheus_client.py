@@ -11,9 +11,15 @@ logger = logging.getLogger(__name__)
 class PrometheusClient(http_client.HttpClient):
     measurements = None
 
+    def get_updated_prometheus_query(self, query):
+        updates = {'${__range_s}': '3600'}
+        for k, v in updates.items():
+            query = query.replace(k, v)
+        return query
+
     def get_query(self, query, timestamp=None):
         params = {
-            "query": query
+            "query": self.get_updated_prometheus_query(query)
         }
 
         if timestamp is not None:
