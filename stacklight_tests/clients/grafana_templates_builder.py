@@ -107,6 +107,8 @@ class TemplatesTree(object):
         # W/A for "Nova - Instances" dashboard
         if "$ident" in dependencies:
             dependencies.remove("$ident")
+        if "$topx" in dependencies:
+            dependencies.remove("$topx")
         return max(self.levels_by_name[dep]
                    for dep in dependencies) if dependencies else 0
 
