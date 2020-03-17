@@ -7,7 +7,6 @@ import base64
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from stacklight_tests.clients import keycloak_client
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -15,6 +14,7 @@ class HttpClient(object):
     def encrypt(self, plaintext):
         secretKey = bytes(self.secret)
         nonce = os.urandom(12)
+        plaintext += '=' * ((4 - len(plaintext) % 4) % 4)
         plaintext = bytes(plaintext)
         aesgcm = AESGCM(secretKey)
         ct = aesgcm.encrypt(nonce, plaintext, None)
@@ -32,7 +32,7 @@ class HttpClient(object):
             self.keycloak = keycloak_client.get_keycloak_client(
                 user, password, keycloak_url)
             self.token = self.keycloak.get_token()
-            token_encr = self.encrypt(self.token['access_token'] + "==")
+            token_encr = self.encrypt(self.token['access_token'])
             self.headers.update({
                 'Cookie': 'kc-access={}'.format(
                     base64.b64encode(token_encr))})
@@ -48,7 +48,7 @@ class HttpClient(object):
                 raise requests.HTTPError(r.content)
             if "IAM realm" in r.content or r.status_code == 401:
                 self.token = self.keycloak.refresh_token(self.token)
-                token_encr = self.encrypt(self.token['access_token'] + "==")
+                token_encr = self.encrypt(self.token['access_token'])
                 self.headers["Cookie"] = 'kc-access={}'.format(
                     base64.b64encode(token_encr)
                 )
