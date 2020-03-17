@@ -14,7 +14,6 @@ class HttpClient(object):
     def encrypt(self, plaintext):
         secretKey = bytes(self.secret)
         nonce = os.urandom(12)
-        plaintext += '=' * ((4 - len(plaintext) % 4) % 4)
         plaintext = bytes(plaintext)
         aesgcm = AESGCM(secretKey)
         ct = aesgcm.encrypt(nonce, plaintext, None)
@@ -35,7 +34,7 @@ class HttpClient(object):
             token_encr = self.encrypt(self.token['access_token'])
             self.headers.update({
                 'Cookie': 'kc-access={}'.format(
-                    base64.b64encode(token_encr))})
+                    base64.b64encode(token_encr).strip("="))})
 
     def set_base_url(self, base_url):
         self.base_url = base_url
@@ -50,7 +49,7 @@ class HttpClient(object):
                 self.token = self.keycloak.refresh_token(self.token)
                 token_encr = self.encrypt(self.token['access_token'])
                 self.headers["Cookie"] = 'kc-access={}'.format(
-                    base64.b64encode(token_encr)
+                    base64.b64encode(token_encr).strip("=")
                 )
                 continue
             else:
