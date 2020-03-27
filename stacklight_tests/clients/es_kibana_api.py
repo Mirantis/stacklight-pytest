@@ -98,6 +98,6 @@ def get_kibana_client(ip, port, user=None, password=None, url=None):
         base_url="http://{0}:{1}/".format(ip, port),
         user=user, password=password, keycloak_url=url,
         secret=settings.IAM_PROXY_KIBANA_SECRET,
-        headers={'kbn-version': '7.1.0'}
+        headers={'kbn-xsrf': 'true'}
     )
     return api_client
