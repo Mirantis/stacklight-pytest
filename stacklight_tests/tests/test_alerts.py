@@ -78,10 +78,10 @@ alert_metrics = {
         'rate(elasticsearch_indices_docs[10m]) >= 1'
     ],
     "KubeAPIErrorsHighCritical": [
-        'sum(rate(apiserver_request_count{job="apiserver"}[5m]))'
+        'sum(rate(apiserver_request_total{job="apiserver"}[5m]))'
     ],
     "KubeAPIErrorsHighWarning": [
-        'sum(rate(apiserver_request_count{job="apiserver"}[5m]))'
+        'sum(rate(apiserver_request_total{job="apiserver"}[5m]))'
     ],
     "KubeAPILatencyHighCritical": [
         'cluster_quantile:apiserver_request_latencies:histogram_quantile'
@@ -94,11 +94,11 @@ alert_metrics = {
         'verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} <= 1'
     ],
     "KubeAPIResourceErrorsHighCritical": [
-        'sum by(resource, subresource, verb) (rate(apiserver_request_count'
+        'sum by(resource, subresource, verb) (rate(apiserver_request_total'
         '{job="apiserver"}[5m]))'
     ],
     "KubeAPIResourceErrorsHighWarning": [
-        'sum by(resource, subresource, verb) (rate(apiserver_request_count'
+        'sum by(resource, subresource, verb) (rate(apiserver_request_total'
         '{job="apiserver"}[5m]))'
     ],
     "KubeCPUOvercommitNamespaces": [
