@@ -57,8 +57,8 @@ def test_pod_logs(k8s_api, kibana_client):
     for pod in pods:
         if pod not in kibana_loggers:
             missing_loggers.append(pod)
-    if settings.SL_TEST_POD in missing_loggers:
-        missing_loggers.remove(settings.SL_TEST_POD)
+    if settings.STACKLIGHT_TEST_POD_NAME in missing_loggers:
+        missing_loggers.remove(settings.STACKLIGHT_TEST_POD_NAME)
     skip_list = []
     missing_loggers = filter(lambda x: x not in skip_list, missing_loggers)
     msg = ('Logs from {} pods not found in Kibana'.format(', '.join(
