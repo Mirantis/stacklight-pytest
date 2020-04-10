@@ -188,6 +188,7 @@ def get_all_grafana_dashboards_names():
     # { Name in Grafana: name in Stacklight CR}
     dashboards = {
         "Alertmanager": 'alertmanager',
+        "Clusters Overview": 'telemeter-clusters-overview',
         "ElasticSearch": 'elasticsearch',
         "Grafana": 'grafana',
         "Kubernetes Calico": 'calico',
@@ -202,6 +203,7 @@ def get_all_grafana_dashboards_names():
         "Pushgateway": 'pushgateway',
         "Relay": 'relay',
         "System": 'node-exporter',
+        "Telemeter Server": 'telemeter-server',
         # Ceph
         "Ceph Cluster": 'ceph-cluster',
         "Ceph Nodes": 'ceph-nodes',
