@@ -180,6 +180,15 @@ class K8sClient(object):
             }
         return sfs_dict
 
+    def get_clusters(self):
+        clusters = self.crd_api.list_cluster_custom_object(
+            group='cluster.k8s.io',
+            version=self.crd_version,
+            plural='clusters',
+            pretty=True
+        )
+        return clusters
+
     def get_stacklight_chart(self, chart_name):
         charts = self.get_stacklight_charts()
         target_chart = filter(lambda x: x['name'] == chart_name, charts)
