@@ -4,24 +4,27 @@ import pytest
 @pytest.mark.run(order=-1)
 @pytest.mark.telemetry
 def test_telemetry_up(prometheus_api, k8s_api, chart_releases):
-    if "telemeter-server" not in chart_releases:
+    if "telemeter-server" in chart_releases:
+        query = r'count({__name__=~"telemetry:.*",_id=~".+"}) by (_id)'
+        output = prometheus_api.get_query(query)
+        clusters_info = {
+            i['metadata']['annotations']['kaas.mirantis.com/uid']: [
+                i['metadata']['namespace'], i['metadata']['name']
+            ] for i in k8s_api.get_clusters()['items']
+        }
+        clusters_id_expected = clusters_info.keys()
+        clusters_id_actual = [o['metric']['_id'].split('/')[2] for o in output]
+        err_msg = "Telemeter-client of {}/{}/{} cluster does't sent data " \
+                  "to telemeter-server."
+
+        for i in clusters_id_expected:
+            assert i in clusters_id_actual, \
+                err_msg.format(clusters_info[i][0], clusters_info[i][1], i)
+    elif "telemeter-client" in chart_releases:
         pytest.skip("This test is only for management cluster")
-
-    query = r'count({__name__=~"telemetry:.*",_id=~".+"}) by (_id)'
-    output = prometheus_api.get_query(query)
-    clusters_info = {
-        i['metadata']['annotations']['kaas.mirantis.com/uid']: [
-            i['metadata']['namespace'], i['metadata']['name']
-        ] for i in k8s_api.get_clusters()['items']
-    }
-    clusters_id_expected = clusters_info.keys()
-    clusters_id_actual = [o['metric']['_id'].split('/')[2] for o in output]
-    err_msg = "Telemeter-client of {}/{}/{} cluster does't sent data " \
-              "to telemeter-server."
-
-    for i in clusters_id_expected:
-        assert i in clusters_id_actual, \
-            err_msg.format(clusters_info[i][0], clusters_info[i][1], i)
+    else:
+        raise ValueError("Releases doesn't contain 'telemeter-client' "
+                         "or 'telemeter-server'")
 
 
 @pytest.mark.run(order=-1)
@@ -70,5 +73,5 @@ def test_recording_rules_consistency(prometheus_api, k8s_api, chart_releases):
         assert recording_rules_total_expected == recording_rules_total_actual,\
             err_msg
     else:
-        raise ValueError("Charts doesn't contain 'telemeter-client' "
+        raise ValueError("Releases doesn't contain 'telemeter-client' "
                          "or 'telemeter-server'")
