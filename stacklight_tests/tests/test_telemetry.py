@@ -29,7 +29,8 @@ def test_telemetry_up(prometheus_api, k8s_api, chart_releases):
 
 @pytest.mark.run(order=-1)
 @pytest.mark.telemetry
-def test_recording_rules_consistency(prometheus_api, k8s_api, chart_releases):
+def test_telemetry_recording_rules_consistency(prometheus_api, k8s_api,
+                                               chart_releases):
     def create_err_msg(expected, actual):
         msg = "Actual count of recording rules " \
               "doesn't correspond to expected. " \
