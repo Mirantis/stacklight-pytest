@@ -49,17 +49,21 @@ def test_pod_logs(k8s_api, kibana_client):
     ret = k8s_api.list_pod_for_all_namespaces(field_selector=field_selector)
     pods = [pod.metadata.name for pod in ret.items]
     q = ('{"size": "0", "aggs": {"uniq_logger": {"terms": '
-         '{"field": "kubernetes.pod_name", "size": 500}}}}')
+         '{"field": "kubernetes.pod_name", "size": 5000}}}}')
     output = json.loads(kibana_client.get_query(q))
     kibana_loggers = [log["key"] for log in
                       output["aggregations"]["uniq_logger"]["buckets"]]
     missing_loggers = []
+    skip_patterns = ['image-precaching-0']
+    skip_list = []
     for pod in pods:
         if pod not in kibana_loggers:
             missing_loggers.append(pod)
+        for sp in skip_patterns:
+            if sp in pod:
+                skip_list.append(pod)
     if settings.STACKLIGHT_TEST_POD_NAME in missing_loggers:
         missing_loggers.remove(settings.STACKLIGHT_TEST_POD_NAME)
-    skip_list = []
     missing_loggers = filter(lambda x: x not in skip_list, missing_loggers)
     msg = ('Logs from {} pods not found in Kibana'.format(', '.join(
         missing_loggers)))
