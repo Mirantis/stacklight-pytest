@@ -181,6 +181,11 @@ def chart_releases(k8s_api):
     return k8s_api.get_stacklight_chart_releases()
 
 
+@pytest.fixture(scope="session")
+def charts_statuses(k8s_api):
+    return k8s_api.get_stacklight_charts_statuses()
+
+
 #
 #
 # @pytest.fixture(scope="session")

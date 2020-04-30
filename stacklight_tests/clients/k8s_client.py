@@ -200,7 +200,7 @@ class K8sClient(object):
         releases = [x['name'] for x in charts]
         return releases
 
-    def get_stacklight_charts(self):
+    def get_stacklight_helmbundle(self):
         crd = self.crd_api.list_namespaced_custom_object(
             group=self.crd_group,
             version=self.crd_version,
@@ -208,9 +208,18 @@ class K8sClient(object):
             plural=self.crd_plural,
             pretty=True)
         assert crd, "Stacklight CRD not found"
-        charts = filter(lambda x: x['metadata']['name'] == 'stacklight-bundle',
-                        crd['items'])[0]['spec']['releases']
+        helmbundle = filter(lambda x: x['metadata']['name'] ==
+                            'stacklight-bundle', crd['items'])[0]
+        return helmbundle
+
+    def get_stacklight_charts(self):
+        charts = self.get_stacklight_helmbundle()['spec']['releases']
         return charts
+
+    def get_stacklight_charts_statuses(self):
+        charts_statuses = (self.get_stacklight_helmbundle()['status']
+                           ['releaseStatuses'])
+        return charts_statuses
 
     def list_namespaced_service(self, namespace):
         return self.core_api.list_namespaced_service(namespace)
