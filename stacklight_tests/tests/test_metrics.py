@@ -38,7 +38,12 @@ target_metrics = {
 @pytest.mark.run(order=1)
 @pytest.mark.parametrize("target,metrics", target_metrics.items(),
                          ids=target_metrics.keys())
-def test_metrics(prometheus_api, nodes, target, metrics):
+def test_metrics(prometheus_api, nodes, target, metrics, k8s_api):
+    if target == 'calico':
+        grafana_dashboards = (k8s_api.get_stacklight_chart('grafana')
+                              ['values']['dashboards']['default'].keys())
+        if 'calico' not in grafana_dashboards:
+            pytest.skip("'Calico' monitoring is disabled.")
     nodenames = nodes.keys()
     for node in nodenames:
         for metric in metrics:
