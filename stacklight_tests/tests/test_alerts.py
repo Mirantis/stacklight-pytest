@@ -605,9 +605,6 @@ alert_metrics = {
         'max_over_time(probe_ssl_earliest_cert_expiry[1h]) - time() '
         '>= 86400 * 30'
     ],
-    "TelemeterClientAuthenticationFailed": [
-        'metricsclient_request_send{client="federate_to"}'
-    ],
     "TelemeterClientFederationFailed": [
         'increase(federate_errors[30m]) <= 2'
     ]
