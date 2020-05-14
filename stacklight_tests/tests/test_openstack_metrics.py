@@ -165,7 +165,7 @@ class TestOpenstackMetrics(object):
         def get_servers_count(st):
             return len(filter(
                 lambda x: x.status == st, client.servers.list(
-                    search_opts={'all_tenants': 1})))
+                    search_opts={'all_tenants': 1}, limit=-1)))
 
         err_msg = "Incorrect servers count in metric {}"
         for status in ["active", "error"]:
