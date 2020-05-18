@@ -97,3 +97,44 @@ def test_node_count_in_es(kibana_client, nodes):
             len(found_nodes), len(expected_nodes), missing_nodes)
     )
     assert len(missing_nodes) == 0, msg
+
+
+@pytest.mark.run(order=-1)
+@pytest.mark.logs
+def test_metricbeat(k8s_api, kibana_client):
+    field_selector = 'status.phase=Running'
+    ret = k8s_api.list_pod_for_all_namespaces(field_selector=field_selector)
+    mb_pod = [pod for pod in ret.items if pod.metadata.name
+                                .startswith('metricbeat')][0]
+    mb_started_time = mb_pod.status.container_statuses[0].state\
+        .running.started_at
+    pods = [{'name': pod.metadata.name,
+             'node_name': pod.spec.node_name,
+             'namespace': pod.metadata.namespace}
+            for pod in ret.items if pod.status.container_statuses[0].state
+            .running.started_at > mb_started_time]
+    q = ('{"size": "0", "aggs": {"uniq_logger": {"terms": '
+         '{"field": "kubernetes.event.involved_object.name", "size": 5000}}},'
+         '"query": {"bool": {"filter": {"match_phrase": '
+         '{"kubernetes.event.involved_object.kind": "Pod"}}}}}')
+    output = json.loads(kibana_client.get_query(q))
+    kibana_loggers = [log["key"] for log in
+                      output["aggregations"]["uniq_logger"]["buckets"]]
+    missing_loggers = []
+    skip_patterns = []
+    skip_list = []
+    for pod in pods:
+        if pod['name'] not in kibana_loggers:
+            missing_loggers.append(pod['name'])
+        for sp in skip_patterns:
+            if sp in pod['name']:
+                skip_list.append(pod['name'])
+    if settings.STACKLIGHT_TEST_POD_NAME in missing_loggers:
+        missing_loggers.remove(settings.STACKLIGHT_TEST_POD_NAME)
+    missing_loggers = filter(lambda x: x not in skip_list, missing_loggers)
+    missing_loggers_info = [pod for pod in pods
+                            if pod['name'] in missing_loggers]
+    msg = ('Logs from {} pods not found in Kibana.'
+           'Metricbeat doesn\'t capture kubernetes events from these pods.'
+           .format(missing_loggers_info))
+    assert len(missing_loggers) == 0, msg
