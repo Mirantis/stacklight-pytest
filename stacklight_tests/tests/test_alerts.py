@@ -294,6 +294,57 @@ alert_metrics = {
     "NumberOfUnassignedShards": [
         'elasticsearch_cluster_health_unassigned_shards <= 0'
     ],
+    "PostgresqlDataPageCorruption": [
+        'sum by (namespace, cluster, pod) '
+        '(rate(pg_stat_database_checksum_failures[5m])) <= 0'
+    ],
+    "PostgresqlDeadlocksDetected": [
+        'sum by (namespace, cluster) '
+        '(rate(pg_stat_database_deadlocks[5m])) <= 0'
+    ],
+    "PostgresqlInsufficientWorkingMemory": [
+        'sum by (namespace, cluster) '
+        '(rate(pg_stat_database_temp_bytes[5m])) <= 0'
+    ],
+    "PostgresqlPatroniClusterSplitBrain": [
+        'count by (namespace, cluster) '
+        '(patroni_patroni_info{role="master"}) <= 1'
+    ],
+    "PostgresqlPatroniClusterUnlocked": [
+        'sum by (namespace, cluster) '
+        '(patroni_patroni_cluster_unlocked) <= 0'
+    ],
+    "PostgresqlPrimaryDown": [
+        'sum by (namespace, cluster) '
+        '(patroni_patroni_info{role="master"} or on() vector(0)) >= 1'
+    ],
+    "PostgresqlReplicaDown": [
+        'absent(count by (namespace, cluster) '
+        '(patroni_patroni_info{role="replica",state!="running"})) or '
+        'absent(count by (namespace, cluster) '
+        '(patroni_patroni_info{role="replica"}))'
+    ],
+    "PostgresqlReplicationNonStreamingReplicas": [
+        'count by (namespace, cluster) '
+        '(patroni_replication_info{state="streaming"}) - '
+        'count by (namespace, cluster) '
+        '(patroni_patroni_info{state="running",role="replica"}) <= 0'
+    ],
+    "PostgresqlReplicationPaused": [
+        'patroni_xlog_paused <= 0'
+    ],
+    "PostgresqlReplicationSlowWalApplication": [
+        'patroni_xlog_replayed_location - on(namespace, cluster, pod) '
+        'group_left patroni_xlog_received_location <= 0'
+    ],
+    "PostgresqlReplicationSlowWalDownload": [
+        'patroni_xlog_received_location - on(namespace, cluster) '
+        'group_left patroni_xlog_location <= 0'
+    ],
+    "PostgresqlReplicationWalArchiveWriteFailing": [
+        'sum by (namespace, cluster, pod) '
+        '(rate(pg_stat_archiver_failed_count[5m])) <= 0'
+    ],
     "PrometheusConfigReloadFailed": [
         'prometheus_config_last_reload_successful != 0'
     ],
