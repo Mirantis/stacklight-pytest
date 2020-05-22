@@ -76,7 +76,7 @@ alert_metrics = {
         'elasticsearch_jvm_memory_max_bytes{area="heap"}) * 100 <= 80'
     ],
     "ElasticNoNewDocuments": [
-        'rate(elasticsearch_indices_docs[10m]) >= 1'
+        'rate(elasticsearch_indices_docs[30m]) != 0'
     ],
     "ExternalEndpointDown": [
         'probe_success{job="blackbox-external-endpoint"} != 0'
@@ -433,6 +433,7 @@ alert_metrics = {
         '{job="node-exporter",device!~"veth.+"}[2m]) <= 0'
     ],
     "TargetDown": ['up != 0'],
+    "TargetFlapping": ['changes(up[15m]) <= 0'],
     "etcdGRPCRequestsSlow": [
         'histogram_quantile(0.99, sum(rate(grpc_server_handling_seconds_bucket'
         '{job=~".*etcd.*", grpc_type="unary"}[5m])) by '
