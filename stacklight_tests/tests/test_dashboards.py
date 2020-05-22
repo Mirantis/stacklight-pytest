@@ -199,6 +199,7 @@ def get_all_grafana_dashboards_names():
         "Kubernetes Pod": 'kubernetes-pod',
         "MongoDB": 'mongodb',
         "NGINX": 'nginx',
+        "PostgreSQL": 'postgresql',
         "Prometheus": 'prometheus',
         "Pushgateway": 'pushgateway',
         "Relay": 'relay',
