@@ -228,6 +228,10 @@ class K8sClient(object):
         return self.core_api.list_pod_for_all_namespaces(
             field_selector=field_selector)
 
+    def list_pod_for_all_namespaces_by_label(self, label_selector=None):
+        return self.core_api.list_pod_for_all_namespaces(
+            label_selector=label_selector)
+
     def list_namespaced_pod(self, namespace):
         return self.core_api.list_namespaced_pod(namespace)
 
