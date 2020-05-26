@@ -5,21 +5,32 @@ import pytest
 @pytest.mark.telemetry
 def test_telemetry_up(prometheus_api, k8s_api, chart_releases):
     if "telemeter-server" in chart_releases:
+        def create_err_msg(failed_clusters):
+            msg = ""
+            for f in failed_clusters.keys():
+                msg += "Telemeter-client of {}/{}/{} cluster does't sent" \
+                       " data to telemeter-server." \
+                    .format(failed_clusters[f][0], failed_clusters[f][1], f)
+            return msg
+
         query = r'count({__name__=~"telemetry:.*",_id=~".+"}) by (_id)'
         output = prometheus_api.get_query(query)
-        clusters_info = {
-            i['metadata']['annotations']['kaas.mirantis.com/uid']: [
-                i['metadata']['namespace'], i['metadata']['name']
-            ] for i in k8s_api.get_clusters()['items']
-        }
+        clusters_info = {}
+        for i in k8s_api.get_clusters()['items']:
+            releases = (i['spec']['providerSpec']
+                        ['value'].get('helmReleases'))
+            if releases:
+                if any(r.get('name') == 'stacklight' for r in releases):
+                    k = i['metadata']['annotations']['kaas.mirantis.com/uid']
+                    v = [i['metadata']['namespace'], i['metadata']['name']]
+                    clusters_info[k] = v
         clusters_id_expected = clusters_info.keys()
         clusters_id_actual = [o['metric']['_id'].split('/')[2] for o in output]
-        err_msg = "Telemeter-client of {}/{}/{} cluster does't sent data " \
-                  "to telemeter-server."
-
+        failed_clusters = {}
         for i in clusters_id_expected:
-            assert i in clusters_id_actual, \
-                err_msg.format(clusters_info[i][0], clusters_info[i][1], i)
+            if i not in clusters_id_actual:
+                failed_clusters[i] = clusters_info[i]
+        assert len(failed_clusters) == 0, create_err_msg(failed_clusters)
     elif "telemeter-client" in chart_releases:
         pytest.skip("This test is only for management cluster")
     else:
