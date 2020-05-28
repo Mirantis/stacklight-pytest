@@ -6,7 +6,12 @@ from stacklight_tests import settings
 logger = logging.getLogger(__name__)
 
 
-alert_skip_list = ['SystemDiskErrorsTooHigh']
+alert_skip_list = ['SystemDiskErrorsTooHigh',
+                   # TODO: To Delete from skip_list after
+                   #  https://mirantis.jira.com/browse/PRODX-4598 is Done
+                   'KubePersistentVolumeUsageCritical',
+                   'KubePersistentVolumeFullInFourDays'
+                   ]
 
 
 alert_metrics = {
