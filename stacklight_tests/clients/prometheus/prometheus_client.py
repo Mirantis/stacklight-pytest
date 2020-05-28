@@ -13,7 +13,10 @@ class PrometheusClient(http_client.HttpClient):
     measurements = None
 
     def get_updated_prometheus_query(self, query):
-        updates = {'$__range': '1h'}
+        updates = {'$__range': '1h',
+                   # W/A for PostgreSQL dashboard
+                   # It Will be refactored in PRODX-5277
+                   'datname=~"$db"': 'datname=~"grafana"'}
         for k, v in updates.items():
             query = query.replace(k, v)
         return query
@@ -97,7 +100,8 @@ class PrometheusClient(http_client.HttpClient):
         if query is None:
             return self.get_label_values(label)
         return list(
-            {res['metric'][label] for res in self.get_query(query)})
+            {res['metric'][label] for res in self.get_query(query)
+             if res.get('metric', {}).get(label)})
 
     def _do_query_result_query(self, query, regex=None):
         def convert_to_human_readable_string(metric):
