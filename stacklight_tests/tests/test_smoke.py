@@ -68,3 +68,77 @@ def test_patroni_containers(k8s_api):
     assert len(failed_containers) == 0, \
         "These containers {} are not in the proper state" \
         .format(failed_containers)
+
+
+@pytest.mark.run(order=1)
+@pytest.mark.smoke
+def test_stacklight_pods_resources(k8s_api):
+    def create_err_msg(by_requests, by_limits):
+        msg = ''
+        template = 'These containers {} have no resources {} for cpu ' \
+                   'or(and) memory.\n'
+        if len(by_requests) != 0:
+            msg += template.format(by_requests, 'requests')
+        if len(by_limits) != 0:
+            msg += template.format(by_limits, 'limits')
+        return msg
+
+    def check_container(resources, failed_containers, skip_list_common,
+                        skip_list_special):
+        if resources is None:
+            if not check_skip(c.name, skip_list_common,
+                              skip_list_special):
+                add_container_to_failed(failed_containers,
+                                        pod, c)
+        else:
+            check_partially_failed(failed_containers,
+                                   resources)
+
+    def add_container_to_failed(arr, pod, c):
+        arr.append(
+            {'pod_name': pod.metadata.name,
+             'container_name': c.name,
+             'resources_requests': c.resources.requests,
+             'resources_limits': c.resources.limits}
+        )
+
+    def check_skip(name, common, special):
+        if name in (common + special):
+            return True
+        else:
+            return False
+
+    def check_partially_failed(failed_containers, resources):
+        if (resources.get('cpu') is None or
+                resources.get('memory') is None):
+            add_container_to_failed(failed_containers,
+                                    pod, c)
+
+    namespace = 'stacklight'
+    ret = k8s_api.list_namespaced_pod(namespace)
+    pods = ret.items
+    skip_list = {'common': ['configmap-reload',
+                            'elasticsearch-master-graceful-termination'
+                            '-handler',
+                            'grafana-sc-dashboard',
+                            'prometheus-server-configmap-reload',
+                            'prometheus-alertmanager-configmap-reload'],
+                 'limits': ['netchecker-agent', 'netchecker-agent-hostnet',
+                            'netchecker-server'],
+                 'requests': []
+                 }
+    failed_containers_by_requests = []
+    failed_containers_by_limits = []
+    for pod in pods:
+        for c in pod.spec.containers:
+            check_container(c.resources.requests,
+                            failed_containers_by_requests,
+                            skip_list['common'], skip_list['requests'])
+            check_container(c.resources.limits,
+                            failed_containers_by_limits,
+                            skip_list['common'], skip_list['limits'])
+
+    assert (len(failed_containers_by_requests) +
+            len(failed_containers_by_limits)) == 0, \
+        create_err_msg(failed_containers_by_requests,
+                       failed_containers_by_limits)
