@@ -140,3 +140,16 @@ def skip_test(related_release, releases):
     if related_release not in releases:
         pytest.skip("Related release '{}' is not found in Stacklight CRD"
                     .format(related_release))
+
+
+def difference_in_seconds(date_one, date_two, difference_in_seconds):
+    # The function compares two dates and returns 'True' or 'False'
+    # depending on whether the difference more or less than
+    # parameter 'difference_in_seconds'
+    result = (date_two - date_one).total_seconds() > difference_in_seconds
+    return result
+
+
+def convert_unicode_to_datetime(unicode_date):
+    return dt.datetime.strptime(unicode_date[:-4],
+                                '%Y-%m-%dT%H:%M:%S.%f')
