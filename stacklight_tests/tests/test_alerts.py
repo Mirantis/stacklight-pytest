@@ -80,8 +80,8 @@ alert_metrics = {
         '(elasticsearch_jvm_memory_used_bytes{area="heap"} / '
         'elasticsearch_jvm_memory_max_bytes{area="heap"}) * 100 <= 80'
     ],
-    "ElasticNoNewDocuments": [
-        'rate(elasticsearch_indices_docs[30m]) != 0'
+    "ElasticNoNewData": [
+        'rate(elasticsearch_indices_store_size_bytes[30m]) != 0'
     ],
     "ExternalEndpointDown": [
         'probe_success{job="blackbox-external-endpoint"} != 0'
