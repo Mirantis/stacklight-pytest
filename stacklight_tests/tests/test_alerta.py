@@ -17,6 +17,8 @@ def test_alerta_smoke(alerta_api):
 @pytest.mark.alerta
 @pytest.mark.smoke
 @pytest.mark.run(order=-1)
+@pytest.mark.skip("Temporary skip, needs investigation in workflow "
+                  "alerta-alertmanager")
 def test_alerta_alerts_consistency(prometheus_native_alerting, alerta_api):
     def check_alerts(alert_age=300):
         time_now = datetime.datetime.now()
