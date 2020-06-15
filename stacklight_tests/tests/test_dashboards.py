@@ -197,7 +197,6 @@ def get_all_grafana_dashboards_names():
         "Kubernetes Namespace": 'kubernetes-namespace',
         "Kubernetes Node": 'kubernetes-node',
         "Kubernetes Pod": 'kubernetes-pod',
-        "MongoDB": 'mongodb',
         "NGINX": 'nginx',
         "PostgreSQL": 'postgresql',
         "Prometheus": 'prometheus',

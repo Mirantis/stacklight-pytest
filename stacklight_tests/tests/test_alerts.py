@@ -274,20 +274,6 @@ alert_metrics = {
     "KubeletTooManyPods": [
         'kubelet_running_pod_count{job="kubelet"} <= 110 * 0.9'
     ],
-    "MongodbConnectionsTooMany": [
-        'mongodb_connections{state="current"} <= 500'
-    ],
-    "MongodbCursorTimeouts": [
-        'increase(mongodb_mongod_metrics_cursor_timed_out_total[10m]) <= 100'
-    ],
-    "MongodbCursorsOpenTooMany": [
-        'absent(mongodb_mongod_metrics_cursor_open{state="total_open"}) or '
-        'mongodb_mongod_metrics_cursor_open{state="total_open"} <= 10000'
-    ],
-    "MongodbMemoryUsageWarning": [
-        'sum by(pod) (mongodb_memory{type="virtual"}) < 0.8 * sum by(pod) '
-        '(container_memory_max_usage_bytes{container="mongodb"})'
-    ],
     "NetCheckerAgentErrors": [
         'increase(ncagent_error_count_total[1h]) <= 10'
     ],

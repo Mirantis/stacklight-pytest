@@ -1,4 +1,3 @@
-from pymongo import MongoClient
 import pytest
 
 from stacklight_tests import settings
@@ -112,12 +111,6 @@ def grafana_client(sl_services, prometheus_api):
             datasource=prometheus_api
         )
     return grafana
-
-
-@pytest.fixture(scope="session")
-def mongodb_api(sl_services):
-    return MongoClient("mongodb://root:r00tme@{}:{}/admin".format(
-        sl_services["mongodb"]["ip"], sl_services["mongodb"]["port"]))
 
 
 @pytest.fixture(scope="session")

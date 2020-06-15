@@ -45,23 +45,3 @@ def test_alerta_alerts_consistency(prometheus_native_alerting, alerta_api):
 
     utils.wait(check_alerts, interval=30, timeout=6 * 60,
                timeout_msg="Alerts in Alertmanager and Alerta incosistent")
-
-
-@pytest.mark.alerta
-@pytest.mark.smoke
-@pytest.mark.skip("Skip test for MongoDB")
-def test_mongodb_status(mongodb_api):
-    logger.info("Checking database `alerta` is present")
-    assert 'alerta' in mongodb_api.list_database_names()
-    logger.info("Checking Mongodb server status is ok")
-    assert str(mongodb_api.server_info()['ok']) == '1.0'
-    db = mongodb_api['alerta']
-    logger.info("Checking authentication to database `alerta` "
-                "with default credentials")
-    assert db.authenticate('alerta', 'alertadb')
-    mongo_status = db.command("serverStatus")
-    logger.info("Checking database `alerta` status is ok")
-    assert str(mongo_status['ok']) == '1.0'
-    logger.info("Checking connections in database `alerta`")
-    assert mongo_status['connections']['current'] != 0
-    assert mongo_status['connections']['available'] != 0

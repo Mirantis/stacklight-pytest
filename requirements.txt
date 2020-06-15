@@ -13,7 +13,6 @@ paramiko==2.0.0 # LGPLv2.1+
 pbr!=2.1.0,>=2.0.0
 pika>=0.10.0 # BSD License
 pyOpenSSL>=17.1.0
-pymongo
 pytest>=4.3  # MIT
 pytest-html
 pytest-ordering
