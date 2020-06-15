@@ -85,14 +85,12 @@ def test_stacklight_pods_resources(k8s_api):
 
     def check_container(resources, failed_containers, skip_list_common,
                         skip_list_special):
-        if resources is None:
-            if not check_skip(c.name, skip_list_common,
-                              skip_list_special):
-                add_container_to_failed(failed_containers,
-                                        pod, c)
+        if check_skip(c.name, skip_list_common, skip_list_special):
+            pass
+        elif resources is None:
+            add_container_to_failed(failed_containers, pod, c)
         else:
-            check_partially_failed(failed_containers,
-                                   resources)
+            check_partially_failed(failed_containers, resources)
 
     def add_container_to_failed(arr, pod, c):
         arr.append(
@@ -124,7 +122,13 @@ def test_stacklight_pods_resources(k8s_api):
                             'prometheus-server-configmap-reload',
                             'prometheus-alertmanager-configmap-reload'],
                  'limits': ['netchecker-agent', 'netchecker-agent-hostnet',
-                            'netchecker-server'],
+                            'netchecker-server', 'iam-proxy', 'alerta',
+                            'elasticsearch-exporter', 'grafana',
+                            'blackbox-exporter',
+                            'prometheus-kube-state-metrics',
+                            'prometheus-node-exporter',
+                            'prometheus-node-exporter',
+                            'prometheus-pushgateway', 'metricbeat', 'metrics'],
                  'requests': []
                  }
     failed_containers_by_requests = []
