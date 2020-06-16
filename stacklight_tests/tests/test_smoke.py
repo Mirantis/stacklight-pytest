@@ -128,7 +128,8 @@ def test_stacklight_pods_resources(k8s_api):
                             'prometheus-kube-state-metrics',
                             'prometheus-node-exporter',
                             'prometheus-node-exporter',
-                            'prometheus-pushgateway', 'metricbeat', 'metrics'],
+                            'prometheus-pushgateway', 'metricbeat', 'metrics',
+                            'prometheus-nginx-exporter'],
                  'requests': []
                  }
     failed_containers_by_requests = []
