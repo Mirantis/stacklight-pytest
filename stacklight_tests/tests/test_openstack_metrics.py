@@ -30,15 +30,16 @@ class TestOpenstackMetrics(object):
         images_size = sum([im["size"] for im in client.images.list(
                            filters=filter)])
 
-        count_query = ('{__name__="openstack_glance_images",'
-                       'visibility="public",status="active"}')
+        count_query = ('sum({__name__=~"openstack_glance_(images|snapshots)",'
+                       'visibility="public",status="active"})')
         err_count_msg = "Incorrect image count in metric {}".format(
             count_query)
         prometheus_api.check_metric_values(
             count_query, images_count, err_count_msg)
 
-        size_query = ('{__name__="openstack_glance_images_size",'
-                      'visibility="public", status="active"}')
+        size_query = ('sum('
+                      '{__name__=~"openstack_glance_(images|snapshots)_size",'
+                      'visibility="public", status="active"})')
         error_size_msg = "Incorrect image size in metric {}".format(size_query)
         prometheus_api.check_metric_values(
             size_query, images_size, error_size_msg)
