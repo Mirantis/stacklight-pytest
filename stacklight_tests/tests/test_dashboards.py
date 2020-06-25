@@ -69,15 +69,18 @@ ignored_queries_for_fail = [
     'max(count(openstack_neutron_agent_state{binary="neutron-metadata-agent"} '
     '== 1 and openstack_neutron_agent_status{binary="neutron-metadata-agent"} '
     '== 0) by (instance))',
-    'max(count(openstack_neutron_agent_state{binary="neutron-openvswitch-'
-    'agent"} == 1 and openstack_neutron_agent_status{binary="neutron-'
-    'openvswitch-agent"} == 0) by (instance))',
-    'max(count(openstack_neutron_agent_state{binary="neutron-openvswitch-'
-    'agent"} == 0 and openstack_neutron_agent_status{binary="neutron-'
-    'openvswitch-agent"} == 1) by (instance))',
-    'max(count(openstack_neutron_agent_state{binary="neutron-openvswitch-'
-    'agent"} == 0 and openstack_neutron_agent_status{binary="neutron-'
-    'openvswitch-agent"} == 0) by (instance))',
+    'max(count(openstack_neutron_agent_state{binary=~"neutron-openvswitch-'
+    'agent|neutron-linuxbridge-agent"} == 1 and openstack_neutron_agent_status'
+    '{binary=~"neutron-openvswitch-agent|neutron-linuxbridge-agent"} == 0) '
+    'by (instance))',
+    'max(count(openstack_neutron_agent_state{binary=~"neutron-openvswitch-'
+    'agent|neutron-linuxbridge-agent"} == 0 and openstack_neutron_agent_status'
+    '{binary=~"neutron-openvswitch-agent|neutron-linuxbridge-agent"} == 1) '
+    'by (instance))',
+    'max(count(openstack_neutron_agent_state{binary=~"neutron-openvswitch-'
+    'agent|neutron-linuxbridge-agent"} == 0 and openstack_neutron_agent_status'
+    '{binary=~"neutron-openvswitch-agent|neutron-linuxbridge-agent"} == 0) '
+    'by (instance))',
     'max(count(openstack_neutron_agent_state{binary="neutron-l3-agent"} '
     '== 1 and openstack_neutron_agent_status{binary="neutron-l3-agent"} '
     '== 0) by (instance))',
