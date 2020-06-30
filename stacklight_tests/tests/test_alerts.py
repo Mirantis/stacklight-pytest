@@ -86,6 +86,24 @@ alert_metrics = {
     "ExternalEndpointDown": [
         'probe_success{job="blackbox-external-endpoint"} != 0'
     ],
+    "ExternalEndpointTCPFailure": [
+        'probe_http_ssl{job="blackbox-external-endpoint"} + on(instance) '
+        'group_left probe_http_duration_seconds'
+        '{job="blackbox-external-endpoint",phase="transfer"} != 0'
+    ],
+    "KaasSSLCertExpirationCritical": [
+        'max_over_time(probe_ssl_earliest_cert_expiry'
+        '{job="kaas-blackbox"}[1h]) >= '
+        'probe_success{job="kaas-blackbox"} * (time() + 86400 * 10)'
+    ],
+    "KaasSSLCertExpirationWarning": [
+        'max_over_time(probe_ssl_earliest_cert_expiry'
+        '{job="kaas-blackbox"}[1h]) >= '
+        'probe_success{job="kaas-blackbox"} * (time() + 86400 * 30)'
+    ],
+    "KaasSSLProbesFailing": [
+        'max_over_time(probe_success{job="kaas-blackbox"}[1h]) != 0'
+    ],
     "KubeAPIDown": [
         'probe_success{job="kubernetes-master-api"} != 0'
     ],
@@ -643,6 +661,19 @@ alert_metrics = {
     "OctaviaApiOutage": [
         'max(openstack_api_check_status{name="octavia"}) != 0'
     ],
+    "OpenstackSSLCertExpirationCritical": [
+        'max_over_time(probe_ssl_earliest_cert_expiry'
+        '{job=~"openstack-blackbox.*"}[1h]) >= '
+        'probe_success{job=~"openstack-blackbox.*"} * (time() + 86400 * 10)'
+    ],
+    "OpenstackSSLCertExpirationWarning": [
+        'max_over_time(probe_ssl_earliest_cert_expiry'
+        '{job=~"openstack-blackbox.*"}[1h]) >= '
+        'probe_success{job=~"openstack-blackbox.*"} * (time() + 86400 * 30)'
+    ],
+    "OpenstackSSLProbesFailing": [
+        'max_over_time(probe_success{job=~"openstack-blackbox.*"}[1h]) != 0'
+    ],
     "RabbitMQDown": ['min(rabbitmq_up) by (pod) == 1'],
     "RabbitMQFileDescriptorUsagehigh": [
         'rabbitmq_fd_used * 100 / rabbitmq_fd_total <= 80'
@@ -655,12 +686,12 @@ alert_metrics = {
     "SfNotifierAuthFailure": ['sf_auth_ok != 0'],
     "SfNotifierDown": ['sf_auth_ok'],
     "SSLCertExpirationCritical": [
-        'max_over_time(probe_ssl_earliest_cert_expiry[1h]) - time() '
-        '>= 86400 * 10'
+        'max_over_time(probe_ssl_earliest_cert_expiry'
+        '{job!~"(openstack|kaas)-blackbox.*"}[1h]) - time() >= 86400 * 10'
     ],
     "SSLCertExpirationWarning": [
-        'max_over_time(probe_ssl_earliest_cert_expiry[1h]) - time() '
-        '>= 86400 * 30'
+        'max_over_time(probe_ssl_earliest_cert_expiry'
+        '{job!~"(openstack|kaas)-blackbox.*"}[1h]) - time() >= 86400 * 30'
     ],
     "TelemeterClientFederationFailed": [
         'increase(federate_errors[30m]) <= 2'
