@@ -33,6 +33,8 @@ def test_telemetry_up(prometheus_api, k8s_api, chart_releases):
         assert len(failed_clusters) == 0, create_err_msg(failed_clusters)
     elif "telemeter-client" in chart_releases:
         pytest.skip("This test is only for management cluster")
+    elif "kaas" not in k8s_api.list_namespaces():
+        pytest.skip("This test is only for KaaS deployment")
     else:
         raise ValueError("Releases doesn't contain 'telemeter-client' "
                          "or 'telemeter-server'")
@@ -85,5 +87,5 @@ def test_telemetry_recording_rules_consistency(prometheus_api, k8s_api,
         assert recording_rules_total_expected == recording_rules_total_actual,\
             err_msg
     else:
-        raise ValueError("Releases doesn't contain 'telemeter-client' "
-                         "or 'telemeter-server'")
+        pytest.skip("Releases doesn't contain 'telemeter-client' "
+                    "or 'telemeter-server'")

@@ -221,6 +221,10 @@ class K8sClient(object):
                            ['releaseStatuses'])
         return charts_statuses
 
+    def list_namespaces(self):
+        return [i.metadata.name
+                for i in self.core_api.list_namespace().items]
+
     def list_namespaced_service(self, namespace):
         return self.core_api.list_namespaced_service(namespace)
 
