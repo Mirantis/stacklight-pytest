@@ -91,6 +91,15 @@ alert_metrics = {
         'group_left probe_http_duration_seconds'
         '{job="blackbox-external-endpoint",phase="transfer"} != 0'
     ],
+    "FileDescriptorUsageCritical": [
+        'node_filefd_allocated / node_filefd_maximum <= 0.95'
+    ],
+    "FileDescriptorUsageMajor": [
+        'node_filefd_allocated / node_filefd_maximum <= 0.9'
+    ],
+    "FileDescriptorUsageWarning": [
+        'node_filefd_allocated / node_filefd_maximum <= 0.8'
+    ],
     "KaasSSLCertExpirationCritical": [
         'max_over_time(probe_ssl_earliest_cert_expiry'
         '{job="kaas-blackbox"}[1h]) >= '
