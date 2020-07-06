@@ -1,5 +1,7 @@
 import json
 import logging
+from datetime import timedelta
+
 import pytest
 
 from stacklight_tests import settings
@@ -108,11 +110,13 @@ def test_metricbeat(k8s_api, kibana_client):
                                 .startswith('metricbeat')][0]
     mb_started_time = mb_pod.status.container_statuses[0].state\
         .running.started_at
+    delta_time = 60
     pods = [{'name': pod.metadata.name,
              'node_name': pod.spec.node_name,
              'namespace': pod.metadata.namespace}
-            for pod in ret.items if pod.status.container_statuses[0].state
-            .running.started_at > mb_started_time]
+            for pod in ret.items if pod.status.container_statuses[-1].state
+            .running.started_at - timedelta(seconds=delta_time) >
+            mb_started_time]
     q = ('{"size": "0", "aggs": {"uniq_logger": {"terms": '
          '{"field": "kubernetes.event.involved_object.name", "size": 5000}}},'
          '"query": {"bool": {"filter": {"match_phrase": '
@@ -134,7 +138,7 @@ def test_metricbeat(k8s_api, kibana_client):
     missing_loggers = filter(lambda x: x not in skip_list, missing_loggers)
     missing_loggers_info = [pod for pod in pods
                             if pod['name'] in missing_loggers]
-    msg = ('Logs from {} pods not found in Kibana.'
+    msg = ('Kubernetes events from {} pods are not found in Kibana. '
            'Metricbeat doesn\'t capture kubernetes events from these pods.'
            .format(missing_loggers_info))
     assert len(missing_loggers) == 0, msg
