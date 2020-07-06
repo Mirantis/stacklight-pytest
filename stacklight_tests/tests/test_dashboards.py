@@ -172,6 +172,13 @@ ignored_queries_for_partial_fail = [
     '[$rate_interval])) by (pod)',
     'sum(rate(container_fs_writes_total{pod=~"$pod"}'
     '[$rate_interval])) by (pod)',
+    # UCP Containers
+    'sum(rate(ucp_engine_container_network_tx_bytes_total'
+    '{instance=~"$hostname",name=~"$name"}[$rate_interval])) '
+    'by (instance,name)',
+    'sum(rate(ucp_engine_container_network_rx_bytes_total'
+    '{instance=~"$hostname",name=~"$name"}[$rate_interval])) '
+    'by (instance,name)'
 ]
 
 
@@ -228,7 +235,10 @@ def get_all_grafana_dashboards_names():
         "Nova Utilization": 'nova-utilization',
         "Openstack Overview": 'openstack-overview',
         "Openstack Tenants": 'openstack-tenants',
-        "Ironic": 'ironic'
+        "Ironic": 'ironic',
+        # UCP
+        "UCP Cluster": 'ucp-cluster',
+        "UCP Containers": 'ucp-containers'
     }
 
     return {idfy_name(k): v for k, v in dashboards.items()}

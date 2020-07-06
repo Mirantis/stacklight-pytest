@@ -66,6 +66,70 @@ alert_metrics = {
         'sum(increase(container_cpu_cfs_periods_total{}[5m])) '
         'by (container, pod, namespace) <= 25'
     ],
+    "DockerNetworkUnhealthy": [
+        'docker_networkdb_stats_netmsg * '
+        '(docker_networkdb_stats_netmsg offset 5m) <= 0 and '
+        'docker_networkdb_stats_qlen * '
+        '(docker_networkdb_stats_qlen offset 5m) <= 0'
+    ],
+    "DockerNodeFlapping": [
+        'changes(docker_swarm_node_ready[10m]) <= 3'
+    ],
+    "DockerServiceReplicasDown": [
+        'docker_swarm_tasks_running == docker_swarm_tasks_desired'
+    ],
+    "DockerServiceReplicasFlapping": [
+        'changes(docker_swarm_tasks_running[10m]) <= 0'
+    ],
+    "DockerServiceReplicasOutage": [
+        'docker_swarm_tasks_running != 0 or docker_swarm_tasks_desired == 0'
+    ],
+    "DockerUCPAPIDown": [
+        'probe_success{job="ucp-manager-api"} != 0'
+    ],
+    "DockerUCPAPIOutage": [
+        'max(probe_success{job="ucp-manager-api"}) != 0'
+    ],
+    "DockerUCPContainerUnhealthy": [
+        'ucp_engine_container_unhealth != 1'
+    ],
+    "DockerUCPInterlockReplicasMismatch": [
+        'docker_swarm_tasks_running{service_name=~".*interlock.*"} >= '
+        'docker_swarm_tasks_desired{service_name=~".*interlock.*"}'
+    ],
+    "DockerUCPInterlockServiceOutage": [
+        'docker_swarm_tasks_running{service_name=~".*interlock.*"} != 0'
+    ],
+    "DockerUCPLeadElectionLoop": [
+        'count(max_over_time(docker_swarm_node_manager_leader[10m]) == 1) <= 2'
+    ],
+    "DockerUCPNodeCPUFullMajor": [
+        'sum by (instance) (ucp_engine_container_cpu_percent) / '
+        'sum by (instance) (ucp_engine_num_cpu_cores) <= 90'
+    ],
+    "DockerUCPNodeCPUFullMinor": [
+        'sum by (instance) (ucp_engine_container_cpu_percent) / '
+        'sum by (instance) (ucp_engine_num_cpu_cores) <= 80'
+    ],
+    "DockerUCPNodeDiskFullCritical": [
+        'sum by (instance) (ucp_engine_disk_free_bytes) / '
+        'sum by (instance) (ucp_engine_disk_total_bytes) >= 0.05'
+    ],
+    "DockerUCPNodeDiskFullWarning": [
+        'sum by (instance) (ucp_engine_disk_free_bytes) '
+        '/ sum by (instance) (ucp_engine_disk_total_bytes) >= 0.15'
+    ],
+    "DockerUCPNodeDown": [
+        'ucp_engine_node_health != 0'
+    ],
+    "DockerUCPNodeMemoryFullMajor": [
+        '100 * sum by (instance) (ucp_engine_container_memory_usage_bytes) / '
+        'sum by (instance) (ucp_engine_memory_total_bytes) <= 90'
+    ],
+    "DockerUCPNodeMemoryFullMinor": [
+        '100 * sum by (instance) (ucp_engine_container_memory_usage_bytes) / '
+        'sum by (instance) (ucp_engine_memory_total_bytes) <= 80'
+    ],
     "ElasticClusterRed": [
         'elasticsearch_cluster_health_status{color="red"} != 1'
     ],
