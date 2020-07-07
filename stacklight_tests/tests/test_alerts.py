@@ -632,11 +632,19 @@ alert_metrics = {
     "HeatApiDown": ['openstack_api_check_status{name=~"heat.*"} != 0'],
     "HeatApiOutage": ['max(openstack_api_check_status{name=~"heat.*"}) != 0'],
     "IronicApiOutage": [
+        'max(openstack_api_check_status{name=~"ironic.*"}) != 0'
+    ],
+    "IronicBmApiOutage": [
         'http_response_status{name=~"ironic-api"} == 1'
     ],
-    "IronicMetricsMissing": [
-        'openstack_ironic_nodes_total',
-        'openstack_ironic_drivers_total'
+    "IronicBmMetricsMissing": [
+        'ironic_nodes_total',
+        'ironic_drivers_total'
+    ],
+    "IronicDriverMissing": [
+        'scalar(count(kube_pod_container_info'
+        '{container="ironic-conductor"} == 1)) - '
+        'count(openstack_ironic_driver) by (driver) <= 0'
     ],
     "KeystoneApiOutage": [
         'openstack_api_check_status{name=~"keystone.*"} != 0'

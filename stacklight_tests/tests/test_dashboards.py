@@ -235,7 +235,8 @@ def get_all_grafana_dashboards_names():
         "Nova Utilization": 'nova-utilization',
         "Openstack Overview": 'openstack-overview',
         "Openstack Tenants": 'openstack-tenants',
-        "Ironic": 'ironic',
+        "Ironic": 'ironic-openstack',
+        "Ironic BM": 'ironic',
         # UCP
         "UCP Cluster": 'ucp-cluster',
         "UCP Containers": 'ucp-containers'
