@@ -195,6 +195,14 @@ class K8sClient(object):
         assert target_chart, "Chart {} not found".format(chart_name)
         return target_chart[0]
 
+    def get_stacklight_chart_starting_with(self, chart_name):
+        charts = self.get_stacklight_charts()
+        target_chart = filter(
+            lambda x: x['name'].startswith(chart_name), charts)
+        assert target_chart, "Chart starting with {} " \
+                             "not found".format(chart_name)
+        return target_chart[0]
+
     def get_stacklight_chart_releases(self):
         charts = self.get_stacklight_charts()
         releases = [x['name'] for x in charts]

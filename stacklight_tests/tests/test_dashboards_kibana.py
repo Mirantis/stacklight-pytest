@@ -29,7 +29,7 @@ def dashboard_name(request):
 @pytest.mark.run(order=-2)
 def test_kibana_dashboard(dashboard_name, kibana_client, k8s_api):
     name_in_chart, name = dashboard_name
-    kibana_dashboards = (k8s_api.get_stacklight_chart('kibana')
+    kibana_dashboards = (k8s_api.get_stacklight_chart_starting_with('kibana')
                          ['values']['dashboardImport']['dashboards'].keys())
     if name_in_chart not in kibana_dashboards:
         pytest.skip("This dashboard is not in the 'kibana' chart."
