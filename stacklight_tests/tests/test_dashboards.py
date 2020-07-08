@@ -18,6 +18,8 @@ ignored_queries_for_fail = [
     'max(openstack_nova_aggregate_ram - '
     'openstack_nova_aggregate_free_ram) by (aggregate)',
     'max(openstack_nova_aggregate_used_vcpus) by (aggregate)',
+    'sum(rate(nginx_ingress_controller_request_duration_seconds_bucket'
+    '{status=~"5.."}[$rate_interval])) by (service)',
     # Neutron
     'max(count(openstack_neutron_agent_state{binary="neutron-metadata-agent"} '
     '== 0 and openstack_neutron_agent_status{binary="neutron-metadata-agent"} '
@@ -83,6 +85,13 @@ ignored_queries_for_fail = [
     'max(count(openstack_nova_service_state{binary="nova-conductor"} == 0 '
     'and openstack_nova_service_status{binary="nova-conductor"} == 0) '
     'by (instance))',
+    'histogram_quantile(0.99, sum(rate'
+    '(nginx_ingress_controller_request_duration_seconds_bucket'
+    '{ingress=~"nova-(cluster|namespace)-fqdn"}[$rate_interval])) '
+    'by (le,ingress,method))',
+    'round(sum(irate(nginx_ingress_controller_requests'
+    '{ingress=~"nova-(cluster|namespace)-fqdn"}[$rate_interval])) '
+    'by (ingress, status), 0.001)',
     # Nova Utilization
     'max(sum(openstack_nova_ram and on (hostname) (openstack_nova_service_'
     'status == 0 and openstack_nova_service_state == 0)) by (instance))',
@@ -120,7 +129,30 @@ ignored_queries_for_fail = [
     'by (instance))',
     'max(count(openstack_cinder_service_state{binary="cinder-volume"} == 1 '
     'and openstack_cinder_service_status{binary="cinder-volume"} == 0) '
-    'by (instance))'
+    'by (instance))',
+    'histogram_quantile(0.99, '
+    'sum(rate(nginx_ingress_controller_request_duration_seconds_bucket'
+    '{ingress=~"cinder-(cluster|namespace)-fqdn"}[$rate_interval])) '
+    'by (le,ingress,method))',
+    'round(sum(irate(nginx_ingress_controller_requests'
+    '{ingress=~"cinder-(cluster|namespace)-fqdn"}[$rate_interval])) '
+    'by (ingress, status), 0.001)',
+    # Heat
+    'round(sum(irate(nginx_ingress_controller_requests'
+    '{ingress=~"heat-(cluster|namespace)-fqdn"}[$rate_interval])) '
+    'by (ingress, status), 0.001)',
+    'histogram_quantile(0.99, '
+    'sum(rate(nginx_ingress_controller_request_duration_seconds_bucket'
+    '{ingress=~"heat-(cluster|namespace)-fqdn"}[$rate_interval])) '
+    'by (le,ingress,method))',
+    # Glance
+    'histogram_quantile(0.99, '
+    'sum(rate(nginx_ingress_controller_request_duration_seconds_bucket'
+    '{ingress=~"glance-(cluster|namespace)-fqdn"}[$rate_interval])) '
+    'by (le,ingress,method))',
+    'round(sum(irate(nginx_ingress_controller_requests'
+    '{ingress=~"glance-(cluster|namespace)-fqdn"}[$rate_interval])) '
+    'by (ingress, status), 0.001)'
 ]
 
 
