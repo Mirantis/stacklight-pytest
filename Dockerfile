@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     DEBCONF_NONINTERACTIVE_SEEN=true \
@@ -12,26 +12,43 @@ WORKDIR /stacklight-pytest
 
 COPY . ./
 
-RUN set -ex; apt-get update && apt-get upgrade -y && \
-    apt-get install -y build-essential curl git-core iputils-ping libffi-dev libldap2-dev libsasl2-dev libssl-dev patch python-dev python-pip  vim-tiny wget python-virtualenv
+# runtime deps
+RUN apt-get update \
+ && apt-get -y upgrade \
+ && apt-get -y --no-install-recommends install \
+      curl \
+      git-core \
+      iputils-ping \
+      libffi6 \
+      libldap-2.4-2 \
+      libsasl2-2 \
+      libssl1.0.0 \
+      patch \
+      python \
+      python2.7 \
+      vim-tiny \
+      virtualenv \
+      wget
 
-# Install kubectl
-RUN curl -L https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl \
-    && chmod a+x /usr/local/bin/kubectl
-
-# Enable these packages while porting to Python3  =>  python3-virtualenv python3-dev  \
-# Due to upstream bug we should use fixed version of pip
-RUN python -m pip install --upgrade 'pip==9.0.3'  \
-    && virtualenv venv \
-    && . venv/bin/activate \
-    && pip install . \
-    && pip install -r requirements.txt
-
-# Cleanup
-RUN apt-get -y purge libx11-data xauth libxmuu1 libxcb1 libx11-6 libxext6 ppp pppconfig pppoeconf popularity-contest cpp gcc g++ libssl-doc && \
-    apt-get -y autoremove; apt-get -y clean ; rm -rf /root/.cache; rm -rf /var/lib/apt/lists/* && \
-    rm -rf /tmp/* ; rm -rf /var/tmp/* ; rm -rfv /etc/apt/sources.list.d/* ; echo > /etc/apt/sources.list
-
-COPY entrypoint.sh ./entrypoint.sh
+# build
+RUN set -ex; \
+    buildDeps="build-essential libffi-dev libldap2-dev libsasl2-dev libssl-dev python-pip"; \
+    apt-get install -y --no-install-recommends ${buildDeps} \
+ && curl -L https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl \
+ && chmod a+x /usr/local/bin/kubectl \
+ && python -m pip install --upgrade 'pip==9.0.3' \
+ && virtualenv venv \
+ && . venv/bin/activate \
+ && pip install . \
+ && pip install -r requirements.txt \
+ && apt-get -y --autoremove purge ${buildDeps} \
+ && apt-get -y clean \
+ && rm -rf \
+      /root/.cache \
+      /var/lib/apt/lists/* \
+      /tmp/* \
+      /var/tmp/* \
+      /etc/apt/sources.list.d/* \
+ && echo > /etc/apt/sources.list
 
 CMD ./entrypoint.sh
