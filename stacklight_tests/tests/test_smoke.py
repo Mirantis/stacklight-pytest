@@ -22,10 +22,13 @@ def test_prometheus_metrics(prometheus_api):
 @pytest.mark.run(order=1)
 @pytest.mark.smoke
 def test_stacklight_helmbundle(charts_statuses):
-    err_msg = "Chart '{}' was not deployed properly.Chart info: {}"
+    err_msg = "These charts '{}' were not deployed properly."
+    failed_charts = {}
     for name, info in charts_statuses.items():
-        assert info['success'], \
-            err_msg.format(name, info)
+        if not info['success'] or info['status'] != 'DEPLOYED':
+            failed_charts[name] = {'success': info['success'],
+                                   'status': info['status']}
+    assert len(failed_charts) == 0, err_msg.format(failed_charts)
 
 
 @pytest.mark.run(order=1)
