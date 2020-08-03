@@ -93,13 +93,6 @@ alert_metrics = {
     "DockerUCPContainerUnhealthy": [
         'ucp_engine_container_unhealth != 1'
     ],
-    "DockerUCPInterlockReplicasMismatch": [
-        'docker_swarm_tasks_running{service_name=~".*interlock.*"} >= '
-        'docker_swarm_tasks_desired{service_name=~".*interlock.*"}'
-    ],
-    "DockerUCPInterlockServiceOutage": [
-        'docker_swarm_tasks_running{service_name=~".*interlock.*"} != 0'
-    ],
     "DockerUCPLeadElectionLoop": [
         'count(max_over_time(docker_swarm_node_manager_leader[10m]) == 1) <= 2'
     ],
