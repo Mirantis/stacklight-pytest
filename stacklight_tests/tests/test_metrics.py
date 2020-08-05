@@ -57,7 +57,10 @@ def test_metrics(prometheus_api, nodes, target, metrics, k8s_api):
 @pytest.mark.metrics
 @pytest.mark.run(order=1)
 def test_daemonsets_metrics(prometheus_api, daemonsets):
+    skip_list = ['ucp-tigera-pinhnsnet']
     for ds in daemonsets.items():
+        if ds[0] in skip_list:
+            continue
         logger.info('Checking metrics for {} daemonset'.format(ds[0]))
         labels = '{{daemonset="{}", namespace="{}"}}'.format(
             ds[0], ds[1]['namespace'])
