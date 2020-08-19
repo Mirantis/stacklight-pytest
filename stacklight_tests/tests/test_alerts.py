@@ -96,14 +96,6 @@ alert_metrics = {
     "DockerUCPLeadElectionLoop": [
         'count(max_over_time(docker_swarm_node_manager_leader[10m]) == 1) <= 2'
     ],
-    "DockerUCPNodeCPUFullMajor": [
-        'sum by (instance) (ucp_engine_container_cpu_percent) / '
-        'sum by (instance) (ucp_engine_num_cpu_cores) <= 90'
-    ],
-    "DockerUCPNodeCPUFullMinor": [
-        'sum by (instance) (ucp_engine_container_cpu_percent) / '
-        'sum by (instance) (ucp_engine_num_cpu_cores) <= 80'
-    ],
     "DockerUCPNodeDiskFullCritical": [
         'sum by (instance) (ucp_engine_disk_free_bytes) / '
         'sum by (instance) (ucp_engine_disk_total_bytes) >= 0.05'
@@ -114,14 +106,6 @@ alert_metrics = {
     ],
     "DockerUCPNodeDown": [
         'ucp_engine_node_health != 0'
-    ],
-    "DockerUCPNodeMemoryFullMajor": [
-        '100 * sum by (instance) (ucp_engine_container_memory_usage_bytes) / '
-        'sum by (instance) (ucp_engine_memory_total_bytes) <= 90'
-    ],
-    "DockerUCPNodeMemoryFullMinor": [
-        '100 * sum by (instance) (ucp_engine_container_memory_usage_bytes) / '
-        'sum by (instance) (ucp_engine_memory_total_bytes) <= 80'
     ],
     "ElasticClusterRed": [
         'elasticsearch_cluster_health_status{color="red"} != 1'
