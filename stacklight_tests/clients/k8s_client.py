@@ -247,6 +247,15 @@ class K8sClient(object):
     def list_namespaced_pod(self, namespace):
         return self.core_api.list_namespaced_pod(namespace)
 
+    def logging_enabled(self):
+        grafana_chart = self.get_stacklight_chart('grafana')
+        chart_dashboards = grafana_chart['values']['dashboards'][
+            'default'].keys()
+        if 'elasticsearch' in chart_dashboards:
+            return True
+        else:
+            return False
+
     def read_namespaced_service(self, service, namespace):
         return self.core_api.read_namespaced_service(
             namespace=namespace, name=service)

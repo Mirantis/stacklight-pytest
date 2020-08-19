@@ -82,6 +82,8 @@ def es_client(sl_services):
 
 @pytest.fixture(scope="session")
 def kibana_client(sl_services):
+    if not logging_enabled:
+        pytest.skip("Logging is disabled for this cluster.")
     if 'iam-proxy-kibana' in sl_services.keys():
         kibana_api = es_kibana_api.get_kibana_client(
             sl_services['iam-proxy-kibana']['external_ip'],
@@ -179,6 +181,9 @@ def charts_statuses(k8s_api):
     return k8s_api.get_stacklight_charts_statuses()
 
 
+@pytest.fixture(scope="session")
+def logging_enabled(k8s_api):
+    return k8s_api.logging_enabled()
 #
 #
 # @pytest.fixture(scope="session")
