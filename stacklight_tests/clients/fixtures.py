@@ -81,7 +81,7 @@ def es_client(sl_services):
 
 
 @pytest.fixture(scope="session")
-def kibana_client(sl_services):
+def kibana_client(sl_services, logging_enabled):
     if not logging_enabled:
         pytest.skip("Logging is disabled for this cluster.")
     if 'iam-proxy-kibana' in sl_services.keys():

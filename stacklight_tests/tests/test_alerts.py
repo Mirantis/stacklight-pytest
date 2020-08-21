@@ -796,14 +796,13 @@ def test_alert_watchdog(k8s_api, prometheus_api, prometheus_native_alerting):
 
 @pytest.mark.alerts
 @pytest.mark.smoke
-@pytest.mark.xfail
 def test_firing_alerts(prometheus_native_alerting):
     if not settings.TEST_FIRING_ALERTS:
         pytest.skip('Test for firing alerts is disabled')
     logger.info("Getting a list of firing alerts")
     alerts = sorted(prometheus_native_alerting.list_alerts(),
                     key=lambda x: x.name)
-    skip_list = ['Watchdog']
+    skip_list = ['Watchdog', 'CPUThrottlingHigh']
     logger.warning(
         "+" + "+".join(["-" * 45, "-" * 50, "-" * 20, "-" * 50]) + "+")
     logger.warning("|{:^45}|{:^50}|{:^20}|{:^50}|".format(
@@ -820,5 +819,5 @@ def test_firing_alerts(prometheus_native_alerting):
         "+" + "+".join(["-" * 45, "-" * 50, "-" * 20, "-" * 50]) + "+")
     alerts = filter(lambda x: x.name not in skip_list, alerts)
     assert len(alerts) == 0, \
-        "There are some firing alerts in the cluster: {}".format(
-            " ".join([a.name for a in alerts]))
+        "There are some firing alerts in the cluster: {}.".format(
+            ", ".join([a.name for a in alerts]))
