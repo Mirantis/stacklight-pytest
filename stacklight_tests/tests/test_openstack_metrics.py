@@ -28,7 +28,7 @@ class TestOpenstackMetrics(object):
         images_count = len([im for im in client.images.list(
                             filters=filter)])
         images_size = sum([im["size"] for im in client.images.list(
-                           filters=filter)])
+                           filters=filter) if im["size"]])
 
         count_query = ('sum({__name__=~"openstack_glance_(images|snapshots)",'
                        'visibility="public",status="active"})')
