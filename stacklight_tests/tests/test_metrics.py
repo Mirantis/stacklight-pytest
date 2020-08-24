@@ -79,7 +79,7 @@ def test_daemonsets_metrics(prometheus_api, daemonsets):
 @pytest.mark.run(order=1)
 def test_deployments_metrics(prometheus_api, deployments):
     for dm in deployments.items():
-        logger.info('Checking metrics for {} daemonset'.format(dm[0]))
+        logger.info('Checking metrics for {} deployment'.format(dm[0]))
         labels = '{{deployment="{}", namespace="{}"}}'.format(
             dm[0], dm[1]['namespace'])
         q = 'kube_deployment_created' + labels
@@ -97,7 +97,7 @@ def test_deployments_metrics(prometheus_api, deployments):
 @pytest.mark.run(order=1)
 def test_replicasets_metrics(prometheus_api, replicasets):
     for rs in replicasets.items():
-        logger.info('Checking metrics for {} daemonset'.format(rs[0]))
+        logger.info('Checking metrics for {} replicaset'.format(rs[0]))
         labels = '{{replicaset="{}", namespace="{}"}}'.format(
             rs[0], rs[1]['namespace'])
         q = 'kube_replicaset_created' + labels
@@ -116,7 +116,7 @@ def test_replicasets_metrics(prometheus_api, replicasets):
 @pytest.mark.run(order=1)
 def test_statefulsets_metrics(prometheus_api, statefulsets):
     for sfs in statefulsets.items():
-        logger.info('Checking metrics for {} daemonset'.format(sfs[0]))
+        logger.info('Checking metrics for {} statefulset'.format(sfs[0]))
         labels = 'statefulset="{}", namespace="{}"'.format(
             sfs[0], sfs[1]['namespace'])
         q = 'kube_statefulset_created{' + labels + '}'

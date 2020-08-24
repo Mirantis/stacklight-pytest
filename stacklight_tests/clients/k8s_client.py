@@ -167,9 +167,9 @@ class K8sClient(object):
             status = {
                 'observed_generation': sfs.status.observed_generation,
                 'replicas': sfs.status.replicas,
-                'replicas_ready': sfs.status.ready_replicas,
-                'replicas_current': sfs.status.current_replicas,
-                'replicas_updated': sfs.status.updated_replicas,
+                'replicas_ready': sfs.status.ready_replicas or 0,
+                'replicas_current': sfs.status.current_replicas or 0,
+                'replicas_updated': sfs.status.updated_replicas or 0,
             }
             sfs_dict[sfs.metadata.name] = {
                 'namespace': sfs.metadata.namespace,
