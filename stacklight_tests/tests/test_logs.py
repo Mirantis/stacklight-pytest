@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from datetime import timedelta
 
 import pytest
@@ -47,12 +48,53 @@ def test_kibana_status(kibana_client):
 @pytest.mark.smoke
 @pytest.mark.logs
 def test_pod_logs(k8s_api, kibana_client):
+    def err_msg(ml_info):
+        node_name = ml_info[0]['node_name']
+        one_node = True
+        for info in ml_info:
+            if info['node_name'] != node_name:
+                one_node = False
+        msg = ('Logs from {} pods not found in ES.'.format(ml_info))
+        if one_node:
+            msg += ' All pods are from the one node {}.'.format(node_name)
+        return msg
+
+    def pod_info(p):
+        p_info = {'name': p.metadata.name,
+                  'node_name': p.spec.node_name,
+                  'namespace': p.metadata.namespace}
+        return p_info
+
+    def collect_pods(r, jobs_ct):
+        if jobs_ct:
+            last_job_time = max(jobs_ct)
+            result = [pod_info(p)
+                      for p in r.items if p.metadata.creation_timestamp +
+                      timedelta(days=logs_retention_time) > last_job_time]
+        else:
+            result = [pod_info(p) for p in r.items]
+        return result
+
     field_selector = 'status.phase=Running'
+    namespace = 'stacklight'
+    config_map_name = 'elasticsearch-curator-config'
+    config_map = k8s_api.get_namespaced_config_map(config_map_name, namespace)
+    logs_retention_time = int(re.search('unit_count:(.*)}',
+                                        config_map.data['action_file.yml'])
+                              .group(1))
+    logger.info("Retention Time for logs in ES is {} day(s)."
+                .format(logs_retention_time))
+    jobs = k8s_api.get_namespaced_jobs(namespace)
+    jobs_creation_time = [job.metadata.creation_timestamp for job in jobs.items
+                          if job.metadata.name
+                          .startswith("elasticsearch-curator")]
     ret = k8s_api.list_pod_for_all_namespaces(field_selector=field_selector)
-    pods = [{'name': pod.metadata.name,
-             'node_name': pod.spec.node_name,
-             'namespace': pod.metadata.namespace}
-            for pod in ret.items]
+    pods = collect_pods(ret, jobs_creation_time)
+    if not pods:
+        pytest.skip("This test is skipped due to the inability to check "
+                    "logs from pods in ES. The time that was past from "
+                    "the latest created pod is bigger than the "
+                    "Retention Time for logs in ES.")
     q = ('{"size": "0", "aggs": {"uniq_logger": {"terms": '
          '{"field": "kubernetes.pod_name", "size": 5000}}}}')
     output = json.loads(kibana_client.get_query(q))
@@ -72,9 +114,7 @@ def test_pod_logs(k8s_api, kibana_client):
     missing_loggers = filter(lambda x: x not in skip_list, missing_loggers)
     missing_loggers_info = [pod for pod in pods
                             if pod['name'] in missing_loggers]
-    msg = ('Logs from {} pods not found in Kibana'.format(
-        missing_loggers_info))
-    assert len(missing_loggers) == 0, msg
+    assert len(missing_loggers) == 0, err_msg(missing_loggers_info)
 
 
 @pytest.mark.run(order=-1)

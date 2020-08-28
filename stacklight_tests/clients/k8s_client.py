@@ -36,6 +36,7 @@ class K8sClient(object):
         api_client = client.ApiClient(self.configuration)
         self.core_api = client.CoreV1Api(api_client)
         self.apps_api = client.AppsV1Api(api_client)
+        self.batch_api = client.BatchV1Api(api_client)
         self.crd_api = client.CustomObjectsApi(api_client)
         self.sl_namespace = settings.SL_NAMESPACE
         self.crd_group = 'lcm.mirantis.com'
@@ -188,6 +189,19 @@ class K8sClient(object):
             pretty=True
         )
         return clusters
+
+    def get_namespaced_jobs(self, namespace):
+        jobs = self.batch_api.list_namespaced_job(
+            namespace=namespace
+        )
+        return jobs
+
+    def get_namespaced_config_map(self, cm_name, cm_namespace):
+        config_map = self.core_api.read_namespaced_config_map(
+            name=cm_name,
+            namespace=cm_namespace
+        )
+        return config_map
 
     def get_stacklight_chart(self, chart_name):
         charts = self.get_stacklight_charts()
