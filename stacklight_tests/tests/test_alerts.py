@@ -821,3 +821,19 @@ def test_firing_alerts(prometheus_native_alerting):
     assert len(alerts) == 0, \
         "There are some firing alerts in the cluster: {}.".format(
             ", ".join([a.name for a in alerts]))
+
+
+@pytest.mark.smoke
+@pytest.mark.alerts
+@pytest.mark.run(order=-2)
+def test_alerts_fixture(prometheus_api):
+    skip_list = {'Watchdog'}
+    actual_alerts = set(prometheus_api.get_all_defined_alerts().keys())
+    expected_alerts = set(alert_metrics.keys())
+
+    actual_alerts.difference_update(skip_list)
+    missing_alerts = actual_alerts.difference(expected_alerts)
+
+    assert len(missing_alerts) == 0, \
+        ("Update test data fixture with the missing alerts: "
+         "{}".format(missing_alerts))
