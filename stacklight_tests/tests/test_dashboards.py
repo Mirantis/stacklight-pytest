@@ -12,6 +12,10 @@ ignored_queries_for_fail = [
     'sum(kube_job_status_succeeded{namespace=~"$namespace"})',
     'sum(kube_job_status_active{namespace=~"$namespace"})',
     'sum(kube_job_status_failed{namespace=~"$namespace"})',
+    # UCP Cluster
+    'count(count(ucp_engine_container_cpu_total_time_nanoseconds{stack!=""}) '
+    'by (stack))',
+    'count(ucp_engine_container_health{name=~"dtr-api-.*"})',
     # Openstack Overview
     'max(openstack_nova_aggregate_disk - '
     'openstack_nova_aggregate_disk_available) by (aggregate)',

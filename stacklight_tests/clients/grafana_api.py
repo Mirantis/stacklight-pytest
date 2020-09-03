@@ -68,19 +68,21 @@ class Dashboard(object):
         return self._templates_tree.get_all_templates_for_query(query)
 
     @staticmethod
-    def build_query(target):
+    def build_query(target, panel_name):
         if target.get("rawQuery"):
             return target["query"]
         if target.get("expr"):
             return target["expr"]
-        raise Exception("Something is going wrong")
+        raise Exception("Expression/Query for the panel '{}' at the ref '{}' "
+                        "is empty.".format(panel_name, target.get("refId",
+                                                                  "A")))
 
     def get_panel_queries(self):
         panel_queries = {}
         for panel, row in self.panels:
             panel_name = "{}->{}".format(row["title"], panel["title"] or "n/a")
             for target in panel.get("targets", []):
-                query = self.build_query(target)
+                query = self.build_query(target, panel_name)
                 query_name = "{}:{}->RefId:{}".format(
                     panel["id"], panel_name, target.get("refId", "A"))
                 panel_queries[query_name] = query
