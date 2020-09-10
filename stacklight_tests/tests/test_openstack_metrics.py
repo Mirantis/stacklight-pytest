@@ -354,7 +354,9 @@ class TestOpenstackMetrics(object):
         logger.info("Removing the test instance")
         client.servers.delete(server)
         utils.wait(
-            lambda: (server.id not in [s.id for s in client.servers.list()])
+            lambda: (server.id not in [s.id for s in client.servers.list()]),
+            interval=30, timeout=10 * 60,
+            timeout_msg="Waiting timed out. The test instance was not removed."
         )
 
         logger.info("Removing the test network and subnet")
