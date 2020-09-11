@@ -16,6 +16,8 @@ ignored_queries_for_fail = [
     'count(count(ucp_engine_container_cpu_total_time_nanoseconds{stack!=""}) '
     'by (stack))',
     'count(ucp_engine_container_health{name=~"dtr-api-.*"})',
+    'count(ucp_engine_containers{manager="false"}) - '
+    '(count(ucp_engine_container_health{name=~"dtr-api-.*"}) or vector(0))',
     # Openstack Overview
     'max(openstack_nova_aggregate_disk - '
     'openstack_nova_aggregate_disk_available) by (aggregate)',
