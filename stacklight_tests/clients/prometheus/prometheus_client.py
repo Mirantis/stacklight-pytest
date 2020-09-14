@@ -13,10 +13,7 @@ class PrometheusClient(http_client.HttpClient):
     measurements = None
 
     def get_updated_prometheus_query(self, query):
-        updates = {'$__range': '1h',
-                   # W/A for PostgreSQL dashboard
-                   # It Will be refactored in PRODX-5277
-                   'datname=~"$db"': 'datname=~"grafana"'}
+        updates = {'$__range': '1h'}
         for k, v in updates.items():
             query = query.replace(k, v)
         return query

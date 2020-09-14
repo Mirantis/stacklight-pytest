@@ -1,8 +1,11 @@
 import collections
 import itertools
 import re
+import logging
 
 from stacklight_tests import utils
+
+logger = logging.getLogger(__name__)
 
 
 class TemplatesTree(object):
@@ -10,15 +13,14 @@ class TemplatesTree(object):
         if append_default is None:
             append_default = {}
         self.queries = queries
+        logger.info("Definitions for variables: {}.".format(self.queries))
         self.default_templates = {
             "$interval": "1m",
             "$timeFilter": "time > now() - 1h",
             "$topk": "5"
         }
         self.default_templates.update(append_default)
-        self.dependencies = {
-            k: self.parse_dependencies(v) for k, (v, _) in self.queries.items()
-        }
+        self.dependencies = self._build_dependencies(self.queries)
         self._compile_query = datasource.compile_query
         self._do_query = datasource.do_query
 
@@ -55,6 +57,31 @@ class TemplatesTree(object):
             if deps:
                 curr_level = self.find_closest_parent_level(deps) + 1
             self.levels_by_name[template] = curr_level
+
+    def _build_dependencies(self, queries):
+        dependencies = {
+            k: self.parse_dependencies(v) for k, (v, _) in queries.items()
+        }
+        logger.info("Dependencies between variables: {}.".format(dependencies))
+        parent_levels = [k for k, v in dependencies.items() if not v]
+        logger.info("The highest parent level(s): {}.".format(parent_levels))
+
+        if len(parent_levels) > 1:
+            independent_levels = [p for p in parent_levels if p not in
+                                  [i for item in
+                                   [v for k, v in dependencies.items()]
+                                   for i in item]]
+            logger.info("Independent level(s): {}".format(independent_levels))
+            sets_difference = list(set(parent_levels)
+                                   .difference(set(independent_levels)))
+            if len(sets_difference) > 0:
+                link_level = sets_difference[0]
+                logger.info("Link level: {}.".format(link_level))
+                for dep in independent_levels:
+                    dependencies[link_level].append(dep)
+                logger.info("Updated Dependencies between variables: {}."
+                            .format(dependencies))
+        return dependencies
 
     def _query_values_for_template(self, template, substitutions):
         query = self._compile_query(self.queries[template][0], substitutions)
