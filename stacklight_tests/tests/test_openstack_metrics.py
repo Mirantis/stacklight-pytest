@@ -322,36 +322,18 @@ def test_libvirt_metrics(prometheus_api, create_resources, chart_releases):
                timeout=2 * 60, timeout_msg=err_msg)
 
 
-@pytest.mark.skip(reason="Not implemented yet")
 @pytest.mark.openstack_metrics
 @pytest.mark.run(order=2)
-def test_kpi_metrics(prometheus_api, salt_actions, os_clients,
-                     os_actions, destructive):
+def test_kpi_metrics(prometheus_api, os_clients,
+                     os_actions, destructive, chart_releases):
+    related_release = 'telegraf-openstack'
+    utils.skip_test(related_release, chart_releases)
+
     def _get_event_metric(query):
         value = prometheus_api.get_query(query)[0]['value'][1]
         logger.info("The current value of metric `{}` is {}".format(
             query, value))
         return value
-
-    nova = salt_actions.ping("I@nova:controller")
-    if not nova:
-        pytest.skip("Openstack is not installed in the cluster")
-
-    neutron_nodes = salt_actions.ping(
-        "I@neutron:gateway:enabled:True or "
-        "I@neutron:compute:dhcp_agent_enabled:True", short=True)
-    oc_nodes = salt_actions.ping("I@opencontrail:compute:enabled:True",
-                                 short=True)
-    if oc_nodes:
-        metric = 'instance_ping_success'
-        for node in oc_nodes:
-            q = 'instance_ping_check_up{{host="{}"}}'.format(node)
-            prometheus_api.check_metric_values(q, 1)
-    if neutron_nodes:
-        metric = 'instance_arping_success'
-        for node in neutron_nodes:
-            q = 'instance_arping_check_up{{host="{}"}}'.format(node)
-            prometheus_api.check_metric_values(q, 1)
 
     start_event = 'compute_instance_create_start_event_doc_count'
     end_event = 'compute_instance_create_end_event_doc_count'
@@ -388,24 +370,16 @@ def test_kpi_metrics(prometheus_api, salt_actions, os_clients,
     logger.info("Created an instance with id {}".format(server.id))
 
     logger.info("Checking KPI metrics for the instance")
-    logger.info("Checking the {} metric".format(metric))
-    q = '{}{{id="{}"}}'.format(metric, server.id)
-    prometheus_api.check_metric_values(q, 1)
-    logger.info("Checking the {} metric".format(
-        'instance_id:{}'.format(metric)))
-    q = 'instance_id:{}{{id="{}"}}'.format(metric, server.id)
-    prometheus_api.check_metric_values(q, 1)
-
     err_msg = "Value of `{}` metric was not increased"
     logger.info("Checking the `{}` metric".format(start_event))
     utils.wait(
         lambda: _get_event_metric(start_event) > start_value,
-        interval=30, timeout=2 * 60,
+        interval=30, timeout=3 * 60,
         timeout_msg=err_msg.format(start_event))
     logger.info("Checking the `{}` metric".format(end_event))
     utils.wait(
         lambda: _get_event_metric(end_event) > end_value,
-        interval=30, timeout=2 * 60,
+        interval=30, timeout=3 * 60,
         timeout_msg=err_msg.format(end_event))
 
     logger.info("Removing the test instance")
@@ -423,3 +397,24 @@ def test_kpi_metrics(prometheus_api, salt_actions, os_clients,
 
     logger.info("Removing the test flavor")
     client.flavors.delete(flavor)
+
+
+@pytest.mark.openstack_metrics
+@pytest.mark.run(order=2)
+def test_prometheus_es_exporter_metrics(prometheus_api, os_clients,
+                                        chart_releases):
+    related_release = 'telegraf-openstack'
+    utils.skip_test(related_release, chart_releases)
+
+    failed_metrics = []
+    metrics = ['compute_instance_create_start_event_doc_count',
+               'compute_instance_create_end_event_doc_count',
+               'compute_instance_create_error_event_doc_count']
+    for m in metrics:
+        logger.info("Checking metric '{}'. ".format(m))
+        output = prometheus_api.get_query(m)
+        if not output:
+            failed_metrics.append(m)
+    msg = "These metrics are not presented in the Prometheus: {}."\
+        .format(failed_metrics)
+    assert len(failed_metrics) == 0, msg
