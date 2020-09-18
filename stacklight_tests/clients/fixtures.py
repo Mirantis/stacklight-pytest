@@ -11,43 +11,43 @@ from stacklight_tests.clients import k8s_client
 from stacklight_tests.clients import keycloak_client
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def k8s_api():
     api_client = k8s_client.get_k8s_client()
     return api_client
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def sl_services(k8s_api):
     return k8s_api.sl_services()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def nodes(k8s_api):
     return k8s_api.nodes()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def daemonsets(k8s_api):
     return k8s_api.daemonsets()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def deployments(k8s_api):
     return k8s_api.deployments()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def replicasets(k8s_api):
     return k8s_api.replicasets()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def statefulsets(k8s_api):
     return k8s_api.statefulsets()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def keycloak_api():
     client = keycloak_client.get_keycloak_client(
         settings.KEYCLOAK_USER, settings.KEYCLOAK_PASSWORD,
@@ -55,7 +55,7 @@ def keycloak_api():
     return client
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def prometheus_api(sl_services):
     if 'iam-proxy-prometheus' in sl_services.keys():
         api_client = prometheus_client.get_prometheus_client(
@@ -71,7 +71,7 @@ def prometheus_api(sl_services):
     return api_client
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def es_client(sl_services):
     elasticsearch_api = es_kibana_api.ElasticSearchApi(
         scheme='http',
@@ -80,7 +80,7 @@ def es_client(sl_services):
     return elasticsearch_api
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def kibana_client(sl_services, logging_enabled):
     if not logging_enabled:
         pytest.skip("Logging is disabled for this cluster.")
@@ -97,7 +97,7 @@ def kibana_client(sl_services, logging_enabled):
     return kibana_api
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def grafana_client(sl_services, prometheus_api):
     if 'iam-proxy-grafana' in sl_services.keys():
         grafana = grafana_api.get_grafana_client(
@@ -115,7 +115,7 @@ def grafana_client(sl_services, prometheus_api):
     return grafana
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def alerta_api(sl_services):
     if 'iam-proxy-alerta' in sl_services.keys():
         api_client = alerta_client.get_alerta_client(
@@ -130,7 +130,7 @@ def alerta_api(sl_services):
     return api_client
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def prometheus_native_alerting(sl_services):
     if 'iam-proxy-alertmanager' in sl_services.keys():
         alerting = alertmanager_client.AlertManagerClient(
@@ -149,7 +149,7 @@ def prometheus_native_alerting(sl_services):
     return alerting
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def os_clients(k8s_api):
     related_release = 'telegraf-openstack'
     releases = k8s_api.get_stacklight_chart_releases()
@@ -166,27 +166,27 @@ def os_clients(k8s_api):
         return openstack_clients
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def os_actions(os_clients):
     return client_manager.OSCliActions(os_clients)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def chart_releases(k8s_api):
     return k8s_api.get_stacklight_chart_releases()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def charts_statuses(k8s_api):
     return k8s_api.get_stacklight_charts_statuses()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def logging_enabled(k8s_api):
     return k8s_api.logging_enabled()
 #
 #
-# @pytest.fixture(scope="session")
+# @pytest.fixture(scope="module")
 # def prometheus_alerting(prometheus_config, prometheus_native_alerting):
 #     if not prometheus_config.get("use_prometheus_query_alert", True):
 #         alerting = prometheus_native_alerting
