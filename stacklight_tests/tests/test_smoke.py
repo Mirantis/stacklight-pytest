@@ -124,7 +124,7 @@ def test_stacklight_pods_resources(k8s_api):
                             'grafana-sc-dashboard',
                             'prometheus-server-configmap-reload',
                             'prometheus-alertmanager-configmap-reload',
-                            'dashboardimport'],
+                            'dashboardimport', 'delete-logging-pvcs'],
                  'limits': ['netchecker-agent', 'netchecker-agent-hostnet',
                             'netchecker-server', 'iam-proxy', 'alerta',
                             'elasticsearch-exporter', 'grafana',
