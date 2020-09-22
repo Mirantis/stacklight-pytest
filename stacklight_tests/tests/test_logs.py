@@ -2,6 +2,7 @@ import json
 import logging
 import re
 from datetime import timedelta
+from dateutil.relativedelta import relativedelta
 
 import pytest
 
@@ -65,31 +66,38 @@ def test_pod_logs(k8s_api, kibana_client):
                   'namespace': p.metadata.namespace}
         return p_info
 
-    def collect_pods(r, jobs_ct):
+    def collect_pods(running_pods, jobs_ct,
+                     r_u, r_u_c):
         if jobs_ct:
+            retention_args = {r_u: r_u_c}
             last_job_time = max(jobs_ct)
             result = [pod_info(p)
-                      for p in r.items if p.metadata.creation_timestamp +
-                      timedelta(days=logs_retention_time) > last_job_time]
+                      for p in running_pods.items if p.metadata
+                      .creation_timestamp +
+                      relativedelta(**retention_args) > last_job_time]
         else:
-            result = [pod_info(p) for p in r.items]
+            result = [pod_info(p) for p in running_pods.items]
         return result
 
     field_selector = 'status.phase=Running'
     namespace = 'stacklight'
     config_map_name = 'elasticsearch-curator-config'
     config_map = k8s_api.get_namespaced_config_map(config_map_name, namespace)
-    logs_retention_time = int(re.search('unit_count:(.*)}',
-                                        config_map.data['action_file.yml'])
-                              .group(1))
-    logger.info("Retention Time for logs in ES is {} day(s)."
-                .format(logs_retention_time))
+    retention_unit = re.search('unit:(.*)',
+                               config_map.data['action_file.yml'])\
+        .group(1).replace('"', '').strip()
+    retention_unit_count = int(re.search('unit_count:(.*)',
+                               config_map.data['action_file.yml'])
+                               .group(1))
+    logger.info("Retention Time for logs in ES is {} {}."
+                .format(retention_unit_count, retention_unit))
     jobs = k8s_api.get_namespaced_jobs(namespace)
     jobs_creation_time = [job.metadata.creation_timestamp for job in jobs.items
                           if job.metadata.name
                           .startswith("elasticsearch-curator")]
     ret = k8s_api.list_pod_for_all_namespaces(field_selector=field_selector)
-    pods = collect_pods(ret, jobs_creation_time)
+    pods = collect_pods(ret, jobs_creation_time, retention_unit,
+                        retention_unit_count)
     if not pods:
         pytest.skip("This test is skipped due to the inability to check "
                     "logs from pods in ES. The time that was past from "
