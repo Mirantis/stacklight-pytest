@@ -281,6 +281,44 @@ ignored_queries_for_fail = [
     'on (name,instance) label_replace(label_replace(ceph_disk_occupation{'
     'ceph_daemon=~"osd.$osd_id"}, "name", "$1", "device", "/dev/(.*)"), '
     '"instance", "$1", "instance", "(.*)")',
+    'label_replace(label_replace(rate(diskio_read_bytes[$rate_interval]), '
+    '"instance", "$1", "host", "(.+)"), "device", "$1", "name", "(.+)") and '
+    'on (name,instance) label_replace(label_replace(ceph_disk_occupation{'
+    'ceph_daemon=~"osd.$osd_id"}, "name", "$1", "device", "(.*)"), '
+    '"instance", "$1", "instance", "(.*)")',
+    'label_replace(rate(diskio_io_time[$rate_interval]), "instance", "$1", '
+    '"host", "(.*)") / 1000 and on (name,instance) label_replace('
+    'label_replace(ceph_disk_occupation{ceph_daemon=~"osd.$osd_id"}, "name", '
+    '"$1", "device", "(.*)"), "instance", "$1", "instance", "(.*)")',
+    'label_replace(label_replace(rate(diskio_write_bytes[$rate_interval]), '
+    '"instance", "$1", "host", "(.+)"), "device", "$1", "name", "(.+)") and '
+    'on (name,instance) label_replace(label_replace(ceph_disk_occupation{'
+    'ceph_daemon=~"osd.$osd_id"}, "name", "$1", "device", "(.*)"), '
+    '"instance", "$1", "instance", "(.*)")',
+    'label_replace(label_replace(rate(diskio_read_time[$rate_interval]), '
+    '"instance", "$1", "host", "(.+)"), "device", "$1", "name", "(.+)") / '
+    'label_replace(label_replace(rate(diskio_reads[$rate_interval]), '
+    '"instance", "$1", "host", "(.+)"), "device", "$1", "name", "(.+)") and '
+    'on (name,instance) label_replace(label_replace(ceph_disk_occupation{'
+    'ceph_daemon=~"osd.$osd_id"}, "name", "$1", "device", "(.*)"), '
+    '"instance", "$1", "instance", "(.*)")',
+    'label_replace(label_replace(rate(diskio_write_time[$rate_interval]), '
+    '"instance", "$1", "host", "(.+)"), "device", "$1", "name", "(.+)") / '
+    'label_replace(label_replace(rate(diskio_writes[$rate_interval]), '
+    '"instance", "$1", "host", "(.+)"), "device", "$1", "name", "(.+)") and '
+    'on (name,instance) label_replace(label_replace(ceph_disk_occupation{'
+    'ceph_daemon=~"osd.$osd_id"}, "name", "$1", "device", "(.*)"), '
+    '"instance", "$1", "instance", "(.*)")',
+    'label_replace(label_replace(rate(diskio_writes[$rate_interval]), '
+    '"instance", "$1", "host", "(.+)"), "device", "$1", "name", "(.+)") and '
+    'on (name,instance) label_replace(label_replace(ceph_disk_occupation{'
+    'ceph_daemon=~"osd.$osd_id"}, "name", "$1", "device", "(.*)"), '
+    '"instance", "$1", "instance", "(.*)")',
+    'label_replace(label_replace(rate(diskio_reads[$rate_interval]), '
+    '"instance", "$1", "host", "(.+)"), "device", "$1", "name", "(.+)") and '
+    'on (name,instance) label_replace(label_replace(ceph_disk_occupation{'
+    'ceph_daemon=~"osd.$osd_id"}, "name", "$1", "device", "(.*)"), '
+    '"instance", "$1", "instance", "(.*)")',
     'label_replace(label_replace(irate(diskio_reads[$rate_interval]), '
     '"instance", "$1", "host", "(.+)"), "device", "$1", "name", "(.+)") and '
     'on (name,instance) label_replace(label_replace(ceph_disk_occupation'
@@ -464,6 +502,9 @@ ignored_queries_for_partial_fail = [
     # ceph-pool-details
     '((ceph_pool_max_avail - ceph_pool_stored) / '
     'deriv(ceph_pool_stored[6h])) * on(pool_id) group_left(instance,name) '
+    'ceph_pool_metadata{name=~"$pool_name"} > 0',
+    '((ceph_pool_max_avail - ceph_pool_bytes_used) / '
+    'deriv(ceph_pool_bytes_used[6h])) * on(pool_id) group_left(instance,name) '
     'ceph_pool_metadata{name=~"$pool_name"} > 0',
 ]
 
