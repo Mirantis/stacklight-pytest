@@ -184,6 +184,11 @@ def charts_statuses(k8s_api):
 @pytest.fixture(scope="module")
 def logging_enabled(k8s_api):
     return k8s_api.logging_enabled()
+
+
+@pytest.fixture(scope="module")
+def stacklight_bundle(k8s_api):
+    return k8s_api.get_stacklight_helmbundle()
 #
 #
 # @pytest.fixture(scope="module")
