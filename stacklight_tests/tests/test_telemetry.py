@@ -54,7 +54,18 @@ def test_telemetry_recording_rules_consistency(prometheus_api, k8s_api,
                          'telemetry:openstack_quota_volume_storage_gb',
                          'telemetry:openstack_usage_ram_gb',
                          'telemetry:openstack_usage_vcpus',
-                         'telemetry:openstack_usage_volume_storage_gb']
+                         'telemetry:openstack_usage_volume_storage_gb',
+                         'telemetry:openstack_quota_instances',
+                         'telemetry:openstack_usage_instances',
+                         'telemetry:openstack_instance_create_start',
+                         'telemetry:openstack_instance_create_end',
+                         'telemetry:openstack_instance_create_error',
+                         'telemetry:openstack_kpi_provisioning',
+                         'telemetry:openstack_instance_downtime_check_failed',
+                         'telemetry:openstack_instance_downtime_check_all',
+                         'telemetry:openstack_kpi_downtime'
+                         ]
+
     skip_list_management = ['telemetry:federate_errors',
                             'telemetry:federate_filtered_samples',
                             'telemetry:federate_samples'] + skip_list_general
@@ -125,6 +136,8 @@ def test_telemetry_recording_rules_consistency(prometheus_api, k8s_api,
             elif c_id.split('/')[0] == 'default':
                 apply_skip_list(metrics_expected_iter,
                                 skip_list_management)
+            else:
+                apply_skip_list(metrics_expected_iter, skip_list_child)
             if metrics_expected_iter != metrics_actual:
                 failed_clusters.append({'cluster_info': c_id,
                                         'absent_rules':
