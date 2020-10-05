@@ -586,13 +586,6 @@ alert_metrics = {
     "CephOsdPgNumTooHighWarning": ['max(ceph_osd_numpg) <= 200'],
     "CephPGRepairTakingTooLong": ['ceph_pg_inconsistent <= 0'],
     # Openstack alerts
-    "BarbicanApiOutage": [
-        'max(openstack_api_check_status{name="barbican"}) != 0'
-    ],
-    "CinderApiDown": ['openstack_api_check_status{name=~"cinderv.*"} != 0'],
-    "CinderApiOutage": [
-        'max(openstack_api_check_status{name=~"cinderv.*"}) != 0'
-    ],
     "CinderServiceDown": ['openstack_cinder_service_state != 0'],
     "CinderServiceOutage": [
         'count by(binary) (openstack_cinder_service_state != 0) == on(binary) '
@@ -606,15 +599,6 @@ alert_metrics = {
         'count by(binary) (openstack_cinder_service_state != 0) >= on(binary) '
         'count by(binary) (openstack_cinder_service_state) * 0.3'
     ],
-    "DesignateApiOutage": [
-        'max(openstack_api_check_status{name="designate"}) != 0'
-    ],
-    "GlanceApiOutage": ['openstack_api_check_status{name="glance"} != 0'],
-    "HeatApiDown": ['openstack_api_check_status{name=~"heat.*"} != 0'],
-    "HeatApiOutage": ['max(openstack_api_check_status{name=~"heat.*"}) != 0'],
-    "IronicApiOutage": [
-        'max(openstack_api_check_status{name=~"ironic.*"}) != 0'
-    ],
     "IronicBmApiOutage": [
         'http_response_status{name=~"ironic-api"} == 1'
     ],
@@ -626,9 +610,6 @@ alert_metrics = {
         'scalar(count(kube_pod_container_info'
         '{container="ironic-conductor"} == 1)) - '
         'count(openstack_ironic_driver) by (driver) <= 0'
-    ],
-    "KeystoneApiOutage": [
-        'openstack_api_check_status{name=~"keystone.*"} != 0'
     ],
     "LibvirtDown": ['libvirt_up != 0'],
     "MariadbGaleraDonorFallingBehind": [
@@ -676,13 +657,6 @@ alert_metrics = {
         'count by(binary) (openstack_neutron_agent_state != 0) == on(binary) '
         'count by(binary) (openstack_neutron_agent_state)'
     ],
-    "NeutronApiOutage": ['openstack_api_check_status{name="neutron"} != 0'],
-    "NovaApiDown": [
-        'openstack_api_check_status{name=~"nova.*|placement"} != 0'
-    ],
-    "NovaApiOutage": [
-        'max(openstack_api_check_status{name=~"nova.*|placement"}) != 0'
-    ],
     "NovaComputeServicesDownMajor": [
         'count(openstack_nova_service_state{binary="nova-compute"} != 0) >= '
         'count(openstack_nova_service_state{binary="nova-compute"}) * 0.5'
@@ -706,8 +680,9 @@ alert_metrics = {
         '{binary!~"nova-compute"} != 0) >= on(binary) count by(binary) '
         '(openstack_nova_service_state{binary!~"nova-compute"}) * 0.3'
     ],
-    "OctaviaApiOutage": [
-        'max(openstack_api_check_status{name="octavia"}) != 0'
+    "OpenstackServiceApiDown": ['openstack_api_check_status != 0'],
+    "OpenstackServiceApiOutage": [
+        'max by (service_name) (openstack_api_check_status) != 0'
     ],
     "OpenstackSSLCertExpirationCritical": [
         'max_over_time(probe_ssl_earliest_cert_expiry'

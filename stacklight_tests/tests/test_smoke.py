@@ -130,6 +130,7 @@ def test_stacklight_pods_resources(k8s_api):
                             'elasticsearch-exporter', 'grafana',
                             'blackbox-exporter',
                             'prometheus-kube-state-metrics',
+                            'prometheus-libvirt-exporter',
                             'prometheus-node-exporter',
                             'prometheus-node-exporter',
                             'prometheus-pushgateway', 'metricbeat', 'metrics',
