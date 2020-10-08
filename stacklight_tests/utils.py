@@ -142,6 +142,11 @@ def skip_test(related_release, releases):
                     .format(related_release))
 
 
+def skip_openstack_test(openstack_cr_exists):
+    if not openstack_cr_exists:
+        pytest.skip("openstackdeployments.lcm.mirantis.com CRs not found")
+
+
 def difference_in_seconds(date_one, date_two, difference_in_seconds):
     # The function compares two dates and returns 'True' or 'False'
     # depending on whether the difference more or less than

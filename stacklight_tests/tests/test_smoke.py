@@ -1,6 +1,8 @@
 import logging
 import pytest
 
+from stacklight_tests import utils
+
 logger = logging.getLogger(__name__)
 
 
@@ -152,3 +154,12 @@ def test_stacklight_pods_resources(k8s_api):
             len(failed_containers_by_limits)) == 0, \
         create_err_msg(failed_containers_by_requests,
                        failed_containers_by_limits)
+
+
+@pytest.mark.run(order=1)
+@pytest.mark.smoke
+def test_stacklight_openstack_monitoring(chart_releases, openstack_cr_exists):
+    utils.skip_test('telegraf-openstack', chart_releases)
+    err_msg = 'Openstack monitoring enabled, but ' \
+              'openstackdeployments.lcm.mirantis.com CRs not found.'
+    assert openstack_cr_exists, err_msg

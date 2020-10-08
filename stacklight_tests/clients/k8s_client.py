@@ -108,14 +108,15 @@ class K8sClient(object):
             status = {
                 'current_number_scheduled': ds.status.current_number_scheduled,
                 'desired_number_scheduled': ds.status.desired_number_scheduled,
-                'number_available': ds.status.number_available,
+                'number_available': ds.status.number_available or 0,
                 'number_misscheduled': ds.status.number_misscheduled,
                 'number_ready': ds.status.number_ready,
                 'number_unavailable': ds.status.number_unavailable or 0,
             }
             ds_dict[ds.metadata.name] = {
                 'namespace': ds.metadata.namespace,
-                'updated_number_scheduled': ds.status.updated_number_scheduled,
+                'updated_number_scheduled':
+                    ds.status.updated_number_scheduled or 0,
                 'status': status
             }
         return ds_dict
@@ -242,6 +243,20 @@ class K8sClient(object):
         charts_statuses = (self.get_stacklight_helmbundle()['status']
                            ['releaseStatuses'])
         return charts_statuses
+
+    def openstack_deployment_exists(self):
+        try:
+            custom_objects = self.crd_api.list_namespaced_custom_object(
+                group="lcm.mirantis.com",
+                version="v1alpha1",
+                namespace="openstack",
+                plural="openstackdeployments",
+                pretty=True)
+            if custom_objects and len(custom_objects['items']) > 0:
+                return True
+        except ApiException:
+            pass
+        return False
 
     def list_namespaces(self):
         return [i.metadata.name

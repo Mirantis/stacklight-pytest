@@ -8,10 +8,11 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module")
-def create_resources(request, os_clients, os_actions, k8s_api):
+def create_resources(request, os_clients, os_actions, k8s_api,
+                     openstack_cr_exists):
     related_release = 'telegraf-openstack'
     releases = k8s_api.get_stacklight_chart_releases()
-    if related_release in releases:
+    if related_release in releases and openstack_cr_exists:
 
         logger.info("Creating a test image")
         image = os_actions.create_cirros_image()
@@ -76,9 +77,10 @@ def create_resources(request, os_clients, os_actions, k8s_api):
 @pytest.mark.openstack_metrics
 @pytest.mark.run(order=2)
 def test_glance_metrics(prometheus_api, os_clients, create_resources,
-                        chart_releases):
+                        chart_releases, openstack_cr_exists):
     related_release = 'telegraf-openstack'
     utils.skip_test(related_release, chart_releases)
+    utils.skip_openstack_test(openstack_cr_exists)
 
     client = os_clients.image
 
@@ -106,9 +108,10 @@ def test_glance_metrics(prometheus_api, os_clients, create_resources,
 @pytest.mark.openstack_metrics
 @pytest.mark.run(order=2)
 def test_keystone_metrics(prometheus_api, os_clients, create_resources,
-                          chart_releases):
+                          chart_releases, openstack_cr_exists):
     related_release = 'telegraf-openstack'
     utils.skip_test(related_release, chart_releases)
+    utils.skip_openstack_test(openstack_cr_exists)
 
     client = os_clients.auth
     tenants = client.projects.list()
@@ -151,9 +154,10 @@ def test_keystone_metrics(prometheus_api, os_clients, create_resources,
 @pytest.mark.openstack_metrics
 @pytest.mark.run(order=2)
 def test_neutron_metrics(prometheus_api, os_clients, create_resources,
-                         chart_releases):
+                         chart_releases, openstack_cr_exists):
     related_release = 'telegraf-openstack'
     utils.skip_test(related_release, chart_releases)
+    utils.skip_openstack_test(openstack_cr_exists)
 
     client = os_clients.network
 
@@ -188,9 +192,10 @@ def test_neutron_metrics(prometheus_api, os_clients, create_resources,
 @pytest.mark.openstack_metrics
 @pytest.mark.run(order=2)
 def test_cinder_metrics(prometheus_api, os_clients, create_resources,
-                        chart_releases):
+                        chart_releases, openstack_cr_exists):
     related_release = 'telegraf-openstack'
     utils.skip_test(related_release, chart_releases)
+    utils.skip_openstack_test(openstack_cr_exists)
 
     client = os_clients.volume
 
@@ -219,9 +224,10 @@ def test_cinder_metrics(prometheus_api, os_clients, create_resources,
 @pytest.mark.openstack_metrics
 @pytest.mark.run(order=2)
 def test_nova_telegraf_metrics(prometheus_api, os_clients, create_resources,
-                               chart_releases):
+                               chart_releases, openstack_cr_exists):
     related_release = 'telegraf-openstack'
     utils.skip_test(related_release, chart_releases)
+    utils.skip_openstack_test(openstack_cr_exists)
 
     client = os_clients.compute
 
@@ -240,9 +246,11 @@ def test_nova_telegraf_metrics(prometheus_api, os_clients, create_resources,
 
 @pytest.mark.openstack_metrics
 @pytest.mark.run(order=2)
-def test_nova_services_metrics(prometheus_api, os_clients, chart_releases):
+def test_nova_services_metrics(prometheus_api, os_clients, chart_releases,
+                               openstack_cr_exists):
     related_release = 'telegraf-openstack'
     utils.skip_test(related_release, chart_releases)
+    utils.skip_openstack_test(openstack_cr_exists)
 
     services = os_clients.compute.services.list()
     for service in services:
@@ -254,9 +262,11 @@ def test_nova_services_metrics(prometheus_api, os_clients, chart_releases):
 
 @pytest.mark.openstack_metrics
 @pytest.mark.run(order=1)
-def test_openstack_api_check_status_metrics(prometheus_api, chart_releases):
+def test_openstack_api_check_status_metrics(prometheus_api, chart_releases,
+                                            openstack_cr_exists):
     related_release = 'telegraf-openstack'
     utils.skip_test(related_release, chart_releases)
+    utils.skip_openstack_test(openstack_cr_exists)
 
     metrics = prometheus_api.get_query('openstack_api_check_status')
     logger.info("openstack_api_check_status metrics list:")
@@ -280,9 +290,11 @@ def test_openstack_api_check_status_metrics(prometheus_api, chart_releases):
 
 @pytest.mark.openstack_metrics
 @pytest.mark.run(order=2)
-def test_libvirt_metrics(prometheus_api, create_resources, chart_releases):
+def test_libvirt_metrics(prometheus_api, create_resources, chart_releases,
+                         openstack_cr_exists):
     related_release = 'telegraf-openstack'
     utils.skip_test(related_release, chart_releases)
+    utils.skip_openstack_test(openstack_cr_exists)
 
     def _check_metrics(inst_id):
         logger.info("Getting libvirt metrics")
@@ -324,10 +336,11 @@ def test_libvirt_metrics(prometheus_api, create_resources, chart_releases):
 
 @pytest.mark.openstack_metrics
 @pytest.mark.run(order=2)
-def test_kpi_metrics(prometheus_api, os_clients,
-                     os_actions, destructive, chart_releases):
+def test_kpi_metrics(prometheus_api, os_clients, os_actions, destructive,
+                     chart_releases, openstack_cr_exists):
     related_release = 'telegraf-openstack'
     utils.skip_test(related_release, chart_releases)
+    utils.skip_openstack_test(openstack_cr_exists)
 
     def _get_event_metric(query):
         value = prometheus_api.get_query(query)[0]['value'][1]
@@ -402,9 +415,10 @@ def test_kpi_metrics(prometheus_api, os_clients,
 @pytest.mark.openstack_metrics
 @pytest.mark.run(order=2)
 def test_prometheus_es_exporter_metrics(prometheus_api, os_clients,
-                                        chart_releases):
+                                        chart_releases, openstack_cr_exists):
     related_release = 'telegraf-openstack'
     utils.skip_test(related_release, chart_releases)
+    utils.skip_openstack_test(openstack_cr_exists)
 
     failed_metrics = []
     metrics = ['compute_instance_create_start_event_doc_count',

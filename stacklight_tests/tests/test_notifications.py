@@ -22,9 +22,10 @@ def check_service_notification_by_type(kibana_client, object_id, event_type):
 @pytest.mark.smoke
 @pytest.mark.notifications
 def test_glance_notifications(destructive, os_clients, kibana_client,
-                              os_actions, chart_releases):
+                              os_actions, chart_releases, openstack_cr_exists):
     related_release = 'fluentd-notifications'
     utils.skip_test(related_release, chart_releases)
+    utils.skip_openstack_test(openstack_cr_exists)
 
     client = os_clients.image
 
@@ -57,9 +58,11 @@ def test_glance_notifications(destructive, os_clients, kibana_client,
 @pytest.mark.smoke
 @pytest.mark.notifications
 def test_neutron_notifications(destructive, os_clients, os_actions,
-                               kibana_client, chart_releases):
+                               kibana_client, chart_releases,
+                               openstack_cr_exists):
     related_release = 'fluentd-notifications'
     utils.skip_test(related_release, chart_releases)
+    utils.skip_openstack_test(openstack_cr_exists)
 
     logger.info("Creating test network and subnet")
     project_id = os_clients.auth.projects.find(name='admin').id
@@ -118,9 +121,10 @@ def test_neutron_notifications(destructive, os_clients, os_actions,
 @pytest.mark.smoke
 @pytest.mark.notifications
 def test_cinder_notifications(destructive, os_clients, kibana_client,
-                              chart_releases):
+                              chart_releases, openstack_cr_exists):
     related_release = 'fluentd-notifications'
     utils.skip_test(related_release, chart_releases)
+    utils.skip_openstack_test(openstack_cr_exists)
 
     volume_name = utils.rand_name("volume-")
     expected_volume_status = settings.VOLUME_STATUS
@@ -153,9 +157,10 @@ def test_cinder_notifications(destructive, os_clients, kibana_client,
 @pytest.mark.smoke
 @pytest.mark.notifications
 def test_nova_notifications(os_clients, os_actions, kibana_client,
-                            destructive, chart_releases):
+                            destructive, chart_releases, openstack_cr_exists):
     related_release = 'fluentd-notifications'
     utils.skip_test(related_release, chart_releases)
+    utils.skip_openstack_test(openstack_cr_exists)
 
     client = os_clients.compute
 
@@ -217,9 +222,10 @@ def test_nova_notifications(os_clients, os_actions, kibana_client,
 @pytest.mark.smoke
 @pytest.mark.notifications
 def test_keystone_notifications(os_clients, kibana_client, destructive,
-                                chart_releases):
+                                chart_releases, openstack_cr_exists):
     related_release = 'fluentd-notifications'
     utils.skip_test(related_release, chart_releases)
+    utils.skip_openstack_test(openstack_cr_exists)
 
     client = os_clients.auth
     domain = os_clients.auth.project_domain_id
@@ -281,9 +287,10 @@ def test_keystone_notifications(os_clients, kibana_client, destructive,
 @pytest.mark.smoke
 @pytest.mark.notifications
 def test_heat_notifications(os_clients, kibana_client, os_actions,
-                            destructive, chart_releases):
+                            destructive, chart_releases, openstack_cr_exists):
     related_release = 'fluentd-notifications'
     utils.skip_test(related_release, chart_releases)
+    utils.skip_openstack_test(openstack_cr_exists)
 
     logger.info("Creating a test image")
     image = os_actions.create_cirros_image()

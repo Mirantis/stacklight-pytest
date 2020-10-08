@@ -2,6 +2,7 @@ import logging
 import pytest
 
 from stacklight_tests import settings
+from stacklight_tests import utils
 
 logger = logging.getLogger(__name__)
 
@@ -13,8 +14,123 @@ alert_skip_list = ['SystemDiskErrorsTooHigh',
                    'KubePersistentVolumeFullInFourDays'
                    ]
 
+alert_metrics_openstack = {
+    "CinderServiceDown": ['openstack_cinder_service_state != 0'],
+    "CinderServiceOutage": [
+        'count by(binary) (openstack_cinder_service_state != 0) == on(binary) '
+        'count by(binary) (openstack_cinder_service_state)'
+    ],
+    "CinderServicesDownMajor": [
+        'count by(binary) (openstack_cinder_service_state != 0) >= on(binary) '
+        'count by(binary) (openstack_cinder_service_state) * 0.6'
+    ],
+    "CinderServicesDownMinor": [
+        'count by(binary) (openstack_cinder_service_state != 0) >= on(binary) '
+        'count by(binary) (openstack_cinder_service_state) * 0.3'
+    ],
+    "IronicDriverMissing": [
+        'scalar(count(kube_pod_container_info'
+        '{container="ironic-conductor"} == 1)) - '
+        'count(openstack_ironic_driver) by (driver) <= 0'
+    ],
+    "LibvirtDown": ['libvirt_up != 0'],
+    "MariadbGaleraDonorFallingBehind": [
+        '(mysql_global_status_wsrep_local_state != 2 or '
+        'mysql_global_status_wsrep_local_recv_queue <= 100)'
+    ],
+    "MariadbGaleraNotReady": [
+        'mysql_global_status_wsrep_ready == 1'
+    ],
+    "MariadbGaleraOutOfSync": [
+        '(mysql_global_status_wsrep_local_state == 4 '
+        'or mysql_global_variables_wsrep_desync != 0)'
+    ],
+    "MariadbInnodbLogWaits": [
+        'rate(mysql_global_status_innodb_log_waits[15m]) <= 10'
+    ],
+    "MariadbInnodbReplicationFallenBehind": [
+        '(mysql_global_variables_innodb_replication_delay <= 30) or on '
+        '(instance) (predict_linear'
+        '(mysql_global_variables_innodb_replication_delay[5m], 60*2) <= 0)'
+    ],
+    "MariadbTableLockWaitHigh": [
+        '100 * mysql_global_status_table_locks_waited / '
+        '(mysql_global_status_table_locks_waited + '
+        'mysql_global_status_table_locks_immediate) <= 30'
+    ],
+    "MemcachedConnectionsNoneMajor": [
+        'count(memcached_current_connections != 0) == count(memcached_up)'
+    ],
+    "MemcachedConnectionsNoneMinor": ['memcached_current_connections != 0'],
+    "MemcachedEvictionsLimit": [
+        'increase(memcached_items_evicted_total[1m]) <= 10'
+    ],
+    "MemcachedServiceDown": ['memcached_up != 0'],
+    "NeutronAgentDown": ['openstack_neutron_agent_state != 0'],
+    "NeutronAgentsDownMajor": [
+        'count by(binary) (openstack_neutron_agent_state != 0) >= on(binary) '
+        'count by(binary) (openstack_neutron_agent_state) * 0.6'
+    ],
+    "NeutronAgentsDownMinor": [
+        'count by(binary) (openstack_neutron_agent_state != 0) >= on(binary) '
+        'count by(binary) (openstack_neutron_agent_state) * 0.3'
+    ],
+    "NeutronAgentsOutage": [
+        'count by(binary) (openstack_neutron_agent_state != 0) == on(binary) '
+        'count by(binary) (openstack_neutron_agent_state)'
+    ],
+    "NovaComputeServicesDownMajor": [
+        'count(openstack_nova_service_state{binary="nova-compute"} != 0) >= '
+        'count(openstack_nova_service_state{binary="nova-compute"}) * 0.5'
+    ],
+    "NovaComputeServicesDownMinor": [
+        'count(openstack_nova_service_state{binary="nova-compute"} != 0) >= '
+        'count(openstack_nova_service_state{binary="nova-compute"}) * 0.25'
+    ],
+    "NovaServiceDown": ['openstack_nova_service_state != 0'],
+    "NovaServiceOutage": [
+        'count by(binary) (openstack_nova_service_state != 0) == on(binary) '
+        'count by(binary) (openstack_nova_service_state)'
+    ],
+    "NovaServicesDownMajor": [
+        'count by(binary) (openstack_nova_service_state'
+        '{binary!~"nova-compute"} != 0) >= on(binary) count by(binary) '
+        '(openstack_nova_service_state{binary!~"nova-compute"}) * 0.6'
+    ],
+    "NovaServicesDownMinor": [
+        'count by(binary) (openstack_nova_service_state'
+        '{binary!~"nova-compute"} != 0) >= on(binary) count by(binary) '
+        '(openstack_nova_service_state{binary!~"nova-compute"}) * 0.3'
+    ],
+    "OpenstackServiceApiDown": ['openstack_api_check_status != 0'],
+    "OpenstackServiceApiOutage": [
+        'max by (service_name) (openstack_api_check_status) != 0'
+    ],
+    "OpenstackSSLCertExpirationCritical": [
+        'max_over_time(probe_ssl_earliest_cert_expiry'
+        '{job=~"openstack-blackbox.*"}[1h]) >= '
+        'probe_success{job=~"openstack-blackbox.*"} * (time() + 86400 * 10)'
+    ],
+    "OpenstackSSLCertExpirationWarning": [
+        'max_over_time(probe_ssl_earliest_cert_expiry'
+        '{job=~"openstack-blackbox.*"}[1h]) >= '
+        'probe_success{job=~"openstack-blackbox.*"} * (time() + 86400 * 30)'
+    ],
+    "OpenstackSSLProbesFailing": [
+        'max_over_time(probe_success{job=~"openstack-blackbox.*"}[1h]) != 0'
+    ],
+    "RabbitMQDown": ['min(rabbitmq_up) by (pod) == 1'],
+    "RabbitMQFileDescriptorUsagehigh": [
+        'rabbitmq_fd_used * 100 / rabbitmq_fd_total <= 80'
+    ],
+    "RabbitMQNetworkPartitionsDetected": [
+        'min(rabbitmq_partitions) by (pod) <= 0'
+    ],
+    "RabbitMQNodeDiskFreeAlarm": ['rabbitmq_node_disk_free_alarm <= 0'],
+    "RabbitMQNodeMemoryAlarm": ['rabbitmq_node_mem_alarm <= 0']
+}
 
-alert_metrics = {
+alert_metrics_no_openstack = {
     "AlertmanagerAlertsInvalidWarning": [
         'increase(alertmanager_alerts_invalid_total[2m]) == 0'
     ],
@@ -585,20 +701,6 @@ alert_metrics = {
     "CephOsdPgNumTooHighCritical": ['max(ceph_osd_numpg) <= 300'],
     "CephOsdPgNumTooHighWarning": ['max(ceph_osd_numpg) <= 200'],
     "CephPGRepairTakingTooLong": ['ceph_pg_inconsistent <= 0'],
-    # Openstack alerts
-    "CinderServiceDown": ['openstack_cinder_service_state != 0'],
-    "CinderServiceOutage": [
-        'count by(binary) (openstack_cinder_service_state != 0) == on(binary) '
-        'count by(binary) (openstack_cinder_service_state)'
-    ],
-    "CinderServicesDownMajor": [
-        'count by(binary) (openstack_cinder_service_state != 0) >= on(binary) '
-        'count by(binary) (openstack_cinder_service_state) * 0.6'
-    ],
-    "CinderServicesDownMinor": [
-        'count by(binary) (openstack_cinder_service_state != 0) >= on(binary) '
-        'count by(binary) (openstack_cinder_service_state) * 0.3'
-    ],
     "IronicBmApiOutage": [
         'http_response_status{name=~"ironic-api"} == 1'
     ],
@@ -606,106 +708,6 @@ alert_metrics = {
         'ironic_nodes_total',
         'ironic_drivers_total'
     ],
-    "IronicDriverMissing": [
-        'scalar(count(kube_pod_container_info'
-        '{container="ironic-conductor"} == 1)) - '
-        'count(openstack_ironic_driver) by (driver) <= 0'
-    ],
-    "LibvirtDown": ['libvirt_up != 0'],
-    "MariadbGaleraDonorFallingBehind": [
-        '(mysql_global_status_wsrep_local_state != 2 or '
-        'mysql_global_status_wsrep_local_recv_queue <= 100)'
-    ],
-    "MariadbGaleraNotReady": [
-        'mysql_global_status_wsrep_ready == 1'
-    ],
-    "MariadbGaleraOutOfSync": [
-        '(mysql_global_status_wsrep_local_state == 4 '
-        'or mysql_global_variables_wsrep_desync != 0)'
-    ],
-    "MariadbInnodbLogWaits": [
-        'rate(mysql_global_status_innodb_log_waits[15m]) <= 10'
-    ],
-    "MariadbInnodbReplicationFallenBehind": [
-        '(mysql_global_variables_innodb_replication_delay <= 30) or on '
-        '(instance) (predict_linear'
-        '(mysql_global_variables_innodb_replication_delay[5m], 60*2) <= 0)'
-    ],
-    "MariadbTableLockWaitHigh": [
-        '100 * mysql_global_status_table_locks_waited / '
-        '(mysql_global_status_table_locks_waited + '
-        'mysql_global_status_table_locks_immediate) <= 30'
-    ],
-    "MemcachedConnectionsNoneMajor": [
-        'count(memcached_current_connections != 0) == count(memcached_up)'
-    ],
-    "MemcachedConnectionsNoneMinor": ['memcached_current_connections != 0'],
-    "MemcachedEvictionsLimit": [
-        'increase(memcached_items_evicted_total[1m]) <= 10'
-    ],
-    "MemcachedServiceDown": ['memcached_up != 0'],
-    "NeutronAgentDown": ['openstack_neutron_agent_state != 0'],
-    "NeutronAgentsDownMajor": [
-        'count by(binary) (openstack_neutron_agent_state != 0) >= on(binary) '
-        'count by(binary) (openstack_neutron_agent_state) * 0.6'
-    ],
-    "NeutronAgentsDownMinor": [
-        'count by(binary) (openstack_neutron_agent_state != 0) >= on(binary) '
-        'count by(binary) (openstack_neutron_agent_state) * 0.3'
-    ],
-    "NeutronAgentsOutage": [
-        'count by(binary) (openstack_neutron_agent_state != 0) == on(binary) '
-        'count by(binary) (openstack_neutron_agent_state)'
-    ],
-    "NovaComputeServicesDownMajor": [
-        'count(openstack_nova_service_state{binary="nova-compute"} != 0) >= '
-        'count(openstack_nova_service_state{binary="nova-compute"}) * 0.5'
-    ],
-    "NovaComputeServicesDownMinor": [
-        'count(openstack_nova_service_state{binary="nova-compute"} != 0) >= '
-        'count(openstack_nova_service_state{binary="nova-compute"}) * 0.25'
-    ],
-    "NovaServiceDown": ['openstack_nova_service_state != 0'],
-    "NovaServiceOutage": [
-        'count by(binary) (openstack_nova_service_state != 0) == on(binary) '
-        'count by(binary) (openstack_nova_service_state)'
-    ],
-    "NovaServicesDownMajor": [
-        'count by(binary) (openstack_nova_service_state'
-        '{binary!~"nova-compute"} != 0) >= on(binary) count by(binary) '
-        '(openstack_nova_service_state{binary!~"nova-compute"}) * 0.6'
-    ],
-    "NovaServicesDownMinor": [
-        'count by(binary) (openstack_nova_service_state'
-        '{binary!~"nova-compute"} != 0) >= on(binary) count by(binary) '
-        '(openstack_nova_service_state{binary!~"nova-compute"}) * 0.3'
-    ],
-    "OpenstackServiceApiDown": ['openstack_api_check_status != 0'],
-    "OpenstackServiceApiOutage": [
-        'max by (service_name) (openstack_api_check_status) != 0'
-    ],
-    "OpenstackSSLCertExpirationCritical": [
-        'max_over_time(probe_ssl_earliest_cert_expiry'
-        '{job=~"openstack-blackbox.*"}[1h]) >= '
-        'probe_success{job=~"openstack-blackbox.*"} * (time() + 86400 * 10)'
-    ],
-    "OpenstackSSLCertExpirationWarning": [
-        'max_over_time(probe_ssl_earliest_cert_expiry'
-        '{job=~"openstack-blackbox.*"}[1h]) >= '
-        'probe_success{job=~"openstack-blackbox.*"} * (time() + 86400 * 30)'
-    ],
-    "OpenstackSSLProbesFailing": [
-        'max_over_time(probe_success{job=~"openstack-blackbox.*"}[1h]) != 0'
-    ],
-    "RabbitMQDown": ['min(rabbitmq_up) by (pod) == 1'],
-    "RabbitMQFileDescriptorUsagehigh": [
-        'rabbitmq_fd_used * 100 / rabbitmq_fd_total <= 80'
-    ],
-    "RabbitMQNetworkPartitionsDetected": [
-        'min(rabbitmq_partitions) by (pod) <= 0'
-    ],
-    "RabbitMQNodeDiskFreeAlarm": ['rabbitmq_node_disk_free_alarm <= 0'],
-    "RabbitMQNodeMemoryAlarm": ['rabbitmq_node_mem_alarm <= 0'],
     "SfNotifierAuthFailure": ['sf_auth_ok != 0'],
     "SfNotifierDown": ['sf_auth_ok'],
     "SSLCertExpirationCritical": [
@@ -721,16 +723,22 @@ alert_metrics = {
     ]
 }
 
+alert_metrics = alert_metrics_no_openstack.copy()
+alert_metrics.update(alert_metrics_openstack)
+
 
 @pytest.mark.alerts
 @pytest.mark.run(order=1)
 @pytest.mark.parametrize("alert,metrics",
                          alert_metrics.items(),
                          ids=alert_metrics.keys())
-def test_alert(prometheus_api, prometheus_native_alerting, alert, metrics):
+def test_alert(prometheus_api, prometheus_native_alerting, alert, metrics,
+               openstack_cr_exists):
     if (any("kube_resourcequota" in m for m in metrics) or
             alert in alert_skip_list):
         pytest.skip("Temporary skip test for {} alert".format(alert))
+    if alert in alert_metrics_openstack:
+        utils.skip_openstack_test(openstack_cr_exists)
     prometheus_alerts = prometheus_api.get_all_defined_alerts().keys()
     firing_alerts = [a.name
                      for a in prometheus_native_alerting.list_alerts()]

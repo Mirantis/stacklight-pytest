@@ -1,6 +1,7 @@
 import collections
-
 import pytest
+
+from stacklight_tests import utils
 
 ignored_queries_for_fail = [
     # Elasticsearch
@@ -219,6 +220,63 @@ ignored_queries_for_partial_fail = [
     'by (instance,name)'
 ]
 
+dashboards_openstack = {
+    "MySQL": 'mysql',
+    "Memcached": 'memcached',
+    "RabbitMQ": 'rabbitmq',
+    "Cinder": 'cinder',
+    "Glance": 'glance',
+    "Heat": 'heat',
+    "Keystone": 'keystone',
+    "KPI Provisioning": 'kpi-provisioning',
+    "KPI Downtime": 'kpi-downtime',
+    "Neutron": 'neutron',
+    "NGINX Ingress controller": 'nginx-ingress-controller',
+    "Nova Availability Zones": 'nova-az',
+    "Nova Hypervisor Overview": 'nova-hypervisor',
+    "Nova Overview": 'nova-overview',
+    "Nova Instances": 'nova-top-instances',
+    "Nova Tenants": 'nova-top-tenants',
+    "Nova Users": 'nova-top-users',
+    "Nova Utilization": 'nova-utilization',
+    "Openstack Overview": 'openstack-overview',
+    "Ironic": 'ironic-openstack'
+}
+
+dashboards_no_openstack = {
+    "Alertmanager": 'alertmanager',
+    "Clusters Overview": 'telemeter-clusters-overview',
+    "ElasticSearch": 'elasticsearch',
+    "Grafana": 'grafana',
+    "Kubernetes Calico": 'calico',
+    "Kubernetes Cluster": 'kubernetes-cluster',
+    "Kubernetes Deployments": 'kubernetes-deployment',
+    "Kubernetes Namespaces": 'kubernetes-namespace',
+    "Kubernetes Nodes": 'kubernetes-node',
+    "Kubernetes Pods": 'kubernetes-pod',
+    "NGINX": 'nginx',
+    "PostgreSQL": 'postgresql',
+    "Prometheus": 'prometheus',
+    "Pushgateway": 'pushgateway',
+    "Relay": 'relay',
+    "System": 'node-exporter',
+    "Telemeter Server": 'telemeter-server',
+    # Ceph
+    "Ceph Cluster": 'ceph-cluster',
+    "Ceph Nodes": 'ceph-nodes',
+    "Ceph OSD": 'ceph-osds',
+    "Ceph Pools": 'ceph-pools',
+    # Ironic
+    "Ironic BM": 'ironic',
+    # UCP
+    "UCP Cluster": 'ucp-cluster',
+    "UCP Containers": 'ucp-containers'
+}
+
+dashboards_openstack_values = {
+    dashboards_openstack[k] for k in dashboards_openstack
+}
+
 
 def idfy_name(name):
     return name.lower().replace(" ", "-").replace("(", "").replace(")", "")
@@ -231,55 +289,8 @@ def query_dict_to_string(query_dict):
 
 def get_all_grafana_dashboards_names():
     # { Name in Grafana: name in Stacklight CR}
-    dashboards = {
-        "Alertmanager": 'alertmanager',
-        "Clusters Overview": 'telemeter-clusters-overview',
-        "ElasticSearch": 'elasticsearch',
-        "Grafana": 'grafana',
-        "Kubernetes Calico": 'calico',
-        "Kubernetes Cluster": 'kubernetes-cluster',
-        "Kubernetes Deployments": 'kubernetes-deployment',
-        "Kubernetes Namespaces": 'kubernetes-namespace',
-        "Kubernetes Nodes": 'kubernetes-node',
-        "Kubernetes Pods": 'kubernetes-pod',
-        "NGINX": 'nginx',
-        "PostgreSQL": 'postgresql',
-        "Prometheus": 'prometheus',
-        "Pushgateway": 'pushgateway',
-        "Relay": 'relay',
-        "System": 'node-exporter',
-        "Telemeter Server": 'telemeter-server',
-        # Ceph
-        "Ceph Cluster": 'ceph-cluster',
-        "Ceph Nodes": 'ceph-nodes',
-        "Ceph OSD": 'ceph-osds',
-        "Ceph Pools": 'ceph-pools',
-        # Openstack
-        "MySQL": 'mysql',
-        "Memcached": 'memcached',
-        "RabbitMQ": 'rabbitmq',
-        "Cinder": 'cinder',
-        "Glance": 'glance',
-        "Heat": 'heat',
-        "Keystone": 'keystone',
-        "KPI Provisioning": 'kpi-provisioning',
-        "KPI Downtime": 'kpi-downtime',
-        "Neutron": 'neutron',
-        "NGINX Ingress controller": 'nginx-ingress-controller',
-        "Nova Availability Zones": 'nova-az',
-        "Nova Hypervisor Overview": 'nova-hypervisor',
-        "Nova Overview": 'nova-overview',
-        "Nova Instances": 'nova-top-instances',
-        "Nova Tenants": 'nova-top-tenants',
-        "Nova Users": 'nova-top-users',
-        "Nova Utilization": 'nova-utilization',
-        "Openstack Overview": 'openstack-overview',
-        "Ironic": 'ironic-openstack',
-        "Ironic BM": 'ironic',
-        # UCP
-        "UCP Cluster": 'ucp-cluster',
-        "UCP Containers": 'ucp-containers'
-    }
+    dashboards = dashboards_no_openstack.copy()
+    dashboards.update(dashboards_openstack)
 
     return {idfy_name(k): v for k, v in dashboards.items()}
 
@@ -342,7 +353,7 @@ class Panel(object):
 @pytest.fixture(scope="module",
                 params=get_all_grafana_dashboards_names().items(),
                 ids=get_all_grafana_dashboards_names().keys())
-def dashboard_name(request, k8s_api):
+def dashboard_name(request, k8s_api, openstack_cr_exists):
     dash_name, chart_dash_name = request.param
     grafana_chart = k8s_api.get_stacklight_chart('grafana')
     chart_dashboards = grafana_chart['values']['dashboards']['default'].keys()
@@ -350,7 +361,8 @@ def dashboard_name(request, k8s_api):
     if chart_dash_name not in chart_dashboards:
         pytest.skip("Dashboard {} not found in Stacklight CRD".format(
             dash_name))
-
+    if chart_dash_name in dashboards_openstack_values:
+        utils.skip_openstack_test(openstack_cr_exists)
     return dash_name
 
 

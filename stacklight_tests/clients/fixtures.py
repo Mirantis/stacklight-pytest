@@ -150,10 +150,10 @@ def prometheus_native_alerting(sl_services):
 
 
 @pytest.fixture(scope="module")
-def os_clients(k8s_api):
+def os_clients(k8s_api, openstack_cr_exists):
     related_release = 'telegraf-openstack'
     releases = k8s_api.get_stacklight_chart_releases()
-    if related_release in releases:
+    if related_release in releases and openstack_cr_exists:
         creds = k8s_api.get_openstack_credentials()
         openstack_clients = client_manager.OfficialClientManager(
             username=creds["OS_USERNAME"],

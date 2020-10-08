@@ -26,3 +26,8 @@ def destructive(request):
                 logger.error(
                     "Recovery failed: {} with exception: {}".format(
                         recovery_method, e))
+
+
+@pytest.fixture(scope="module")
+def openstack_cr_exists(k8s_api):
+    return k8s_api.openstack_deployment_exists()
