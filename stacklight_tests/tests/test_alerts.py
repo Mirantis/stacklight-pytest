@@ -261,7 +261,7 @@ alert_metrics_no_openstack = {
     "FileDescriptorUsageWarning": [
         'node_filefd_allocated / node_filefd_maximum <= 0.8'
     ],
-    "KaasSSLCertExpirationCritical": [
+    "KaasSSLCertExpirationMajor": [
         'max_over_time(probe_ssl_earliest_cert_expiry'
         '{job="kaas-blackbox"}[1h]) >= '
         'probe_success{job="kaas-blackbox"} * (time() + 86400 * 10)'
@@ -277,13 +277,13 @@ alert_metrics_no_openstack = {
     "KubeAPIDown": [
         'probe_success{job="kubernetes-master-api"} != 0'
     ],
-    "KubeAPIErrorsHighCritical": [
+    "KubeAPIErrorsHighMajor": [
         'sum(rate(apiserver_request_total{job="apiserver"}[5m]))'
     ],
     "KubeAPIErrorsHighWarning": [
         'sum(rate(apiserver_request_total{job="apiserver"}[5m]))'
     ],
-    "KubeAPILatencyHighCritical": [
+    "KubeAPILatencyHighMajor": [
         'cluster_quantile:apiserver_request_latencies:histogram_quantile'
         '{job="apiserver",quantile="0.99",subresource!="log",'
         'verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} <= 4'
@@ -296,7 +296,7 @@ alert_metrics_no_openstack = {
     "KubeAPIOutage": [
         'max(probe_success{job="kubernetes-master-api"}) != 0'
     ],
-    "KubeAPIResourceErrorsHighCritical": [
+    "KubeAPIResourceErrorsHighMajor": [
         'sum by(resource, subresource, verb) (rate(apiserver_request_total'
         '{job="apiserver"}[5m]))'
     ],
@@ -527,7 +527,7 @@ alert_metrics_no_openstack = {
     "PrometheusConfigReloadFailed": [
         'prometheus_config_last_reload_successful != 0'
     ],
-    "PrometheusErrorSendingAlertsCritical": [
+    "PrometheusErrorSendingAlertsMajor": [
         'prometheus_notifications_errors_total',
         'prometheus_notifications_sent_total'
     ],
@@ -697,9 +697,9 @@ alert_metrics_no_openstack = {
         'count(count(ceph_osd_metadata{job="rook-ceph-mgr"}) by '
         '(ceph_version)) <= 1'
     ],
-    "CephOsdDownMinor": ['count(ceph_osd_up) - sum(ceph_osd_up) <= 0'],
-    "CephOsdPgNumTooHighCritical": ['max(ceph_osd_numpg) <= 300'],
-    "CephOsdPgNumTooHighWarning": ['max(ceph_osd_numpg) <= 200'],
+    "CephOSDDownMinor": ['count(ceph_osd_up) - sum(ceph_osd_up) <= 0'],
+    "CephOSDPgNumTooHighCritical": ['max(ceph_osd_numpg) <= 300'],
+    "CephOSDPgNumTooHighWarning": ['max(ceph_osd_numpg) <= 200'],
     "CephPGRepairTakingTooLong": ['ceph_pg_inconsistent <= 0'],
     "IronicBmApiOutage": [
         'http_response_status{name=~"ironic-api"} == 1'
@@ -710,7 +710,7 @@ alert_metrics_no_openstack = {
     ],
     "SfNotifierAuthFailure": ['sf_auth_ok != 0'],
     "SfNotifierDown": ['sf_auth_ok'],
-    "SSLCertExpirationCritical": [
+    "SSLCertExpirationMajor": [
         'max_over_time(probe_ssl_earliest_cert_expiry'
         '{job!~"(openstack|kaas)-blackbox.*"}[1h]) - time() >= 86400 * 10'
     ],
