@@ -1,5 +1,6 @@
 import logging
 import pytest
+import yaml
 
 from stacklight_tests import settings
 from stacklight_tests import utils
@@ -106,7 +107,7 @@ alert_metrics_openstack = {
     "OpenstackServiceApiOutage": [
         'max by (service_name) (openstack_api_check_status) != 0'
     ],
-    "OpenstackSSLCertExpirationCritical": [
+    "OpenstackSSLCertExpirationMajor": [
         'max_over_time(probe_ssl_earliest_cert_expiry'
         '{job=~"openstack-blackbox.*"}[1h]) >= '
         'probe_success{job=~"openstack-blackbox.*"} * (time() + 86400 * 10)'
@@ -120,7 +121,7 @@ alert_metrics_openstack = {
         'max_over_time(probe_success{job=~"openstack-blackbox.*"}[1h]) != 0'
     ],
     "RabbitMQDown": ['min(rabbitmq_up) by (pod) == 1'],
-    "RabbitMQFileDescriptorUsagehigh": [
+    "RabbitMQFileDescriptorUsageWarning": [
         'rabbitmq_fd_used * 100 / rabbitmq_fd_total <= 80'
     ],
     "RabbitMQNetworkPartitionsDetected": [
@@ -182,6 +183,8 @@ alert_metrics_no_openstack = {
         'sum(increase(container_cpu_cfs_periods_total{}[5m])) '
         'by (container, pod, namespace) <= 25'
     ],
+    "DockerDTRAPIDown": ['probe_success{job="ucp-dtr-api"} != 0'],
+    "DockerDTRAPIOutage": ['max(probe_success{job="ucp-dtr-api"}) != 0'],
     "DockerNetworkUnhealthy": [
         'docker_networkdb_stats_netmsg * '
         '(docker_networkdb_stats_netmsg offset 5m) <= 0 and '
@@ -336,7 +339,7 @@ alert_metrics_no_openstack = {
     ],
     "KubeCronJobRunning": [
         'time() - '
-        'kube_cronjob_next_schedule_time{job="kube-state-metrics"} <= 3600'
+        'kube_cronjob_next_schedule_time{job="kube-state-metrics"} <= 15 * 60'
     ],
     "KubeDaemonSetMisScheduled": [
         'kube_daemonset_status_number_misscheduled'
@@ -401,12 +404,12 @@ alert_metrics_no_openstack = {
         'kubelet_volume_stats_capacity_bytes{job="kubelet"} >= 3'
     ],
     "KubePodCrashLooping": [
-        'rate(kube_pod_container_status_restarts_total'
-        '{job="kube-state-metrics"}[15m]) * 60 * 5 <= 0'
+        'increase(kube_pod_container_status_restarts_total{'
+        'job="kube-state-metrics"}[10m]) <= 1'
     ],
     "KubePodNotReady": [
-        'sum by (namespace, pod) (kube_pod_status_phase'
-        '{job="kube-state-metrics", phase=~"Pending|Unknown"}) <= 0'
+        'min_over_time(sum by (namespace, pod) (kube_pod_status_phase{'
+        'phase=~"Pending|Unknown|Failed"})[10m:]) <= 0'
     ],
     "KubeQuotaExceeded": [
         '100 * kube_resourcequota{job="kube-state-metrics", type="used"} / '
@@ -555,7 +558,7 @@ alert_metrics_no_openstack = {
         'increase(prometheus_tsdb_reloads_failures_total[2h]) <= 0'
     ],
     "PrometheusTSDBWALCorruptions": [
-        'prometheus_tsdb_wal_corruptions_total <= 0',
+        'increase(prometheus_tsdb_wal_corruptions_total[3m]) <= 0',
     ],
     "PrometheusTargetScrapesDuplicate": [
         'increase'
@@ -706,10 +709,10 @@ alert_metrics_no_openstack = {
     ],
     "IronicBmMetricsMissing": [
         'ironic_nodes_total',
-        'ironic_drivers_total'
+        'ironic_drivers_total',
+        'http_response_status{name=~"ironic-api"}'
     ],
     "SfNotifierAuthFailure": ['sf_auth_ok != 0'],
-    "SfNotifierDown": ['sf_auth_ok'],
     "SSLCertExpirationMajor": [
         'max_over_time(probe_ssl_earliest_cert_expiry'
         '{job!~"(openstack|kaas)-blackbox.*"}[1h]) - time() >= 86400 * 10'
@@ -824,3 +827,33 @@ def test_alerts_fixture(prometheus_api):
     assert len(missing_alerts) == 0, \
         ("Update test data fixture with the missing alerts: "
          "{}".format(missing_alerts))
+
+
+@pytest.mark.alerts
+@pytest.mark.run(order=-2)
+def test_alerts_expressions_actuality(prometheus_api):
+    def handle_string(raw_string):
+        return raw_string.strip().replace(' ', '').lower()
+
+    with open('../files/prometheus_alerts.yaml', 'r') as input_file:
+        prometheus_chart_alerts = yaml.load(input_file)
+    cluster_alerts = {alert[0]: alert[1]['query'] for alert in
+                      prometheus_api.get_all_defined_alerts().items()}
+    cluster_alerts.pop('Watchdog', None)
+    failed_alerts = {}
+    for k, v in cluster_alerts.items():
+        cluster_alert = str(k)
+        cluster_alert_expr = handle_string(str(v))
+        prometheus_chart_alert_expr = handle_string(
+            prometheus_chart_alerts[cluster_alert])
+        if cluster_alert_expr != prometheus_chart_alert_expr:
+            failed_alerts[cluster_alert] = {
+                'cluster_alert_expr': str(v),
+                'prometheus_chart_alert':
+                    prometheus_chart_alerts[cluster_alert]
+            }
+
+    with open('../files/failed_alerts.yaml', 'w') as output_file:
+        yaml.dump(failed_alerts, output_file, default_flow_style=False)
+    err_msg = "These alerts should be updated {}".format(failed_alerts)
+    assert len(failed_alerts) == 0, err_msg
