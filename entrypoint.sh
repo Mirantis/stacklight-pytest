@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+export URL=$(kubectl config view --minify | grep server | cut -f 2- -d ":" | tr -d " ")
+
+export SECRETNAME=$(kubectl get secrets | grep $STACKLIGHT_TEST_POD_NAME | awk '{print $1}')
+export TOKEN=$(kubectl describe secret $SECRETNAME | grep -E '^token' | cut -f2 -d':' | tr -d " ")
+
 REPORT_DIR="${REPORT_DIR:-}"
 if [[ -z "$REPORT_DIR" ]]; then
     echo "No REPORT_DIR variable specified or discovered. Default /report path will be used"
