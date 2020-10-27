@@ -5,7 +5,7 @@ elasticsearch  # Apache-2.0
 future
 ipaddress>=1.0.17
 keystoneauth1>=3.8.0
-kubernetes
+kubernetes==11.0.0
 lxml>=3.7.2 # BSD License
 oslo.serialization!=2.19.1,>=2.18.0
 oslo.utils>=3.33.0

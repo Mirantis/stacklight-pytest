@@ -8,20 +8,14 @@ AlertmanagerNotificationFailureWarning: increase(alertmanager_notifications_fail
 CPUThrottlingHigh: 100 * sum by(container, pod, namespace) (increase(container_cpu_cfs_throttled_periods_total{container!=""}[5m]))
   / sum by(container, pod, namespace) (increase(container_cpu_cfs_periods_total[5m]))
   > 25
-CalicoDatapaneIfaceMsgBatchSizeHigh: absent(felix_int_dataplane_iface_msg_batch_size_sum)
-  OR absent(felix_int_dataplane_iface_msg_batch_size_count) OR (felix_int_dataplane_iface_msg_batch_size_sum/felix_int_dataplane_iface_msg_batch_size_count)
+CalicoDatapaneIfaceMsgBatchSizeHigh: felix_int_dataplane_iface_msg_batch_size_sum / felix_int_dataplane_iface_msg_batch_size_count
   > 5
-CalicoDataplaneAddressMsgBatchSizeHigh: absent(felix_int_dataplane_addr_msg_batch_size_sum)
-  OR absent(felix_int_dataplane_addr_msg_batch_size_count) OR (felix_int_dataplane_addr_msg_batch_size_sum/felix_int_dataplane_addr_msg_batch_size_count)
+CalicoDataplaneAddressMsgBatchSizeHigh: felix_int_dataplane_addr_msg_batch_size_sum / felix_int_dataplane_addr_msg_batch_size_count
   > 5
-CalicoDataplaneFailuresHigh: absent(felix_int_dataplane_failures) OR increase(felix_int_dataplane_failures[1h])
-  > 5
-CalicoIPsetErrorsHigh: absent(felix_ipset_errors) OR increase(felix_ipset_errors[1h])
-  > 5
-CalicoIptablesRestoreErrorsHigh: absent(felix_iptables_restore_errors) OR increase(felix_iptables_restore_errors[1h])
-  > 5
-CalicoIptablesSaveErrorsHigh: absent(felix_iptables_save_errors) OR increase(felix_iptables_save_errors[1h])
-  > 5
+CalicoDataplaneFailuresHigh: increase(felix_int_dataplane_failures[1h]) > 5
+CalicoIPsetErrorsHigh: increase(felix_ipset_errors[1h]) > 5
+CalicoIptablesRestoreErrorsHigh: increase(felix_iptables_restore_errors[1h]) > 5
+CalicoIptablesSaveErrorsHigh: increase(felix_iptables_save_errors[1h]) > 5
 CephClusterCriticallyFull: sum(ceph_osd_stat_bytes_used) / sum(ceph_osd_stat_bytes)
   > 0.95
 CephClusterHealthCritical: ceph_health_status > 1
@@ -74,9 +68,10 @@ DockerUCPNodeDiskFullCritical: sum by (instance) (ucp_engine_disk_free_bytes) / 
 DockerUCPNodeDiskFullWarning: sum by (instance) (ucp_engine_disk_free_bytes) / sum
   by (instance) (ucp_engine_disk_total_bytes) < 0.15
 DockerUCPNodeDown: ucp_engine_node_health == 0
-ElasticClusterRed: elasticsearch_cluster_health_status{color="red"} == 1
-ElasticClusterYellow: elasticsearch_cluster_health_status{color="yellow"} == 1
-ElasticHeapUsageTooHigh: (elasticsearch_jvm_memory_used_bytes{area="heap"} / elasticsearch_jvm_memory_max_bytes{area="heap"})
+ElasticClusterStatusCritical: max(elasticsearch_cluster_health_status{color="red"}) == 1
+ElasticClusterStatusWarning: max(elasticsearch_cluster_health_status{color=~"yellow|red"})
+  == 1
+ElasticHeapUsageCritical: (elasticsearch_jvm_memory_used_bytes{area="heap"} / elasticsearch_jvm_memory_max_bytes{area="heap"})
   * 100 > 90
 ElasticHeapUsageWarning: (elasticsearch_jvm_memory_used_bytes{area="heap"} / elasticsearch_jvm_memory_max_bytes{area="heap"})
   * 100 > 80
@@ -122,10 +117,10 @@ KubeCPUOvercommitNamespaces: sum(kube_resourcequota{job="kube-state-metrics",res
 KubeCPUOvercommitPods: sum(namespace_name:kube_pod_container_resource_requests_cpu_cores:sum)
   / sum(node:node_num_cpu:sum) > (count(node:node_num_cpu:sum)-1) / count(node:node_num_cpu:sum)
 KubeClientCertificateExpirationInOneDay: apiserver_client_certificate_expiration_seconds_count{job="apiserver"}
-  > 0 and histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m])))
+  > 0 and on(job) histogram_quantile(0.01, sum by(job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m])))
   < 86400
 KubeClientCertificateExpirationInSevenDays: apiserver_client_certificate_expiration_seconds_count{job="apiserver"}
-  > 0 and histogram_quantile(0.01, sum by (job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m])))
+  > 0 and on(job) histogram_quantile(0.01, sum by(job, le) (rate(apiserver_client_certificate_expiration_seconds_bucket{job="apiserver"}[5m])))
   < 604800
 KubeClientErrors: (sum by(instance, job) (rate(rest_client_requests_total{code=~"5.."}[5m]))
   / sum by(instance, job) (rate(rest_client_requests_total[5m]))) * 100 > 1
@@ -292,6 +287,8 @@ SSLCertExpirationMajor: max_over_time(probe_ssl_earliest_cert_expiry{job!~"(open
   - time() < 86400 * 10
 SSLCertExpirationWarning: max_over_time(probe_ssl_earliest_cert_expiry{job!~"(openstack|kaas)-blackbox.*"}[1h])
   - time() < 86400 * 30
+SSLProbesFailing: max_over_time(probe_success{job!~"(openstack|kaas)-blackbox.*"}[1h])
+  == 0
 SfNotifierAuthFailure: sf_auth_ok == 0
 SystemCpuFullWarning: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m]))
   * 100) > 90

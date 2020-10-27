@@ -7,7 +7,6 @@ from stacklight_tests import utils
 
 logger = logging.getLogger(__name__)
 
-
 alert_skip_list = ['SystemDiskErrorsTooHigh',
                    # TODO: To Delete from skip_list after
                    #  https://mirantis.jira.com/browse/PRODX-4598 is Done
@@ -146,31 +145,23 @@ alert_metrics_no_openstack = {
         'increase(alertmanager_notifications_failed_total[2m]) == 0'
     ],
     "CalicoDatapaneIfaceMsgBatchSizeHigh": [
-        'felix_int_dataplane_iface_msg_batch_size_sum',
-        'felix_int_dataplane_iface_msg_batch_size_count',
-        '(felix_int_dataplane_iface_msg_batch_size_sum/'
-        'felix_int_dataplane_iface_msg_batch_size_count) <= 5'
+        'felix_int_dataplane_iface_msg_batch_size_sum/'
+        'felix_int_dataplane_iface_msg_batch_size_count <= 5'
     ],
     "CalicoDataplaneAddressMsgBatchSizeHigh": [
-        'felix_int_dataplane_addr_msg_batch_size_sum',
-        'felix_int_dataplane_addr_msg_batch_size_count',
-        '(felix_int_dataplane_addr_msg_batch_size_sum/'
-        'felix_int_dataplane_addr_msg_batch_size_count) <= 5'
+        'felix_int_dataplane_addr_msg_batch_size_sum/'
+        'felix_int_dataplane_addr_msg_batch_size_count <= 5'
     ],
     "CalicoDataplaneFailuresHigh": [
-        'felix_int_dataplane_failures',
         'increase(felix_int_dataplane_failures[1h]) <= 5'
     ],
     "CalicoIPsetErrorsHigh": [
-        'felix_ipset_errors',
         'increase(felix_ipset_errors[1h]) <= 5'
     ],
     "CalicoIptablesRestoreErrorsHigh": [
-        'felix_iptables_restore_errors',
         'increase(felix_iptables_restore_errors[1h]) <= 5'
     ],
     "CalicoIptablesSaveErrorsHigh": [
-        'felix_iptables_save_errors',
         'increase(felix_iptables_save_errors[1h]) <= 5'
     ],
     "ClockSkewDetected": [
@@ -226,13 +217,13 @@ alert_metrics_no_openstack = {
     "DockerUCPNodeDown": [
         'ucp_engine_node_health != 0'
     ],
-    "ElasticClusterRed": [
-        'elasticsearch_cluster_health_status{color="red"} != 1'
+    "ElasticClusterStatusCritical": [
+        'max(elasticsearch_cluster_health_status{color="red"}) != 1'
     ],
-    "ElasticClusterYellow": [
-        'elasticsearch_cluster_health_status{color="yellow"} != 1'
+    "ElasticClusterStatusWarning": [
+        'max(elasticsearch_cluster_health_status{color=~"yellow|red"}) != 1'
     ],
-    "ElasticHeapUsageTooHigh": [
+    "ElasticHeapUsageCritical": [
         '(elasticsearch_jvm_memory_used_bytes{area="heap"} / '
         'elasticsearch_jvm_memory_max_bytes{area="heap"}) * 100 <= 90'
     ],
@@ -321,14 +312,14 @@ alert_metrics_no_openstack = {
     "KubeClientCertificateExpirationInOneDay": [
         'apiserver_client_certificate_expiration_seconds_count'
         '{job="apiserver"} == 0 '
-        'or histogram_quantile(0.01, sum by(job, le) '
+        'or on(job) histogram_quantile(0.01, sum by(job, le) '
         '(rate(apiserver_client_certificate_expiration_seconds_bucket'
         '{job="apiserver"}[5m]))) >= 86400'
     ],
     "KubeClientCertificateExpirationInSevenDays": [
         'apiserver_client_certificate_expiration_seconds_count'
         '{job="apiserver"} == 0 '
-        'or histogram_quantile(0.01, sum by(job, le) '
+        'or on(job) histogram_quantile(0.01, sum by(job, le) '
         '(rate(apiserver_client_certificate_expiration_seconds_bucket'
         '{job="apiserver"}[5m]))) >= 604800'
     ],
@@ -721,6 +712,10 @@ alert_metrics_no_openstack = {
         'max_over_time(probe_ssl_earliest_cert_expiry'
         '{job!~"(openstack|kaas)-blackbox.*"}[1h]) - time() >= 86400 * 30'
     ],
+    "SSLProbesFailing": [
+        'max_over_time(probe_success{'
+        'job!~"(openstack|kaas)-blackbox.*"}[1h]) != 0'
+    ],
     "TelemeterClientFederationFailed": [
         'increase(federate_errors[30m]) <= 2'
     ]
@@ -833,9 +828,12 @@ def test_alerts_fixture(prometheus_api):
 @pytest.mark.run(order=-2)
 def test_alerts_expressions_actuality(prometheus_api):
     def handle_string(raw_string):
-        return raw_string.strip().replace(' ', '').lower()
-
-    with open('../files/prometheus_alerts.yaml', 'r') as input_file:
+        if raw_string is not None:
+            return raw_string.strip().replace(' ', '').lower()
+        else:
+            return None
+    with open('stacklight_tests/files/prometheus_alerts.yaml', 'r') \
+            as input_file:
         prometheus_chart_alerts = yaml.load(input_file)
     cluster_alerts = {alert[0]: alert[1]['query'] for alert in
                       prometheus_api.get_all_defined_alerts().items()}
@@ -845,15 +843,16 @@ def test_alerts_expressions_actuality(prometheus_api):
         cluster_alert = str(k)
         cluster_alert_expr = handle_string(str(v))
         prometheus_chart_alert_expr = handle_string(
-            prometheus_chart_alerts[cluster_alert])
+            prometheus_chart_alerts.get(cluster_alert, None))
         if cluster_alert_expr != prometheus_chart_alert_expr:
             failed_alerts[cluster_alert] = {
                 'cluster_alert_expr': str(v),
                 'prometheus_chart_alert':
-                    prometheus_chart_alerts[cluster_alert]
+                    prometheus_chart_alerts.get(cluster_alert, None)
             }
 
-    with open('../files/failed_alerts.yaml', 'w') as output_file:
+    with open('stacklight_tests/files/failed_alerts.yaml', 'w') \
+            as output_file:
         yaml.dump(failed_alerts, output_file, default_flow_style=False)
     err_msg = "These alerts should be updated {}".format(failed_alerts)
     assert len(failed_alerts) == 0, err_msg
