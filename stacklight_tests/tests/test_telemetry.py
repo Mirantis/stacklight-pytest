@@ -49,22 +49,7 @@ def test_telemetry_up(prometheus_api, k8s_api, chart_releases):
 def test_telemetry_recording_rules_consistency(prometheus_api, k8s_api,
                                                chart_releases,
                                                stacklight_bundle):
-    skip_list_general = ['telemetry:openstack_quota_ram_gb',
-                         'telemetry:openstack_quota_vcpus',
-                         'telemetry:openstack_quota_volume_storage_gb',
-                         'telemetry:openstack_usage_ram_gb',
-                         'telemetry:openstack_usage_vcpus',
-                         'telemetry:openstack_usage_volume_storage_gb',
-                         'telemetry:openstack_quota_instances',
-                         'telemetry:openstack_usage_instances',
-                         'telemetry:openstack_instance_create_start',
-                         'telemetry:openstack_instance_create_end',
-                         'telemetry:openstack_instance_create_error',
-                         'telemetry:openstack_kpi_provisioning',
-                         'telemetry:openstack_instance_downtime_check_failed',
-                         'telemetry:openstack_instance_downtime_check_all',
-                         'telemetry:openstack_kpi_downtime'
-                         ]
+    skip_list_general = ['telemetry:openstack']
 
     skip_list_management = ['telemetry:federate_errors',
                             'telemetry:federate_filtered_samples',
@@ -95,9 +80,13 @@ def test_telemetry_recording_rules_consistency(prometheus_api, k8s_api,
             return 'cluster_id'
 
     def apply_skip_list(m_expected, skip_list):
-        for m in skip_list:
-            if m in m_expected:
-                m_expected.remove(m)
+        metrics_to_remove = []
+        for m_e in m_expected:
+            for m_s_l in skip_list:
+                if m_e.startswith(m_s_l):
+                    metrics_to_remove.append(m_e)
+        for m_t_r in metrics_to_remove:
+            m_expected.remove(m_t_r)
 
     def create_err_msg(m_expected=None, m_actual=None, f_c=None):
         if f_c:

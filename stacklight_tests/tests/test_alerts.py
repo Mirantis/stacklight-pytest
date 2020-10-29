@@ -654,14 +654,14 @@ alert_metrics_no_openstack = {
     ],
     "etcdNoLeader": ['etcd_server_has_leader{job=~".*etcd.*"} != 0'],
     # Ceph alerts
-    "CephClusterCriticallyFull": [
+    "CephClusterFullCritical": [
         'sum(ceph_osd_stat_bytes_used) / sum(ceph_osd_stat_bytes) <= 0.95'
+    ],
+    "CephClusterFullWarning": [
+        'sum(ceph_osd_stat_bytes_used) / sum(ceph_osd_stat_bytes) <= 0.85'
     ],
     "CephClusterHealthCritical": ['ceph_health_status <= 1'],
     "CephClusterHealthMinor": ['ceph_health_status != 1'],
-    "CephClusterNearFull": [
-        'sum(ceph_osd_stat_bytes_used) / sum(ceph_osd_stat_bytes) <= 0.85'
-    ],
     "CephDataRecoveryTakingTooLong": ['ceph_pg_undersized <= 0'],
     "CephMonHighNumberOfLeaderChanges": [
         'rate(ceph_mon_num_elections{job="rook-ceph-mgr"}[5m]) * 60 <= 0.95'
@@ -694,7 +694,8 @@ alert_metrics_no_openstack = {
     "CephOSDDownMinor": ['count(ceph_osd_up) - sum(ceph_osd_up) <= 0'],
     "CephOSDPgNumTooHighCritical": ['max(ceph_osd_numpg) <= 300'],
     "CephOSDPgNumTooHighWarning": ['max(ceph_osd_numpg) <= 200'],
-    "CephPGRepairTakingTooLong": ['ceph_pg_inconsistent <= 0'],
+    "CephPGInconsistent": ['ceph_pg_inconsistent <= 0'],
+    "CephPGUndersized": ['ceph_pg_undersized <= 0'],
     "IronicBmApiOutage": [
         'http_response_status{name=~"ironic-api"} == 1'
     ],

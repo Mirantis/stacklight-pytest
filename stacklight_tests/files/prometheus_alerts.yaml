@@ -16,11 +16,11 @@ CalicoDataplaneFailuresHigh: increase(felix_int_dataplane_failures[1h]) > 5
 CalicoIPsetErrorsHigh: increase(felix_ipset_errors[1h]) > 5
 CalicoIptablesRestoreErrorsHigh: increase(felix_iptables_restore_errors[1h]) > 5
 CalicoIptablesSaveErrorsHigh: increase(felix_iptables_save_errors[1h]) > 5
-CephClusterCriticallyFull: sum(ceph_osd_stat_bytes_used) / sum(ceph_osd_stat_bytes)
+CephClusterFullCritical: sum(ceph_osd_stat_bytes_used) / sum(ceph_osd_stat_bytes)
   > 0.95
+CephClusterFullWarning: sum(ceph_osd_stat_bytes_used) / sum(ceph_osd_stat_bytes) > 0.85
 CephClusterHealthCritical: ceph_health_status > 1
 CephClusterHealthMinor: ceph_health_status == 1
-CephClusterNearFull: sum(ceph_osd_stat_bytes_used) / sum(ceph_osd_stat_bytes) > 0.85
 CephDataRecoveryTakingTooLong: ceph_pg_undersized > 0
 CephMonHighNumberOfLeaderChanges: rate(ceph_mon_num_elections{job="rook-ceph-mgr"}[5m])
   * 60 > 0.95
@@ -38,7 +38,8 @@ CephOSDPgNumTooHighCritical: max(ceph_osd_numpg) > 300
 CephOSDPgNumTooHighWarning: max(ceph_osd_numpg) > 200
 CephOSDVersionMismatch: count(count(ceph_osd_metadata{job="rook-ceph-mgr"}) by (ceph_version))
   > 1
-CephPGRepairTakingTooLong: ceph_pg_inconsistent > 0
+CephPGInconsistent: ceph_pg_inconsistent > 0
+CephPGUndersized: ceph_pg_undersized > 0
 CinderServiceDown: openstack_cinder_service_state == 0
 CinderServiceOutage: count(openstack_cinder_service_state == 0) by (binary) == on
   (binary) count(openstack_cinder_service_state) by (binary)
