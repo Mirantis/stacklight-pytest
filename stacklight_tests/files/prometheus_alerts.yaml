@@ -20,33 +20,33 @@ CephClusterFullCritical: sum(ceph_osd_stat_bytes_used) / sum(ceph_osd_stat_bytes
   > 0.95
 CephClusterFullWarning: sum(ceph_osd_stat_bytes_used) / sum(ceph_osd_stat_bytes) > 0.85
 CephClusterHealthCritical: ceph_health_status > 1
-CephClusterHealthMinor: ceph_health_status == 1
+CephClusterHealthMinor: ceph_health_status >= 1
 CephDataRecoveryTakingTooLong: ceph_pg_undersized > 0
 CephMonHighNumberOfLeaderChanges: rate(ceph_mon_num_elections{job="rook-ceph-mgr"}[5m])
   * 60 > 0.95
 CephMonQuorumAtRisk: count(ceph_mon_quorum_status{job="rook-ceph-mgr"} == 1) <= ((count(ceph_mon_metadata{job="rook-ceph-mgr"})
   / 2) + 1)
-CephMonVersionMismatch: count(count(ceph_mon_metadata{job="rook-ceph-mgr"}) by (ceph_version))
+CephMonVersionMismatch: count(count by(ceph_version) (ceph_mon_metadata{job="rook-ceph-mgr"}))
   > 1
 CephNodeDown: cluster:ceph_node_down:join_kube == 0
 CephOSDDiskNotResponding: label_replace((ceph_osd_in == 1 and ceph_osd_up == 0),"disk","$1","ceph_daemon","osd.(.*)")
   + on(ceph_daemon) group_left(host, device) label_replace(ceph_disk_occupation,"host","$1","exported_instance","(.*)")
 CephOSDDiskUnavailable: label_replace((ceph_osd_in == 0 and ceph_osd_up == 0),"disk","$1","ceph_daemon","osd.(.*)")
   + on(ceph_daemon) group_left(host, device) label_replace(ceph_disk_occupation,"host","$1","exported_instance","(.*)")
-CephOSDDownMinor: count(ceph_osd_up) - sum(ceph_osd_up) > 0
+CephOSDDown: count(ceph_osd_up) - sum(ceph_osd_up) > 0
 CephOSDPgNumTooHighCritical: max(ceph_osd_numpg) > 300
 CephOSDPgNumTooHighWarning: max(ceph_osd_numpg) > 200
-CephOSDVersionMismatch: count(count(ceph_osd_metadata{job="rook-ceph-mgr"}) by (ceph_version))
+CephOSDVersionMismatch: count(count by(ceph_version) (ceph_osd_metadata{job="rook-ceph-mgr"}))
   > 1
 CephPGInconsistent: ceph_pg_inconsistent > 0
 CephPGUndersized: ceph_pg_undersized > 0
 CinderServiceDown: openstack_cinder_service_state == 0
-CinderServiceOutage: count(openstack_cinder_service_state == 0) by (binary) == on
-  (binary) count(openstack_cinder_service_state) by (binary)
-CinderServicesDownMajor: count(openstack_cinder_service_state == 0) by (binary) >=
-  on (binary) count(openstack_cinder_service_state) by (binary) * 0.6
-CinderServicesDownMinor: count(openstack_cinder_service_state == 0) by (binary) >=
-  on (binary) count(openstack_cinder_service_state) by (binary) * 0.3
+CinderServiceOutage: count by(binary) (openstack_cinder_service_state == 0) == on(binary)
+  count by(binary) (openstack_cinder_service_state)
+CinderServicesDownMajor: count by(binary) (openstack_cinder_service_state == 0) >= on(binary)
+  count by(binary) (openstack_cinder_service_state) * 0.6
+CinderServicesDownMinor: count by(binary) (openstack_cinder_service_state == 0) >= on(binary)
+  count by(binary) (openstack_cinder_service_state) * 0.3
 ClockSkewDetected: abs(node_timex_offset_seconds{job="node-exporter"}) > 0.03
 ContainerScrapeError: container_scrape_error != 0
 DockerDTRAPIDown: probe_success{job="ucp-dtr-api"} == 0
@@ -196,12 +196,12 @@ NetCheckerReportsMissing: absent(ncagent_report_count_total) or increase(ncagent
 NetCheckerTCPServerDelay: absent(ncagent_http_probe_tcp_connection_time_ms) or delta(ncagent_http_probe_tcp_connection_time_ms{url="http://netchecker-service:8081/api/v1/ping"}[5m])
   > 100
 NeutronAgentDown: openstack_neutron_agent_state == 0
-NeutronAgentsDownMajor: count(openstack_neutron_agent_state == 0) by (binary) >= on
-  (binary) count(openstack_neutron_agent_state) by (binary) * 0.6
-NeutronAgentsDownMinor: count(openstack_neutron_agent_state == 0) by (binary) >= on
-  (binary) count(openstack_neutron_agent_state) by (binary) * 0.3
-NeutronAgentsOutage: count(openstack_neutron_agent_state == 0) by (binary) == on (binary)
-  count(openstack_neutron_agent_state) by (binary)
+NeutronAgentsDownMajor: count by(binary) (openstack_neutron_agent_state == 0) >= on(binary)
+  count by(binary) (openstack_neutron_agent_state) * 0.6
+NeutronAgentsDownMinor: count by(binary) (openstack_neutron_agent_state == 0) >= on(binary)
+  count by(binary) (openstack_neutron_agent_state) * 0.3
+NeutronAgentsOutage: count by(binary) (openstack_neutron_agent_state == 0) == on(binary)
+  count by(binary) (openstack_neutron_agent_state)
 NginxDroppedIncomingConnections: irate(nginx_connections_accepted[5m]) - irate(nginx_connections_handled[5m])
   > 0
 NginxServiceDown: nginx_up != 1
@@ -214,14 +214,14 @@ NovaComputeServicesDownMajor: count(openstack_nova_service_state{binary="nova-co
 NovaComputeServicesDownMinor: count(openstack_nova_service_state{binary="nova-compute"}
   == 0) >= count(openstack_nova_service_state{binary="nova-compute"}) * 0.25
 NovaServiceDown: openstack_nova_service_state == 0
-NovaServiceOutage: count(openstack_nova_service_state == 0) by (binary) == on (binary)
-  count(openstack_nova_service_state) by (binary)
-NovaServicesDownMajor: count(openstack_nova_service_state{binary!~"nova-compute"}
-  == 0) by (binary) >= on (binary) count(openstack_nova_service_state{binary!~"nova-compute"})
-  by (binary) * 0.6
-NovaServicesDownMinor: count(openstack_nova_service_state{binary!~"nova-compute"}
-  == 0) by (binary) >= on (binary) count(openstack_nova_service_state{binary!~"nova-compute"})
-  by (binary) * 0.3
+NovaServiceOutage: count by(binary) (openstack_nova_service_state == 0) == on(binary)
+  count by(binary) (openstack_nova_service_state)
+NovaServicesDownMajor: count by(binary) (openstack_nova_service_state{binary!~"nova-compute"}
+  == 0) >= on(binary) count by(binary) (openstack_nova_service_state{binary!~"nova-compute"})
+  * 0.6
+NovaServicesDownMinor: count by(binary) (openstack_nova_service_state{binary!~"nova-compute"}
+  == 0) >= on(binary) count by(binary) (openstack_nova_service_state{binary!~"nova-compute"})
+  * 0.3
 NumberOfInitializingShards: elasticsearch_cluster_health_initializing_shards > 0
 NumberOfPendingTasks: elasticsearch_cluster_health_number_of_pending_tasks > 0
 NumberOfRelocationShards: elasticsearch_cluster_health_relocating_shards > 0
@@ -279,9 +279,9 @@ PrometheusTSDBWALCorruptions: increase(prometheus_tsdb_wal_corruptions_total[3m]
   > 0
 PrometheusTargetScrapesDuplicate: increase(prometheus_target_scrapes_sample_duplicate_timestamp_total[5m])
   > 0
-RabbitMQDown: min(rabbitmq_up) by (pod) != 1
+RabbitMQDown: rabbitmq_up != 1
 RabbitMQFileDescriptorUsageWarning: rabbitmq_fd_used * 100 / rabbitmq_fd_total > 80
-RabbitMQNetworkPartitionsDetected: min(rabbitmq_partitions) by (pod) > 0
+RabbitMQNetworkPartitionsDetected: rabbitmq_partitions > 0
 RabbitMQNodeDiskFreeAlarm: rabbitmq_node_disk_free_alarm > 0
 RabbitMQNodeMemoryAlarm: rabbitmq_node_mem_alarm > 0
 SSLCertExpirationMajor: max_over_time(probe_ssl_earliest_cert_expiry{job!~"(openstack|kaas)-blackbox.*"}[1h])

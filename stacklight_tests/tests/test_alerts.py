@@ -17,16 +17,23 @@ alert_skip_list = ['SystemDiskErrorsTooHigh',
 alert_metrics_openstack = {
     "CinderServiceDown": ['openstack_cinder_service_state != 0'],
     "CinderServiceOutage": [
-        'count by(binary) (openstack_cinder_service_state != 0) == on(binary) '
-        'count by(binary) (openstack_cinder_service_state)'
+        'count by(binary) (openstack_cinder_service_state == 0) != on(binary) '
+        'count by(binary) (openstack_cinder_service_state) or '
+        'count (openstack_cinder_service_state == 1) == '
+        'count (openstack_cinder_service_state)'
     ],
     "CinderServicesDownMajor": [
-        'count by(binary) (openstack_cinder_service_state != 0) >= on(binary) '
-        'count by(binary) (openstack_cinder_service_state) * 0.6'
+        'count by(binary) (openstack_cinder_service_state == 0) < on(binary) '
+        'count by(binary) (openstack_cinder_service_state) * 0.6 or '
+        'count (openstack_cinder_service_state == 1) == '
+        'count (openstack_cinder_service_state)'
+
     ],
     "CinderServicesDownMinor": [
-        'count by(binary) (openstack_cinder_service_state != 0) >= on(binary) '
-        'count by(binary) (openstack_cinder_service_state) * 0.3'
+        'count by(binary) (openstack_cinder_service_state == 0) < on(binary) '
+        'count by(binary) (openstack_cinder_service_state) * 0.3 or '
+        'count (openstack_cinder_service_state == 1) == '
+        'count (openstack_cinder_service_state)'
     ],
     "IronicDriverMissing": [
         'scalar(count(kube_pod_container_info'
@@ -68,39 +75,55 @@ alert_metrics_openstack = {
     "MemcachedServiceDown": ['memcached_up != 0'],
     "NeutronAgentDown": ['openstack_neutron_agent_state != 0'],
     "NeutronAgentsDownMajor": [
-        'count by(binary) (openstack_neutron_agent_state != 0) >= on(binary) '
-        'count by(binary) (openstack_neutron_agent_state) * 0.6'
+        'count by(binary) (openstack_neutron_agent_state == 0) < on(binary) '
+        'count by(binary) (openstack_neutron_agent_state) * 0.6 or '
+        'count (openstack_neutron_agent_state == 1) == '
+        'count (openstack_neutron_agent_state)'
     ],
     "NeutronAgentsDownMinor": [
-        'count by(binary) (openstack_neutron_agent_state != 0) >= on(binary) '
-        'count by(binary) (openstack_neutron_agent_state) * 0.3'
+        'count by(binary) (openstack_neutron_agent_state == 0) < on(binary) '
+        'count by(binary) (openstack_neutron_agent_state) * 0.3 or '
+        'count (openstack_neutron_agent_state == 1) == '
+        'count (openstack_neutron_agent_state)'
     ],
     "NeutronAgentsOutage": [
-        'count by(binary) (openstack_neutron_agent_state != 0) == on(binary) '
-        'count by(binary) (openstack_neutron_agent_state)'
+        'count by(binary) (openstack_neutron_agent_state == 0) != on(binary) '
+        'count by(binary) (openstack_neutron_agent_state) or '
+        'count (openstack_neutron_agent_state == 1) == '
+        'count (openstack_neutron_agent_state)'
     ],
     "NovaComputeServicesDownMajor": [
-        'count(openstack_nova_service_state{binary="nova-compute"} != 0) >= '
-        'count(openstack_nova_service_state{binary="nova-compute"}) * 0.5'
+        'count(openstack_nova_service_state{binary="nova-compute"} == 0) < '
+        'count(openstack_nova_service_state{binary="nova-compute"}) * 0.5 or '
+        'count (openstack_nova_service_state{binary="nova-compute"} == 1) == '
+        'count (openstack_nova_service_state{binary="nova-compute"})'
     ],
     "NovaComputeServicesDownMinor": [
-        'count(openstack_nova_service_state{binary="nova-compute"} != 0) >= '
-        'count(openstack_nova_service_state{binary="nova-compute"}) * 0.25'
+        'count(openstack_nova_service_state{binary="nova-compute"} == 0) < '
+        'count(openstack_nova_service_state{binary="nova-compute"}) * 0.25 or '
+        'count (openstack_nova_service_state{binary="nova-compute"} == 1) == '
+        'count (openstack_nova_service_state{binary="nova-compute"})'
     ],
     "NovaServiceDown": ['openstack_nova_service_state != 0'],
     "NovaServiceOutage": [
-        'count by(binary) (openstack_nova_service_state != 0) == on(binary) '
-        'count by(binary) (openstack_nova_service_state)'
+        'count by(binary) (openstack_nova_service_state == 0) != on(binary) '
+        'count by(binary) (openstack_nova_service_state) or '
+        'count (openstack_nova_service_state == 1) == '
+        'count (openstack_nova_service_state)'
     ],
     "NovaServicesDownMajor": [
         'count by(binary) (openstack_nova_service_state'
-        '{binary!~"nova-compute"} != 0) >= on(binary) count by(binary) '
-        '(openstack_nova_service_state{binary!~"nova-compute"}) * 0.6'
+        '{binary!~"nova-compute"} == 0) < on(binary) count by(binary) '
+        '(openstack_nova_service_state{binary!~"nova-compute"}) * 0.6 or '
+        'count (openstack_nova_service_state{binary!~"nova-compute"} == 1) == '
+        'count (openstack_nova_service_state{binary!~"nova-compute"})'
     ],
     "NovaServicesDownMinor": [
         'count by(binary) (openstack_nova_service_state'
-        '{binary!~"nova-compute"} != 0) >= on(binary) count by(binary) '
-        '(openstack_nova_service_state{binary!~"nova-compute"}) * 0.3'
+        '{binary!~"nova-compute"} == 0) < on(binary) count by(binary) '
+        '(openstack_nova_service_state{binary!~"nova-compute"}) * 0.3 or '
+        'count (openstack_nova_service_state{binary!~"nova-compute"} == 1) == '
+        'count (openstack_nova_service_state{binary!~"nova-compute"})'
     ],
     "OpenstackServiceApiDown": ['openstack_api_check_status != 0'],
     "OpenstackServiceApiOutage": [
@@ -119,12 +142,12 @@ alert_metrics_openstack = {
     "OpenstackSSLProbesFailing": [
         'max_over_time(probe_success{job=~"openstack-blackbox.*"}[1h]) != 0'
     ],
-    "RabbitMQDown": ['min(rabbitmq_up) by (pod) == 1'],
+    "RabbitMQDown": ['rabbitmq_up == 1'],
     "RabbitMQFileDescriptorUsageWarning": [
         'rabbitmq_fd_used * 100 / rabbitmq_fd_total <= 80'
     ],
     "RabbitMQNetworkPartitionsDetected": [
-        'min(rabbitmq_partitions) by (pod) <= 0'
+        'rabbitmq_partitions <= 0'
     ],
     "RabbitMQNodeDiskFreeAlarm": ['rabbitmq_node_disk_free_alarm <= 0'],
     "RabbitMQNodeMemoryAlarm": ['rabbitmq_node_mem_alarm <= 0']
@@ -661,7 +684,7 @@ alert_metrics_no_openstack = {
         'sum(ceph_osd_stat_bytes_used) / sum(ceph_osd_stat_bytes) <= 0.85'
     ],
     "CephClusterHealthCritical": ['ceph_health_status <= 1'],
-    "CephClusterHealthMinor": ['ceph_health_status != 1'],
+    "CephClusterHealthMinor": ['ceph_health_status < 1'],
     "CephDataRecoveryTakingTooLong": ['ceph_pg_undersized <= 0'],
     "CephMonHighNumberOfLeaderChanges": [
         'rate(ceph_mon_num_elections{job="rook-ceph-mgr"}[5m]) * 60 <= 0.95'
@@ -691,7 +714,7 @@ alert_metrics_no_openstack = {
         'count(count(ceph_osd_metadata{job="rook-ceph-mgr"}) by '
         '(ceph_version)) <= 1'
     ],
-    "CephOSDDownMinor": ['count(ceph_osd_up) - sum(ceph_osd_up) <= 0'],
+    "CephOSDDown": ['count(ceph_osd_up) - sum(ceph_osd_up) <= 0'],
     "CephOSDPgNumTooHighCritical": ['max(ceph_osd_numpg) <= 300'],
     "CephOSDPgNumTooHighWarning": ['max(ceph_osd_numpg) <= 200'],
     "CephPGInconsistent": ['ceph_pg_inconsistent <= 0'],
