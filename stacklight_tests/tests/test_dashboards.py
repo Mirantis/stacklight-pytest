@@ -112,11 +112,11 @@ ignored_queries_for_fail = [
     'status == 1 and openstack_nova_service_state == 0)) by (instance))',
     'max(sum(openstack_nova_ram and on (hostname) (openstack_nova_service_'
     'status == 0 and openstack_nova_service_state == 1)) by (instance))',
-    'max(avg(openstack_nova_disk and on (hostname) (openstack_nova_service_'
+    'max(sum(openstack_nova_disk and on (hostname) (openstack_nova_service_'
     'status == 0 and openstack_nova_service_state == 1)) by (instance))',
-    'max(avg(openstack_nova_disk and on (hostname) (openstack_nova_service_'
+    'max(sum(openstack_nova_disk and on (hostname) (openstack_nova_service_'
     'status == 1 and openstack_nova_service_state == 0)) by (instance))',
-    'max(avg(openstack_nova_disk and on (hostname) (openstack_nova_service_'
+    'max(sum(openstack_nova_disk and on (hostname) (openstack_nova_service_'
     'status == 0 and openstack_nova_service_state == 0)) by (instance))',
     # Cinder
     'max(count(openstack_cinder_service_state{binary="cinder-volume"} == 0 '
