@@ -415,7 +415,11 @@ def test_kpi_metrics(prometheus_api, os_clients, os_actions, destructive,
 @pytest.mark.openstack_metrics
 @pytest.mark.run(order=2)
 def test_prometheus_es_exporter_metrics(prometheus_api, os_clients,
-                                        chart_releases, openstack_cr_exists):
+                                        chart_releases, openstack_cr_exists,
+                                        logging_enabled):
+    if not logging_enabled:
+        pytest.skip("Metrics related to this test are from the ES."
+                    "Logging is disabled for this cluster.")
     related_release = 'telegraf-openstack'
     utils.skip_test(related_release, chart_releases)
     utils.skip_openstack_test(openstack_cr_exists)
