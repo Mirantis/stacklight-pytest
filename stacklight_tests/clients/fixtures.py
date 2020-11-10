@@ -49,6 +49,10 @@ def alerta_api(alerta_config):
     endpoint = "http://{0}:{1}/api".format(alerta_config["alerta_host"],
                                            alerta_config["alerta_port"])
     client = Client(endpoint=endpoint, ssl_verify=False)
+    resp = client.login(alerta_config["alerta_username"],
+                        alerta_config["alerta_password"])
+    token = resp["token"]
+    client = Client(endpoint=endpoint, token=token, ssl_verify=False)
     return client
 
 

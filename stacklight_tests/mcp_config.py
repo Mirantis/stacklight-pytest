@@ -211,7 +211,8 @@ class MKConfig(object):
             "alerta_host": _param["_param"]["prometheus_control_address"],
             "alerta_port":
                 get_port(expose_params["alerta"]),
-            "alerta_username": _param["_param"]["alerta_admin_username"]
+            "alerta_username": _param["_param"]["alerta_admin_username"],
+            "alerta_password": _param["_param"]["alerta_admin_password"]
         }
 
     def generate_mongodb_config(self):
