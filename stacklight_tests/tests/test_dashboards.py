@@ -532,7 +532,7 @@ def get_all_grafana_dashboards_names():
         "Ceph OSD Overview": "I@ceph:osd",
         "Ceph Pool Details": "I@ceph:common",
         "Ceph Pools Overview": "I@ceph:common",
-        "Ceph RBD Overview": "I@ceph:common:rbd_monitoring_enabled",
+        "Ceph RBD Overview": "I@ceph:common:rbd_monitoring_enabled:True",
         "Ceph RGW Instance Detail": "I@ceph:radosgw",
         "Ceph RGW Overview": "I@ceph:radosgw",
         "Cinder": "I@cinder:controller",
