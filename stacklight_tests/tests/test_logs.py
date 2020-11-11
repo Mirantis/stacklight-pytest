@@ -158,13 +158,18 @@ def test_metricbeat(k8s_api, kibana_client):
                                 .startswith('metricbeat')][0]
     mb_started_time = mb_pod.status.container_statuses[0].state\
         .running.started_at
-    delta_time = 60
-    pods = [{'name': pod.metadata.name,
-             'node_name': pod.spec.node_name,
-             'namespace': pod.metadata.namespace}
-            for pod in ret.items if pod.status.container_statuses[-1].state
-            .running.started_at - timedelta(seconds=delta_time) >
-            mb_started_time]
+    delta_time = 120
+    pods = []
+    for pod in ret.items:
+        if pod.status.container_statuses[-1].state.to_dict()\
+                .get('running') is not None:
+            if (pod.status.container_statuses[-1].state.running.started_at -
+                    timedelta(seconds=delta_time)) > mb_started_time:
+                pods.append(
+                    {'name': pod.metadata.name,
+                     'node_name': pod.spec.node_name,
+                     'namespace': pod.metadata.namespace}
+                )
     q = ('{"size": "0", "aggs": {"uniq_logger": {"terms": '
          '{"field": "kubernetes.event.involved_object.name", "size": 5000}}},'
          '"query": {"bool": {"filter": {"match_phrase": '
