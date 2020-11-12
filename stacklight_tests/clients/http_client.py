@@ -45,7 +45,8 @@ class HttpClient(object):
                 method, url, headers=self.headers, data=data, **kwargs)
             if not r.ok:
                 raise requests.HTTPError(r.content)
-            if "IAM realm" in r.content or r.status_code == 401:
+            if "Sign into Mirantis Container Cloud IAM" in r.content \
+                    or r.status_code == 401:
                 self.token = self.keycloak.refresh_token(self.token)
                 token_encr = self.encrypt(self.token['access_token'])
                 self.headers["Cookie"] = 'kc-access={}'.format(
