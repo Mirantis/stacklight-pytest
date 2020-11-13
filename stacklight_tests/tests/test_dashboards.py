@@ -159,6 +159,14 @@ ignored_queries_for_fail = [
     'by (le,ingress,method))',
     'round(sum(irate(nginx_ingress_controller_requests'
     '{ingress=~"glance-(cluster|namespace)-fqdn"}[$rate_interval])) '
+    'by (ingress, status), 0.001)',
+    # Keystone
+    'histogram_quantile(0.99, '
+    'sum(rate(nginx_ingress_controller_request_duration_seconds_bucket'
+    '{ingress=~"keystone-(cluster|namespace)-fqdn"}[$rate_interval])) '
+    'by (le,ingress,method))',
+    'round(sum(irate(nginx_ingress_controller_requests'
+    '{ingress=~"keystone-(cluster|namespace)-fqdn"}[$rate_interval])) '
     'by (ingress, status), 0.001)'
 ]
 
