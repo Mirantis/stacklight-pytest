@@ -17,7 +17,8 @@ class TemplatesTree(object):
         self.default_templates = {
             "$interval": "1m",
             "$timeFilter": "time > now() - 1h",
-            "$topk": "5"
+            "$topk": "5",
+            "$ident": "instance_name"
         }
         self.default_templates.update(append_default)
         self.dependencies = self._build_dependencies(self.queries)
@@ -135,6 +136,11 @@ class TemplatesTree(object):
         # W/A for "Kubernetes Pod" dashboard
         if "$__range" in dependencies:
             dependencies.remove("$__range")
+        # W/A for "Nova - Instances" dashboard
+        if "$ident" in dependencies:
+            dependencies.remove("$ident")
+        if "$topx" in dependencies:
+            dependencies.remove("$topx")
         return max(self.levels_by_name[dep]
                    for dep in dependencies) if dependencies else 0
 
