@@ -10,8 +10,7 @@ def idfy_name(name):
 
 
 def get_all_kibana_dashboards_names():
-    dashboards = {"audit": 'Audit',
-                  "kubernetes_events": 'K8S events',
+    dashboards = {"kubernetes_events": 'K8S events',
                   "logs": 'Logs',
                   "notifications": 'Notifications'}
     return dashboards
@@ -22,6 +21,22 @@ def get_all_kibana_dashboards_names():
                 ids=[idfy_name(v) for v in
                      get_all_kibana_dashboards_names().values()])
 def dashboard_name(request):
+    return request.param
+
+
+def get_all_kibana_index_patterns_names():
+    index_patterns = {"audit": 'audit-*',
+                      "kubernetes_events": 'kubernetes_events-*',
+                      "logs": 'logstash-*',
+                      "notifications": 'notification-*'}
+    return index_patterns
+
+
+@pytest.fixture(scope="module",
+                params=get_all_kibana_index_patterns_names().items(),
+                ids=[idfy_name(v) for v in
+                     get_all_kibana_index_patterns_names().values()])
+def index_pattern_name(request):
     return request.param
 
 
@@ -39,4 +54,21 @@ def test_kibana_dashboard(dashboard_name, kibana_client, k8s_api):
     actual_dashboards = [d['_source']['dashboard']['title'] for d in
                          output['hits']['hits']]
     assert name in actual_dashboards, \
+        "The representation of this dashboard is not correct"
+
+
+@pytest.mark.dashboards
+@pytest.mark.run(order=-2)
+def test_kibana_index_pattern(index_pattern_name, kibana_client, k8s_api):
+    dashboard_name, name = index_pattern_name
+    kibana_dashboards = (k8s_api.get_stacklight_chart_starting_with('kibana')
+                         ['values']['dashboardImport']['dashboards'].keys())
+    if dashboard_name not in kibana_dashboards:
+        pytest.skip("This dashboard is not in the 'kibana' chart."
+                    "Thus it's not expected in the Kibana.")
+    q = '{"query":{"match" : {"type": "index-pattern"}}}'
+    output = json.loads(kibana_client.get_query(q))
+    actual_index_patterns = [d['_source']['index-pattern']['title'] for d in
+                             output['hits']['hits']]
+    assert name in actual_index_patterns, \
         "The representation of this dashboard is not correct"
