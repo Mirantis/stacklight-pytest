@@ -49,26 +49,14 @@ CinderServicesDownMinor: count by(binary) (openstack_cinder_service_state == 0) 
   count by(binary) (openstack_cinder_service_state) * 0.3
 ClockSkewDetected: abs(node_timex_offset_seconds{job="node-exporter"}) > 0.03
 ContainerScrapeError: container_scrape_error != 0
-DockerDTRAPIDown: probe_success{job="ucp-dtr-api"} == 0
-DockerDTRAPIOutage: max(probe_success{job="ucp-dtr-api"}) == 0
-DockerNetworkUnhealthy: docker_networkdb_stats_netmsg * (docker_networkdb_stats_netmsg
+DockerSwarmLeadElectionLoop: count(max_over_time(docker_swarm_node_manager_leader[10m]) == 1) > 2
+DockerSwarmNetworkUnhealthy: docker_networkdb_stats_netmsg * (docker_networkdb_stats_netmsg
   offset 5m) > 0 or docker_networkdb_stats_qlen * (docker_networkdb_stats_qlen offset
   5m) > 0
-DockerNodeFlapping: changes(docker_swarm_node_ready[10m]) > 3
-DockerServiceReplicasDown: docker_swarm_tasks_running != docker_swarm_tasks_desired
-DockerServiceReplicasFlapping: changes(docker_swarm_tasks_running[10m]) > 0
-DockerServiceReplicasOutage: docker_swarm_tasks_running == 0 and docker_swarm_tasks_desired
-  != 0
-DockerUCPAPIDown: probe_success{job="ucp-manager-api"} == 0
-DockerUCPAPIOutage: max(probe_success{job="ucp-manager-api"}) == 0
-DockerUCPContainerUnhealthy: ucp_engine_container_unhealth == 1
-DockerUCPLeadElectionLoop: count(max_over_time(docker_swarm_node_manager_leader[10m])
-  == 1) > 2
-DockerUCPNodeDiskFullCritical: sum by (instance) (ucp_engine_disk_free_bytes) / sum
-  by (instance) (ucp_engine_disk_total_bytes) < 0.05
-DockerUCPNodeDiskFullWarning: sum by (instance) (ucp_engine_disk_free_bytes) / sum
-  by (instance) (ucp_engine_disk_total_bytes) < 0.15
-DockerUCPNodeDown: ucp_engine_node_health == 0
+DockerSwarmNodeFlapping: changes(docker_swarm_node_ready[10m]) > 3
+DockerSwarmServiceReplicasDown: docker_swarm_tasks_running != docker_swarm_tasks_desired
+DockerSwarmServiceReplicasFlapping: changes(docker_swarm_tasks_running[10m]) > 0
+DockerSwarmServiceReplicasOutage: docker_swarm_tasks_running == 0 and docker_swarm_tasks_desired != 0
 ElasticClusterStatusCritical: max(elasticsearch_cluster_health_status{color="red"}) == 1
 ElasticClusterStatusWarning: max(elasticsearch_cluster_health_status{color=~"yellow|red"})
   == 1
@@ -183,10 +171,23 @@ MariadbInnodbReplicationFallenBehind: (mysql_global_variables_innodb_replication
   60*2) > 0)
 MariadbTableLockWaitHigh: 100 * mysql_global_status_table_locks_waited / (mysql_global_status_table_locks_waited
   + mysql_global_status_table_locks_immediate) > 30
+MCCSSLCertExpirationMajor: max_over_time(probe_ssl_earliest_cert_expiry{job="mcc-blackbox"}[1h])
+  < probe_success{job="mcc-blackbox"} * (time() + 86400 * 10)
+MCCSSLCertExpirationWarning: max_over_time(probe_ssl_earliest_cert_expiry{job="mcc-blackbox"}[1h])
+  < probe_success{job="mcc-blackbox"} * (time() + 86400 * 30)
+MCCSSLProbesFailing: max_over_time(probe_success{job="mcc-blackbox"}[1h]) == 0
 MemcachedConnectionsNoneMajor: count(memcached_current_connections == 0) == count(memcached_up)
 MemcachedConnectionsNoneMinor: memcached_current_connections == 0
 MemcachedEvictionsLimit: increase(memcached_items_evicted_total[1m]) > 10
 MemcachedServiceDown: memcached_up == 0
+MKEAPIDown: probe_success{job="mke-manager-api"} == 0
+MKEAPIOutage: max(probe_success{job="mke-manager-api"}) == 0
+MKEContainerUnhealthy: ucp_engine_container_unhealth == 1
+MKENodeDiskFullCritical: sum by(instance) (ucp_engine_disk_free_bytes) / sum by(instance)
+  (ucp_engine_disk_total_bytes) < 0.05
+MKENodeDiskFullWarning: sum by(instance) (ucp_engine_disk_free_bytes) / sum by(instance)
+  (ucp_engine_disk_total_bytes) < 0.15
+MKENodeDown: ucp_engine_node_health == 0
 NetCheckerAgentErrors: absent(ncagent_error_count_total) or increase(ncagent_error_count_total[1h])
   > 10
 NetCheckerDNSSlow: absent(ncagent_http_probe_dns_lookup_time_ms) or delta(ncagent_http_probe_dns_lookup_time_ms[5m])
@@ -284,11 +285,11 @@ RabbitMQFileDescriptorUsageWarning: rabbitmq_fd_used * 100 / rabbitmq_fd_total >
 RabbitMQNetworkPartitionsDetected: rabbitmq_partitions > 0
 RabbitMQNodeDiskFreeAlarm: rabbitmq_node_disk_free_alarm > 0
 RabbitMQNodeMemoryAlarm: rabbitmq_node_mem_alarm > 0
-SSLCertExpirationMajor: max_over_time(probe_ssl_earliest_cert_expiry{job!~"(openstack|kaas)-blackbox.*"}[1h])
+SSLCertExpirationMajor: max_over_time(probe_ssl_earliest_cert_expiry{job!~"(openstack|mcc)-blackbox.*"}[1h])
   - time() < 86400 * 10
-SSLCertExpirationWarning: max_over_time(probe_ssl_earliest_cert_expiry{job!~"(openstack|kaas)-blackbox.*"}[1h])
+SSLCertExpirationWarning: max_over_time(probe_ssl_earliest_cert_expiry{job!~"(openstack|mcc)-blackbox.*"}[1h])
   - time() < 86400 * 30
-SSLProbesFailing: max_over_time(probe_success{job!~"(openstack|kaas)-blackbox.*"}[1h])
+SSLProbesFailing: max_over_time(probe_success{job!~"(openstack|mcc)-blackbox.*"}[1h])
   == 0
 SfNotifierAuthFailure: sf_auth_ok == 0
 SystemCpuFullWarning: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m]))
@@ -302,9 +303,9 @@ SystemDiskInodesFullMajor: 100 - 100 * node_filesystem_files_free / node_filesys
   >= 95
 SystemDiskInodesFullWarning: 100 - 100 * node_filesystem_files_free / node_filesystem_files
   >= 85
-SystemLoadTooHighCritical: node_load5 / on (node) (avg by (node) (machine_cpu_cores))
+SystemLoadTooHighCritical: avg by(node) (node_load5) / avg by(node) (machine_cpu_cores)
   > 2
-SystemLoadTooHighWarning: node_load5 / on (node) (avg by (node) (machine_cpu_cores))
+SystemLoadTooHighWarning: avg by(node) (node_load5) / avg by(node) (machine_cpu_cores)
   > 1
 SystemMemoryFullMajor: 100 * (node_memory_MemFree_bytes + node_memory_Cached_bytes
   + node_memory_Buffers_bytes) / node_memory_MemTotal_bytes < 5 and node_memory_Active_bytes

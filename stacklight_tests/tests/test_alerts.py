@@ -65,6 +65,19 @@ alert_metrics_openstack = {
         '(mysql_global_status_table_locks_waited + '
         'mysql_global_status_table_locks_immediate) <= 30'
     ],
+    "MCCSSLCertExpirationMajor": [
+        'max_over_time(probe_ssl_earliest_cert_expiry{'
+        'job="mcc-blackbox"}[1h]) >= '
+        'probe_success{job="mcc-blackbox"} * (time() + 86400 * 10)'
+    ],
+    "MCCSSLCertExpirationWarning": [
+        'max_over_time(probe_ssl_earliest_cert_expiry{'
+        'job="mcc-blackbox"}[1h]) >= '
+        'probe_success{job="mcc-blackbox"} * (time() + 86400 * 30)'
+    ],
+    "MCCSSLProbesFailing": [
+        'max_over_time(probe_success{job="mcc-blackbox"}[1h]) != 0'
+    ],
     "MemcachedConnectionsNoneMajor": [
         'count(memcached_current_connections != 0) == count(memcached_up)'
     ],
@@ -73,6 +86,18 @@ alert_metrics_openstack = {
         'increase(memcached_items_evicted_total[1m]) <= 10'
     ],
     "MemcachedServiceDown": ['memcached_up != 0'],
+    "MKEAPIDown": ['probe_success{job="mke-manager-api"} != 0'],
+    "MKEAPIOutage": ['max(probe_success{job="mke-manager-api"}) != 0'],
+    "MKEContainerUnhealthy": ['ucp_engine_container_unhealth != 1'],
+    "MKENodeDiskFullCritical": [
+        'sum by(instance) (ucp_engine_disk_free_bytes) / '
+        'sum by(instance) (ucp_engine_disk_total_bytes) >= 0.05'
+    ],
+    "MKENodeDiskFullWarning": [
+        'sum by(instance) (ucp_engine_disk_free_bytes) / '
+        'sum by(instance) (ucp_engine_disk_total_bytes) >= 0.15'
+    ],
+    "MKENodeDown": ['ucp_engine_node_health != 0'],
     "NeutronAgentDown": ['openstack_neutron_agent_state != 0'],
     "NeutronAgentsDownMajor": [
         'count by(binary) (openstack_neutron_agent_state == 0) < on(binary) '
@@ -197,48 +222,26 @@ alert_metrics_no_openstack = {
         'sum(increase(container_cpu_cfs_periods_total{}[5m])) '
         'by (container, pod, namespace) <= 25'
     ],
-    "DockerDTRAPIDown": ['probe_success{job="ucp-dtr-api"} != 0'],
-    "DockerDTRAPIOutage": ['max(probe_success{job="ucp-dtr-api"}) != 0'],
-    "DockerNetworkUnhealthy": [
+    "DockerSwarmLeadElectionLoop": [
+        'count(max_over_time(docker_swarm_node_manager_leader[10m]) == 1) <= 2'
+    ],
+    "DockerSwarmNetworkUnhealthy": [
         'docker_networkdb_stats_netmsg * '
         '(docker_networkdb_stats_netmsg offset 5m) <= 0 and '
         'docker_networkdb_stats_qlen * '
         '(docker_networkdb_stats_qlen offset 5m) <= 0'
     ],
-    "DockerNodeFlapping": [
+    "DockerSwarmNodeFlapping": [
         'changes(docker_swarm_node_ready[10m]) <= 3'
     ],
-    "DockerServiceReplicasDown": [
+    "DockerSwarmServiceReplicasDown": [
         'docker_swarm_tasks_running == docker_swarm_tasks_desired'
     ],
-    "DockerServiceReplicasFlapping": [
+    "DockerSwarmServiceReplicasFlapping": [
         'changes(docker_swarm_tasks_running[10m]) <= 0'
     ],
-    "DockerServiceReplicasOutage": [
+    "DockerSwarmServiceReplicasOutage": [
         'docker_swarm_tasks_running != 0 or docker_swarm_tasks_desired == 0'
-    ],
-    "DockerUCPAPIDown": [
-        'probe_success{job="ucp-manager-api"} != 0'
-    ],
-    "DockerUCPAPIOutage": [
-        'max(probe_success{job="ucp-manager-api"}) != 0'
-    ],
-    "DockerUCPContainerUnhealthy": [
-        'ucp_engine_container_unhealth != 1'
-    ],
-    "DockerUCPLeadElectionLoop": [
-        'count(max_over_time(docker_swarm_node_manager_leader[10m]) == 1) <= 2'
-    ],
-    "DockerUCPNodeDiskFullCritical": [
-        'sum by (instance) (ucp_engine_disk_free_bytes) / '
-        'sum by (instance) (ucp_engine_disk_total_bytes) >= 0.05'
-    ],
-    "DockerUCPNodeDiskFullWarning": [
-        'sum by (instance) (ucp_engine_disk_free_bytes) '
-        '/ sum by (instance) (ucp_engine_disk_total_bytes) >= 0.15'
-    ],
-    "DockerUCPNodeDown": [
-        'ucp_engine_node_health != 0'
     ],
     "ElasticClusterStatusCritical": [
         'max(elasticsearch_cluster_health_status{color="red"}) != 1'
@@ -598,10 +601,10 @@ alert_metrics_no_openstack = {
         '100 - 100 * node_filesystem_files_free / node_filesystem_files < 85'
     ],
     "SystemLoadTooHighCritical": [
-        'node_load5 / on (node) machine_cpu_cores <= 2'
+        'avg by(node) (node_load5) / avg by(node) (machine_cpu_cores) <= 2'
     ],
     "SystemLoadTooHighWarning": [
-        'node_load5 / on (node) machine_cpu_cores <= 1'
+        'avg by(node) (node_load5) / avg by(node) (machine_cpu_cores) <= 1'
     ],
     "SystemMemoryFullMajor": [
         '100 * (node_memory_MemFree_bytes + node_memory_Cached_bytes + '
@@ -730,15 +733,15 @@ alert_metrics_no_openstack = {
     "SfNotifierAuthFailure": ['sf_auth_ok != 0'],
     "SSLCertExpirationMajor": [
         'max_over_time(probe_ssl_earliest_cert_expiry'
-        '{job!~"(openstack|kaas)-blackbox.*"}[1h]) - time() >= 86400 * 10'
+        '{job!~"(openstack|mcc)-blackbox.*"}[1h]) - time() >= 86400 * 10'
     ],
     "SSLCertExpirationWarning": [
         'max_over_time(probe_ssl_earliest_cert_expiry'
-        '{job!~"(openstack|kaas)-blackbox.*"}[1h]) - time() >= 86400 * 30'
+        '{job!~"(openstack|mcc)-blackbox.*"}[1h]) - time() >= 86400 * 30'
     ],
     "SSLProbesFailing": [
         'max_over_time(probe_success{'
-        'job!~"(openstack|kaas)-blackbox.*"}[1h]) != 0'
+        'job!~"(openstack|mcc)-blackbox.*"}[1h]) != 0'
     ],
     "TelemeterClientFederationFailed": [
         'increase(federate_errors[30m]) <= 2'

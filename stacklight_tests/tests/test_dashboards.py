@@ -13,12 +13,13 @@ ignored_queries_for_fail = [
     'sum(kube_job_status_succeeded{namespace=~"$namespace"})',
     'sum(kube_job_status_active{namespace=~"$namespace"})',
     'sum(kube_job_status_failed{namespace=~"$namespace"})',
-    # UCP Cluster
+    # MKE Cluster
     'count(count(ucp_engine_container_cpu_total_time_nanoseconds{stack!=""}) '
     'by (stack))',
     'count(ucp_engine_container_health{name=~"dtr-api-.*"})',
     'count(ucp_engine_containers{manager="false"}) - '
     '(count(ucp_engine_container_health{name=~"dtr-api-.*"}) or vector(0))',
+    'count(ucp_engine_containers{manager="false"})',
     # Openstack Overview
     'max(openstack_nova_aggregate_disk - '
     'openstack_nova_aggregate_disk_available) by (aggregate)',
@@ -262,6 +263,9 @@ dashboards_no_openstack = {
     "Kubernetes Namespaces": 'kubernetes-namespace',
     "Kubernetes Nodes": 'kubernetes-node',
     "Kubernetes Pods": 'kubernetes-pod',
+    # MKE
+    "MKE Containers": 'mke-containers',
+    "MKE Cluster": 'mke-cluster',
     "NGINX": 'nginx',
     "PostgreSQL": 'postgresql',
     "Prometheus": 'prometheus',
@@ -275,10 +279,7 @@ dashboards_no_openstack = {
     "Ceph OSD": 'ceph-osds',
     "Ceph Pools": 'ceph-pools',
     # Ironic
-    "Ironic BM": 'ironic',
-    # UCP
-    "UCP Cluster": 'ucp-cluster',
-    "UCP Containers": 'ucp-containers'
+    "Ironic BM": 'ironic'
 }
 
 dashboards_openstack_values = {
