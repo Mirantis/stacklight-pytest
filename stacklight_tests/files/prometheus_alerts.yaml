@@ -7,7 +7,7 @@ AlertmanagerNotificationFailureWarning: increase(alertmanager_notifications_fail
   > 0
 CPUThrottlingHigh: 100 * sum by(container, pod, namespace) (increase(container_cpu_cfs_throttled_periods_total{container!=""}[5m]))
   / sum by(container, pod, namespace) (increase(container_cpu_cfs_periods_total[5m]))
-  > 25
+  > 75
 CalicoDatapaneIfaceMsgBatchSizeHigh: felix_int_dataplane_iface_msg_batch_size_sum / felix_int_dataplane_iface_msg_batch_size_count
   > 5
 CalicoDataplaneAddressMsgBatchSizeHigh: felix_int_dataplane_addr_msg_batch_size_sum / felix_int_dataplane_addr_msg_batch_size_count
@@ -137,8 +137,8 @@ KubeNodeNotReady: kube_node_status_condition{condition="Ready",job="kube-state-m
   == 0
 KubePersistentVolumeErrors: kube_persistentvolume_status_phase{job="kube-state-metrics",phase=~"Failed|Pending"}
   > 0
-KubePersistentVolumeFullInFourDays: 100 * ( kubelet_volume_stats_available_bytes{job="kubelet"}
-  / kubelet_volume_stats_capacity_bytes{job="kubelet"} ) < 15 and predict_linear(kubelet_volume_stats_available_bytes{job="kubelet"}[36h],
+KubePersistentVolumeFullInFourDays: 100 * (kubelet_volume_stats_available_bytes{job="kubelet"} /
+  kubelet_volume_stats_capacity_bytes{job="kubelet"}) < 15 and predict_linear(kubelet_volume_stats_available_bytes{job="kubelet"}[1d12h],
   4 * 24 * 3600) < 0
 KubePersistentVolumeUsageCritical: 100 * kubelet_volume_stats_available_bytes{job="kubelet"}
   / kubelet_volume_stats_capacity_bytes{job="kubelet"} < 3
@@ -158,7 +158,7 @@ KubeStatefulSetUpdateNotRolledOut: max without (revision) ( kube_statefulset_sta
   != kube_statefulset_status_replicas_updated{job="kube-state-metrics"} )
 KubeVersionMismatch: count(count by (gitVersion) (label_replace(kubernetes_build_info{job!="kube-dns"},"gitVersion","$1","gitVersion","(v[0-9]*.[0-9]*.[0-9]*).*")))
   > 1
-KubeletTooManyPods: kubelet_running_pod_count{job="kubelet"} > 110 * 0.9
+KubeletTooManyPods: kubelet_running_pod_count{job="kubelet"} > on(node) kube_node_status_allocatable{resource="pods"} * 0.9
 LibvirtDown: libvirt_up == 0
 MariadbGaleraDonorFallingBehind: (mysql_global_status_wsrep_local_state == 2 and mysql_global_status_wsrep_local_recv_queue
   > 100)
@@ -313,7 +313,7 @@ SystemMemoryFullMajor: 100 * (node_memory_MemFree_bytes + node_memory_Cached_byt
 SystemMemoryFullWarning: 100 * (node_memory_MemFree_bytes + node_memory_Cached_bytes
   + node_memory_Buffers_bytes) / node_memory_MemTotal_bytes < 10 and node_memory_Active_bytes
   < 8 * 2^30
-SystemRxPacketsDroppedTooHigh: increase(node_network_receive_drop_total{device!~"cali.*"}[1m])
+SystemRxPacketsDroppedTooHigh: increase(node_network_receive_drop_total{device!~"br-ex|br-int|cali.*"}[1m])
   > 60
 SystemRxPacketsErrorTooHigh: rate(node_network_receive_errs_total{device!~"veth.+",job="node-exporter"}[2m])
   > 0

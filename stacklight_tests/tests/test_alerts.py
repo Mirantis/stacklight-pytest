@@ -220,7 +220,7 @@ alert_metrics_no_openstack = {
         '100 * sum(increase(container_cpu_cfs_throttled_periods_total'
         '{container!="", }[5m])) by (container, pod, namespace) / '
         'sum(increase(container_cpu_cfs_periods_total{}[5m])) '
-        'by (container, pod, namespace) <= 25'
+        'by (container, pod, namespace) <= 75'
     ],
     "DockerSwarmLeadElectionLoop": [
         'count(max_over_time(docker_swarm_node_manager_leader[10m]) == 1) <= 2'
@@ -414,7 +414,7 @@ alert_metrics_no_openstack = {
         '100 * ( kubelet_volume_stats_available_bytes{job="kubelet"} / '
         'kubelet_volume_stats_capacity_bytes{job="kubelet"} ) >= 15 or '
         'predict_linear(kubelet_volume_stats_available_bytes{job="kubelet"}'
-        '[12h], 4 * 24 * 3600) >= 0'
+        '[1d12h], 4 * 24 * 3600) >= 0'
     ],
     "KubePersistentVolumeUsageCritical": [
         '100 * kubelet_volume_stats_available_bytes{job="kubelet"} / '
@@ -453,7 +453,8 @@ alert_metrics_no_openstack = {
         '"gitVersion","$1","gitVersion","(v[0-9]*.[0-9]*.[0-9]*).*"))) <= 1'
     ],
     "KubeletTooManyPods": [
-        'kubelet_running_pod_count{job="kubelet"} <= 110 * 0.9'
+        'kubelet_running_pod_count{job="kubelet"} <= on(node) '
+        'kube_node_status_allocatable{resource="pods"} * 0.9'
     ],
     "NetCheckerAgentErrors": [
         'increase(ncagent_error_count_total[1h]) <= 10'
@@ -617,7 +618,8 @@ alert_metrics_no_openstack = {
         'node_memory_Active_bytes >= 8 * 2^30'
     ],
     "SystemRxPacketsDroppedTooHigh": [
-        'increase(node_network_receive_drop_total{device!~"cali.*"}[1m]) <= 60'
+        'increase(node_network_receive_drop_total{'
+        'device!~"br-ex|br-int|cali.*"}[1m]) <= 60'
     ],
     "SystemRxPacketsErrorTooHigh": [
         'rate(node_network_receive_errs_total'
@@ -790,10 +792,10 @@ def test_alert(prometheus_api, prometheus_native_alerting, alert, metrics,
 @pytest.mark.alerts
 def test_alert_watchdog(k8s_api, prometheus_api, prometheus_native_alerting):
     prometheus_chart = k8s_api.get_stacklight_chart("prometheus")
-    override_alerts = prometheus_chart['values']['alertsOverride']
+    override_alerts = prometheus_chart['values'].get('alertsOverride', {})
 
-    if (not override_alerts.get('general', '') or
-            "Watchdog" not in override_alerts['general'].keys()):
+    if (not override_alerts.get('Watchdog', '') or
+            "Watchdog" not in override_alerts.keys()):
         pytest.skip("Watchdog alert is disabled on this environment")
     err_msg = "Something wrong with Watchdog alert. It should be always firing"
     logger.info('Checking that Watchdog alert is firing')
