@@ -169,7 +169,7 @@ alert_metrics_openstack = {
     ],
     "RabbitMQDown": ['rabbitmq_up == 1'],
     "RabbitMQFileDescriptorUsageWarning": [
-        'rabbitmq_fd_used * 100 / rabbitmq_fd_total <= 80'
+        'rabbitmq_fd_used * 100 / rabbitmq_fd_available <= 80'
     ],
     "RabbitMQNetworkPartitionsDetected": [
         'rabbitmq_partitions <= 0'
@@ -280,19 +280,6 @@ alert_metrics_no_openstack = {
     ],
     "FileDescriptorUsageWarning": [
         'node_filefd_allocated / node_filefd_maximum <= 0.8'
-    ],
-    "KaasSSLCertExpirationMajor": [
-        'max_over_time(probe_ssl_earliest_cert_expiry'
-        '{job="kaas-blackbox"}[1h]) >= '
-        'probe_success{job="kaas-blackbox"} * (time() + 86400 * 10)'
-    ],
-    "KaasSSLCertExpirationWarning": [
-        'max_over_time(probe_ssl_earliest_cert_expiry'
-        '{job="kaas-blackbox"}[1h]) >= '
-        'probe_success{job="kaas-blackbox"} * (time() + 86400 * 30)'
-    ],
-    "KaasSSLProbesFailing": [
-        'max_over_time(probe_success{job="kaas-blackbox"}[1h]) != 0'
     ],
     "KubeAPIDown": [
         'probe_success{job="kubernetes-master-api"} != 0'

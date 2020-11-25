@@ -80,11 +80,6 @@ IronicBmMetricsMissing: absent(ironic_nodes_total) == 1 or absent(ironic_drivers
   == 1 or absent(http_response_status{name=~"ironic-api"}) == 1
 IronicDriverMissing: scalar(count(kube_pod_container_info{container="ironic-conductor"}
   == 1)) - count(openstack_ironic_driver) by (driver) > 0
-KaasSSLCertExpirationMajor: max_over_time(probe_ssl_earliest_cert_expiry{job="kaas-blackbox"}[1h])
-  < probe_success{job="kaas-blackbox"} * (time() + 86400 * 10)
-KaasSSLCertExpirationWarning: max_over_time(probe_ssl_earliest_cert_expiry{job="kaas-blackbox"}[1h])
-  < probe_success{job="kaas-blackbox"} * (time() + 86400 * 30)
-KaasSSLProbesFailing: max_over_time(probe_success{job="kaas-blackbox"}[1h]) == 0
 KubeAPIDown: probe_success{job="kubernetes-master-api"} == 0
 KubeAPIErrorsHighMajor: sum(rate(apiserver_request_total{code=~"^(?:5..)$",job="apiserver"}[5m]))
   / sum(rate(apiserver_request_total{job="apiserver"}[5m])) * 100 > 3
@@ -281,7 +276,7 @@ PrometheusTSDBWALCorruptions: increase(prometheus_tsdb_wal_corruptions_total[3m]
 PrometheusTargetScrapesDuplicate: increase(prometheus_target_scrapes_sample_duplicate_timestamp_total[5m])
   > 0
 RabbitMQDown: rabbitmq_up != 1
-RabbitMQFileDescriptorUsageWarning: rabbitmq_fd_used * 100 / rabbitmq_fd_total > 80
+RabbitMQFileDescriptorUsageWarning: rabbitmq_fd_used * 100 / rabbitmq_fd_available > 80
 RabbitMQNetworkPartitionsDetected: rabbitmq_partitions > 0
 RabbitMQNodeDiskFreeAlarm: rabbitmq_node_disk_free_alarm > 0
 RabbitMQNodeMemoryAlarm: rabbitmq_node_mem_alarm > 0
