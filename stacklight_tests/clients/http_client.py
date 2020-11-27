@@ -43,9 +43,9 @@ class HttpClient(object):
         for _ in range(3):
             r = requests.request(
                 method, url, headers=self.headers, data=data, **kwargs)
-            if not r.ok:
-                raise requests.HTTPError(r.content)
-            if "Sign into Mirantis Container Cloud IAM" in r.content \
+            refresh_token_items = ["Sign into Mirantis Container Cloud IAM",
+                                   "RESTEASY003065"]
+            if any(item in r.content for item in refresh_token_items) \
                     or r.status_code == 401:
                 self.token = self.keycloak.refresh_token(self.token)
                 token_encr = self.encrypt(self.token['access_token'])
@@ -53,6 +53,8 @@ class HttpClient(object):
                     base64.b64encode(token_encr).strip("=")
                 )
                 continue
+            if not r.ok:
+                raise requests.HTTPError(r.content)
             else:
                 return r
         else:

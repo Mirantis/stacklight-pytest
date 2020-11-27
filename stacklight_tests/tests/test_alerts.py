@@ -781,8 +781,7 @@ def test_alert_watchdog(k8s_api, prometheus_api, prometheus_native_alerting):
     prometheus_chart = k8s_api.get_stacklight_chart("prometheus")
     override_alerts = prometheus_chart['values'].get('alertsOverride', {})
 
-    if (not override_alerts.get('Watchdog', '') or
-            "Watchdog" not in override_alerts.keys()):
+    if not override_alerts.get('Watchdog', ''):
         pytest.skip("Watchdog alert is disabled on this environment")
     err_msg = "Something wrong with Watchdog alert. It should be always firing"
     logger.info('Checking that Watchdog alert is firing')
