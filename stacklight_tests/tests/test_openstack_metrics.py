@@ -14,60 +14,98 @@ def create_resources(request, os_clients, os_actions, k8s_api,
     releases = k8s_api.get_stacklight_chart_releases()
     if related_release in releases and openstack_cr_exists:
 
-        logger.info("Creating a test image")
-        image = os_actions.create_cirros_image()
-        utils.wait_for_resource_status(
-            os_clients.image.images, image.id, "active")
+        try:
+            logger.info("Creating a test image")
+            image = None
+            image = os_actions.create_cirros_image()
+            utils.wait_for_resource_status(
+                os_clients.image.images, image.id, "active")
+        except Exception as e:
+            logger.error("Creating a test image is failed. "
+                         "Error: {}".format(e))
 
-        logger.info("Creating a test flavor")
-        flavor = os_actions.create_flavor(
-            name="test_flavor", ram='64')
+        try:
+            logger.info("Creating a test flavor")
+            flavor = None
+            flavor = os_actions.create_flavor(
+                name="sl_test_flavor", ram='64')
+        except Exception as e:
+            logger.error("Creating a test flavor is failed. "
+                         "Error: {}".format(e))
 
-        logger.info("Creating a test volume")
-        volume = os_clients.volume.volumes.create(size=1, name=utils.rand_name(
-            "volume-"))
-        utils.wait_for_resource_status(os_clients.volume.volumes, volume.id,
-                                       'available')
+        try:
+            logger.info("Creating a test volume")
+            volume = None
+            volume = os_clients.volume.volumes.create(
+                size=1, name=utils.rand_name("volume-"))
+            utils.wait_for_resource_status(
+                os_clients.volume.volumes, volume.id, 'available')
+        except Exception as e:
+            logger.error("Creating a test volume is failed. "
+                         "Error: {}".format(e))
 
-        logger.info("Creating test network and subnet")
-        project_id = os_clients.auth.projects.find(name='admin').id
-        net = os_actions.create_network(project_id)
-        subnet = os_actions.create_subnet(net, project_id, "192.168.100.0/24")
+        try:
+            logger.info("Creating test network and subnet")
+            net = None
+            subnet = None
+            project_id = os_clients.auth.projects.find(name='admin').id
+            net = os_actions.create_network(project_id)
+            subnet = os_actions.create_subnet(net, project_id,
+                                              "192.168.100.0/24")
+        except Exception as e:
+            logger.error("Creating a test network and subnet is failed. "
+                         "Error: {}".format(e))
 
-        logger.info("Creating a test instance")
-        server = os_actions.create_basic_server(image, flavor, net)
-        utils.wait_for_resource_status(
-            os_clients.compute.servers, server, 'ACTIVE')
-        logger.info("Created the test instance with id {}".format(server.id))
+        try:
+            logger.info("Creating a test instance")
+            server = None
+            server = os_actions.create_basic_server(image, flavor, net)
+            utils.wait_for_resource_status(
+                os_clients.compute.servers, server, 'ACTIVE')
+            logger.info("Created the test instance with id {}"
+                        .format(server.id))
+        except Exception as e:
+            logger.error("Creating a test instance is failed. Error: {}"
+                         .format(e))
 
         def delete_resources():
-            logger.info("Removing the test instance")
-            os_clients.compute.servers.delete(server)
-            utils.wait(
-                lambda: (server.id not in [
-                    s.id for s in os_clients.compute.servers.list()])
-            )
+            if server:
+                logger.info("Removing the test instance")
+                os_clients.compute.servers.delete(server)
+                utils.wait(
+                    lambda: (server.id not in [
+                        s.id for s in os_clients.compute.servers.list()])
+                )
 
-            logger.info("Removing the test network and subnet")
-            os_clients.network.delete_subnet(subnet['id'])
-            os_clients.network.delete_network(net['id'])
+            if net and server:
+                logger.info("Removing the test network and subnet")
+                if subnet:
+                    os_clients.network.delete_subnet(subnet['id'])
+                os_clients.network.delete_network(net['id'])
 
-            logger.info("Removing the test image")
-            os_clients.image.images.delete(image.id)
-            utils.wait(
-                lambda: (image.id not in [
-                    i["id"] for i in os_clients.image.images.list()])
-            )
+            if image:
+                logger.info("Removing the test image")
+                os_clients.image.images.delete(image.id)
+                utils.wait(
+                    lambda: (image.id not in [
+                        i["id"] for i in os_clients.image.images.list()])
+                )
 
-            logger.info("Removing the test flavor")
-            os_clients.compute.flavors.delete(flavor)
+            if flavor:
+                logger.info("Removing the test flavor")
+                os_clients.compute.flavors.delete(flavor)
+                utils.wait(
+                    lambda: (flavor.id not in [
+                        f.id for f in os_clients.compute.flavors.list()])
+                )
 
-            logger.info("Removing the test volume")
-            os_clients.volume.volumes.delete(volume)
-            utils.wait(
-                lambda: (volume.id not in [
-                    v.id for v in os_clients.volume.volumes.list()])
-            )
+            if volume:
+                logger.info("Removing the test volume")
+                os_clients.volume.volumes.delete(volume)
+                utils.wait(
+                    lambda: (volume.id not in [
+                        v.id for v in os_clients.volume.volumes.list()])
+                )
 
         request.addfinalizer(delete_resources)
         return {'server': server, 'image': image, 'flavor': flavor, 'net': net,
@@ -328,10 +366,13 @@ def test_libvirt_metrics(prometheus_api, create_resources, chart_releases,
         return True
 
     server = create_resources['server']
-    err_msg = ("Timeout waiting for all libvirt metrics "
-               "for the instance {}".format(server.id))
-    utils.wait(lambda: _check_metrics(server.id), interval=20,
-               timeout=2 * 60, timeout_msg=err_msg)
+    if server:
+        err_msg = ("Timeout waiting for all libvirt metrics "
+                   "for the instance {}".format(server.id))
+        utils.wait(lambda: _check_metrics(server.id), interval=20,
+                   timeout=2 * 60, timeout_msg=err_msg)
+    else:
+        raise ValueError("Server required for this test was not created.")
 
 
 @pytest.mark.openstack_metrics
@@ -364,7 +405,7 @@ def test_kpi_metrics(prometheus_api, os_clients, os_actions, destructive,
 
     logger.info("Creating a test flavor")
     flavor = os_actions.create_flavor(
-        name="test_flavor", ram='64')
+        name="sl_test_flavor_kpi", ram='64')
     destructive.append(lambda: client.flavors.delete(flavor))
 
     logger.info("Creating test network and subnet")
