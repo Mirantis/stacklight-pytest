@@ -24,8 +24,8 @@ class OfficialClientManager(object):
     KEYSTONECLIENT_VERSION = 3, 0
     NEUTRONCLIENT_VERSION = 2
     NOVACLIENT_VERSION = 2
-    INTERFACE = 'admin'
-    endpoint_type = "internalURL"
+    INTERFACE = 'public'
+    endpoint_type = "publicURL"
     if "OS_INTERFACE" in os.environ.keys():
         INTERFACE = os.environ["OS_INTERFACE"]
     if "OS_ENDPOINT_TYPE" in os.environ.keys():
@@ -102,8 +102,10 @@ class OfficialClientManager(object):
         session = cls._get_auth_session(
             username=username, password=password, tenant_name=tenant_name,
             auth_url=auth_url, cert=cert, domain=domain)
+        service_type = 'identity'
         keystone = keystone_client.Client(
-            cls.KEYSTONECLIENT_VERSION, session=session, **kwargs)
+            cls.KEYSTONECLIENT_VERSION, session=session,
+            service_type=service_type, interface=cls.INTERFACE, ** kwargs)
         keystone.management_url = auth_url
         return keystone
 
@@ -117,7 +119,8 @@ class OfficialClientManager(object):
         service_type = 'compute'
         compute_client = novaclient.Client(
             version=cls.NOVACLIENT_VERSION, session=session,
-            service_type=service_type, os_cache=False, **kwargs)
+            service_type=service_type, interface=cls.INTERFACE,
+            os_cache=False, **kwargs)
         return compute_client
 
     @classmethod
