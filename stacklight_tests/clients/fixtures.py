@@ -1,4 +1,5 @@
 import pytest
+import subprocess
 
 from stacklight_tests import settings
 from stacklight_tests.clients import alerta_client
@@ -150,7 +151,8 @@ def prometheus_native_alerting(sl_services):
 
 
 @pytest.fixture(scope="session")
-def os_clients(k8s_api, openstack_cr_exists):
+def os_clients(k8s_api, openstack_cr_exists, openstack_hosts_setup):
+    public_auth_url = 'http://keystone.it.just.works/v3'
     related_release = 'telegraf-openstack'
     releases = k8s_api.get_stacklight_chart_releases()
     if related_release in releases and openstack_cr_exists:
@@ -159,7 +161,7 @@ def os_clients(k8s_api, openstack_cr_exists):
             username=creds["OS_USERNAME"],
             password=creds["OS_PASSWORD"],
             tenant_name=creds["OS_PROJECT_NAME"],
-            auth_url=creds["OS_AUTH_URL"],
+            auth_url=public_auth_url,
             cert=False,
             domain=creds["OS_DEFAULT_DOMAIN"],
         )
@@ -194,6 +196,41 @@ def stacklight_bundle(k8s_api):
 @pytest.fixture(scope="session")
 def openstack_cr_exists(k8s_api):
     return k8s_api.openstack_deployment_exists()
+
+
+@pytest.fixture(scope="session")
+def openstack_ingress_ip(k8s_api, openstack_cr_exists):
+    if openstack_cr_exists:
+        return k8s_api.get_openstack_ingress_ip()
+    else:
+        return None
+
+
+@pytest.fixture(scope="session")
+def openstack_hosts_setup(k8s_api, openstack_ingress_ip):
+    if openstack_ingress_ip and settings.STACKLIGHT_TEST_POD_NAME:
+        with open('/etc/hosts', 'r') as file:
+            hosts = file.read().replace('\n', ' ').strip()
+        service_types = ('keystone',
+                         'cinder',
+                         'glance',
+                         'heat',
+                         'nova',
+                         'neutron')
+        for s_t in service_types:
+            if s_t in hosts:
+                if openstack_ingress_ip in hosts:
+                    continue
+                else:
+                    raise EnvironmentError(
+                        "The file '/etc/host' in this OS is already "
+                        "configured for another Openstack."
+                    )
+            else:
+                subprocess.call(
+                    "echo \"{} {}.it.just.works\" >> /etc/hosts"
+                    .format(openstack_ingress_ip, s_t),
+                    shell=True)
 #
 #
 # @pytest.fixture(scope="session")

@@ -19,7 +19,7 @@ LOG_FILE = os.environ.get('LOG_FILE', 'test.log')
 SL_NAMESPACE = os.environ.get("SL_NAMESPACE", 'stacklight')
 TEST_FIRING_ALERTS = get_var_as_bool("TEST_FIRING_ALERTS", True)
 STACKLIGHT_TEST_POD_NAME = os.environ.get("STACKLIGHT_TEST_POD_NAME",
-                                          'test-stacklight')
+                                          '')
 
 # Images dir
 IMAGES_PATH = os.environ.get("IMAGES_PATH", os.path.expanduser('~/images'))

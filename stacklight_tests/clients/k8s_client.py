@@ -297,6 +297,15 @@ class K8sClient(object):
             creds[k] = base64.b64decode(v).decode()
         return creds
 
+    def get_openstack_ingress_ip(self):
+        services = self.core_api.list_namespaced_service(
+            namespace="openstack"
+        )
+        ingress = filter(lambda item: item.metadata.name == 'ingress',
+                         services.items)[0]
+        ingress_ip = ingress.status.load_balancer.ingress[0].ip
+        return ingress_ip
+
 
 def validate_kubeconfig(path):
     err_msg = ("There is an 'auth-provider' option in the provided kubeconfig."
