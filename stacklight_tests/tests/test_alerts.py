@@ -79,7 +79,8 @@ alert_metrics_openstack = {
         'max_over_time(probe_success{job="mcc-blackbox"}[1h]) != 0'
     ],
     "MemcachedConnectionsNoneMajor": [
-        'count(memcached_current_connections != 0) == count(memcached_up)'
+        'count(memcached_current_connections == 0) by (namespace) != '
+        'count(memcached_up) by (namespace)'
     ],
     "MemcachedConnectionsNoneMinor": ['memcached_current_connections != 0'],
     "MemcachedEvictionsLimit": [
@@ -87,7 +88,9 @@ alert_metrics_openstack = {
     ],
     "MemcachedServiceDown": ['memcached_up != 0'],
     "MKEAPIDown": ['probe_success{job="mke-manager-api"} != 0'],
-    "MKEAPIOutage": ['max(probe_success{job="mke-manager-api"}) != 0'],
+    "MKEAPIOutage": [
+        'max by(job) (probe_success{job="mke-manager-api"}) != 0'
+    ],
     "MKEContainerUnhealthy": ['ucp_engine_container_unhealth != 1'],
     "MKENodeDiskFullCritical": [
         'sum by(instance) (ucp_engine_disk_free_bytes) / '
@@ -98,6 +101,8 @@ alert_metrics_openstack = {
         'sum by(instance) (ucp_engine_disk_total_bytes) >= 0.15'
     ],
     "MKENodeDown": ['ucp_engine_node_health != 0'],
+    "MSRAPIDown": ['probe_success{job="msr-api"} != 0'],
+    "MSRAPIOutage": ['max(probe_success{job="msr-api"}) by (job) != 0'],
     "NeutronAgentDown": ['openstack_neutron_agent_state != 0'],
     "NeutronAgentsDownMajor": [
         'count by(binary) (openstack_neutron_agent_state == 0) < on(binary) '
@@ -118,16 +123,24 @@ alert_metrics_openstack = {
         'count (openstack_neutron_agent_state)'
     ],
     "NovaComputeServicesDownMajor": [
-        'count(openstack_nova_service_state{binary="nova-compute"} == 0) < '
-        'count(openstack_nova_service_state{binary="nova-compute"}) * 0.5 or '
-        'count (openstack_nova_service_state{binary="nova-compute"} == 1) == '
-        'count (openstack_nova_service_state{binary="nova-compute"})'
+        'count(openstack_nova_service_state{binary="nova-compute"} == 0) '
+        'by (binary) < '
+        'count(openstack_nova_service_state{binary="nova-compute"}) '
+        'by (binary) * 0.5 or '
+        'count (openstack_nova_service_state{binary="nova-compute"} == 1) '
+        'by (binary) == '
+        'count (openstack_nova_service_state{binary="nova-compute"}) '
+        'by (binary)'
     ],
     "NovaComputeServicesDownMinor": [
-        'count(openstack_nova_service_state{binary="nova-compute"} == 0) < '
-        'count(openstack_nova_service_state{binary="nova-compute"}) * 0.25 or '
-        'count (openstack_nova_service_state{binary="nova-compute"} == 1) == '
-        'count (openstack_nova_service_state{binary="nova-compute"})'
+        'count(openstack_nova_service_state{binary="nova-compute"} == 0) '
+        'by (binary) < '
+        'count(openstack_nova_service_state{binary="nova-compute"}) '
+        'by (binary) * 0.25 or '
+        'count (openstack_nova_service_state{binary="nova-compute"} == 1) '
+        'by (binary) == '
+        'count (openstack_nova_service_state{binary="nova-compute"}) '
+        'by (binary)'
     ],
     "NovaServiceDown": ['openstack_nova_service_state != 0'],
     "NovaServiceOutage": [
@@ -244,10 +257,11 @@ alert_metrics_no_openstack = {
         'docker_swarm_tasks_running != 0 or docker_swarm_tasks_desired == 0'
     ],
     "ElasticClusterStatusCritical": [
-        'max(elasticsearch_cluster_health_status{color="red"}) != 1'
+        'max(elasticsearch_cluster_health_status{color="red"}) by (name) != 1'
     ],
     "ElasticClusterStatusWarning": [
-        'max(elasticsearch_cluster_health_status{color=~"yellow|red"}) != 1'
+        'max(elasticsearch_cluster_health_status{color=~"yellow|red"}) '
+        'by (name) != 1'
     ],
     "ElasticHeapUsageCritical": [
         '(elasticsearch_jvm_memory_used_bytes{area="heap"} / '
@@ -281,14 +295,48 @@ alert_metrics_no_openstack = {
     "FileDescriptorUsageWarning": [
         'node_filefd_allocated / node_filefd_maximum <= 0.8'
     ],
+    "KafkaInsufficientBrokers": [
+        'sum by (namespace, cluster) (up{job="tf-kafka-jmx"}) / '
+        'count by (namespace, cluster) (up{job="tf-kafka-jmx"}) >= 1'
+    ],
+    "KafkaMissingController": [
+        'sum by (namespace, cluster) (kafka_controller_kafkacontroller_value{'
+        'name="ActiveControllerCount"}) >= 1'
+    ],
+    "KafkaOfflinePartitionsDetected": [
+        'sum by (namespace, cluster) (kafka_controller_kafkacontroller_value{'
+        'name="OfflinePartitionsCount"}) <= 0'
+    ],
+    "KafkaTooManyControllers": [
+        'sum by (namespace, cluster) (kafka_controller_kafkacontroller_value{'
+        'name="ActiveControllerCount"}) <= 1'
+    ],
+    "KafkaUncleanLeaderElectionOccured": [
+        'max by (namespace, cluster) '
+        '(kafka_controller_controllerstats_uncleanleaderelectionspersec{'
+        'rate="1m"}) <= 0'
+    ],
+    "KafkaUnderReplicatedPartitions": [
+        'sum by (namespace, cluster) '
+        '(rate(kafka_server_replicamanager_value{'
+        'name="UnderReplicatedPartitions"}[1m])) <= 0'
+    ],
     "KubeAPIDown": [
         'probe_success{job="kubernetes-master-api"} != 0'
     ],
     "KubeAPIErrorsHighMajor": [
-        'sum(rate(apiserver_request_total{job="apiserver"}[5m]))'
+        'sum by(job) '
+        '(rate(apiserver_request_total{code=~"^(?:5..)$",'
+        'job="apiserver"}[5m])) / '
+        'sum by(job) (rate(apiserver_request_total{'
+        'job="apiserver"}[5m])) * 100 <= 3'
     ],
     "KubeAPIErrorsHighWarning": [
-        'sum(rate(apiserver_request_total{job="apiserver"}[5m]))'
+        'sum by(job) '
+        '(rate(apiserver_request_total{code=~"^(?:5..)$",'
+        'job="apiserver"}[5m])) / '
+        'sum by(job) (rate(apiserver_request_total{'
+        'job="apiserver"}[5m])) * 100 <= 1'
     ],
     "KubeAPILatencyHighMajor": [
         'cluster_quantile:apiserver_request_latencies:histogram_quantile'
@@ -301,7 +349,7 @@ alert_metrics_no_openstack = {
         'verb!~"^(?:LIST|WATCH|WATCHLIST|PROXY|CONNECT)$"} <= 1'
     ],
     "KubeAPIOutage": [
-        'max(probe_success{job="kubernetes-master-api"}) != 0'
+        'max by(job) (probe_success{job="kubernetes-master-api"}) != 0'
     ],
     "KubeAPIResourceErrorsHighMajor": [
         'sum by(resource, subresource, verb) (rate(apiserver_request_total'
@@ -502,8 +550,8 @@ alert_metrics_no_openstack = {
         '(patroni_patroni_cluster_unlocked) <= 0'
     ],
     "PostgresqlPrimaryDown": [
-        'sum by (namespace, cluster) '
-        '(patroni_patroni_info{role="master"} or on() vector(0)) >= 1'
+        'absent(patroni_patroni_info{job="patroni",role="master"}) * '
+        'on(job) group_left(cluster, namespace) up{job="patroni"} != 1'
     ],
     "PostgresqlReplicaDown": [
         'absent(count by (namespace, cluster) '
@@ -521,12 +569,14 @@ alert_metrics_no_openstack = {
         'patroni_xlog_paused <= 0'
     ],
     "PostgresqlReplicationSlowWalApplication": [
-        'patroni_xlog_replayed_location - on(namespace, cluster, pod) '
-        'group_left patroni_xlog_received_location <= 0'
+        'max without(instance, node) (patroni_xlog_replayed_location) - '
+        'on(namespace, cluster, pod) group_left() max without(instance, node) '
+        '(patroni_xlog_received_location) <= 0'
     ],
     "PostgresqlReplicationSlowWalDownload": [
-        'patroni_xlog_received_location - on(namespace, cluster) '
-        'group_left patroni_xlog_location <= 0'
+        'max without(instance, node) (patroni_xlog_received_location) - '
+        'on(namespace, cluster) group_left() max without(instance, node) '
+        '(patroni_xlog_location) <= 0'
     ],
     "PostgresqlReplicationWalArchiveWriteFailing": [
         'sum by (namespace, cluster, pod) '
@@ -670,10 +720,12 @@ alert_metrics_no_openstack = {
     "etcdNoLeader": ['etcd_server_has_leader{job=~".*etcd.*"} != 0'],
     # Ceph alerts
     "CephClusterFullCritical": [
-        'sum(ceph_osd_stat_bytes_used) / sum(ceph_osd_stat_bytes) <= 0.95'
+        'sum(ceph_osd_stat_bytes_used) by (rook_cluster) / '
+        'sum(ceph_osd_stat_bytes) by (rook_cluster) <= 0.95'
     ],
     "CephClusterFullWarning": [
-        'sum(ceph_osd_stat_bytes_used) / sum(ceph_osd_stat_bytes) <= 0.85'
+        'sum(ceph_osd_stat_bytes_used) by (rook_cluster) / '
+        'sum(ceph_osd_stat_bytes) by (rook_cluster) <= 0.85'
     ],
     "CephClusterHealthCritical": ['ceph_health_status <= 1'],
     "CephClusterHealthMinor": ['ceph_health_status < 1'],
@@ -707,8 +759,12 @@ alert_metrics_no_openstack = {
         '(ceph_version)) <= 1'
     ],
     "CephOSDDown": ['count(ceph_osd_up) - sum(ceph_osd_up) <= 0'],
-    "CephOSDPgNumTooHighCritical": ['max(ceph_osd_numpg) <= 300'],
-    "CephOSDPgNumTooHighWarning": ['max(ceph_osd_numpg) <= 200'],
+    "CephOSDPgNumTooHighCritical": [
+        'max(ceph_osd_numpg) by (rook_cluster) <= 300'
+    ],
+    "CephOSDPgNumTooHighWarning": [
+        'max(ceph_osd_numpg) by (rook_cluster) <= 200'
+    ],
     "CephPGInconsistent": ['ceph_pg_inconsistent <= 0'],
     "CephPGUndersized": ['ceph_pg_undersized <= 0'],
     "IronicBmApiOutage": [
@@ -731,6 +787,9 @@ alert_metrics_no_openstack = {
     "SSLProbesFailing": [
         'max_over_time(probe_success{'
         'job!~"(openstack|mcc)-blackbox.*"}[1h]) != 0'
+    ],
+    "TelegrafGatherErrors": [
+        'rate(internal_agent_gather_errors[10m]) <= 0'
     ],
     "TelemeterClientFederationFailed": [
         'increase(federate_errors[30m]) <= 2'
