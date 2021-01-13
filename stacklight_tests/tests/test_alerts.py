@@ -550,8 +550,10 @@ alert_metrics_no_openstack = {
         '(patroni_patroni_cluster_unlocked) <= 0'
     ],
     "PostgresqlPrimaryDown": [
-        'absent(patroni_patroni_info{job="patroni",role="master"}) * '
-        'on(job) group_left(cluster, namespace) up{job="patroni"} != 1'
+        'sum by (namespace, cluster) '
+        '(absent(patroni_patroni_info{role="master",job="patroni"}) * '
+        'on(job) group_right(instance) up{job="patroni"}) <= 0 or '
+        'patroni_patroni_info{role="master",job="patroni"}'
     ],
     "PostgresqlReplicaDown": [
         'absent(count by (namespace, cluster) '

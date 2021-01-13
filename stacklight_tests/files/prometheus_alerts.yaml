@@ -247,8 +247,8 @@ PostgresqlPatroniClusterSplitBrain: count by (namespace, cluster) (patroni_patro
   > 1
 PostgresqlPatroniClusterUnlocked: sum by (namespace, cluster) (patroni_patroni_cluster_unlocked)
   > 0
-PostgresqlPrimaryDown: absent(patroni_patroni_info{job="patroni",role="master"}) *
-  on(job) group_left(cluster, namespace) up{job="patroni"} == 1
+PostgresqlPrimaryDown: sum by (namespace, cluster) (absent(patroni_patroni_info{role="master",job="patroni"}) *
+  on(job) group_right(instance) up{job="patroni"}) > 0
 PostgresqlReplicaDown: 100 * (count by (namespace, cluster) (patroni_patroni_info{role="replica",state!="running"})
   / count by (namespace, cluster) (patroni_patroni_info{role="replica"} or on() vector(1)))
 PostgresqlReplicationNonStreamingReplicas: count by(namespace, cluster) (patroni_replication_info{state="streaming"})
