@@ -60,9 +60,20 @@ class TemplatesTree(object):
             self.levels_by_name[template] = curr_level
 
     def _build_dependencies(self, queries):
+        redundant_levels = ['$es_cluster_filter',
+                            '$es_dc_filter',
+                            '$es_deploy_filter',
+                            '$es_node_filter',
+                            '$es_ns_filter',
+                            '$es_pod_filter',
+                            '$kibana_host']
         dependencies = {
             k: self.parse_dependencies(v) for k, (v, _) in queries.items()
         }
+        for k in dependencies.keys():
+            for r_l in redundant_levels:
+                if k == r_l:
+                    del dependencies[k]
         logger.info("Dependencies between variables: {}.".format(dependencies))
         parent_levels = [k for k, v in dependencies.items() if not v]
         logger.info("The highest parent level(s): {}.".format(parent_levels))
