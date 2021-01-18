@@ -367,8 +367,8 @@ alert_metrics_no_openstack = {
     "KubeCPUOvercommitPods": [
         'sum('
         'namespace_name:kube_pod_container_resource_requests_cpu_cores:sum) / '
-        'sum(node:node_num_cpu:sum) <= '
-        '(count(node:node_num_cpu:sum)-1) / count(node:node_num_cpu:sum)'
+        'sum(node:node_num_cpu:sum) <= ((count(node:node_num_cpu:sum)-1) / '
+        'count(node:node_num_cpu:sum) > 0.8 or vector(0.8))'
     ],
     "KubeClientCertificateExpirationInOneDay": [
         'apiserver_client_certificate_expiration_seconds_count'
@@ -435,7 +435,8 @@ alert_metrics_no_openstack = {
         'sum(namespace_name:'
         'kube_pod_container_resource_requests_memory_bytes:sum) / '
         'sum(node_memory_MemTotal_bytes) <= '
-        '(count(node:node_num_cpu:sum)-1) / count(node:node_num_cpu:sum)'
+        '((count(node:node_num_cpu:sum)-1) / '
+        'count(node:node_num_cpu:sum) > 0.8 or vector(0.8))'
     ],
     "KubeNodeNotReady": [
         'kube_node_status_condition'
