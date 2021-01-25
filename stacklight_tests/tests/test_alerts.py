@@ -15,6 +15,55 @@ alert_skip_list = ['SystemDiskErrorsTooHigh',
                    ]
 
 alert_metrics_openstack = {
+    "CassandraAuthFailures": [
+        'increase(cassandra_client_authentication_failures_total[1m]) <= 5'
+    ],
+    "CassandraCacheHitRateTooLow": [
+        'rate(cassandra_cache_hits_total[5m]) / '
+        'rate(cassandra_cache_requests_total[5m]) >= 0.85'
+    ],
+    "CassandraClientRequestFailure": [
+        'increase(cassandra_client_request_failures_total[1m]) <= 0'
+    ],
+    "CassandraClientRequestUnvailable": [
+        'increase('
+        'cassandra_client_request_unavailable_exceptions_total[1m]) <= 0'
+    ],
+    "CassandraCommitlogTasksPending": [
+        'cassandra_commit_log_pending_tasks < 15'
+    ],
+    "CassandraCompactionExecutorTasksBlocked": [
+        'cassandra_thread_pool_blocked_tasks{pool="CompactionExecutor"} <= 0'
+    ],
+    "CassandraCompactionTasksPending": [
+        'avg_over_time('
+        'cassandra_table_estimated_pending_compactions[30m]) < 100'
+    ],
+    "CassandraConnectionTimeouts": [
+        'increase(cassandra_endpoint_connection_timeouts_total[1m]) <= 5'
+    ],
+    "CassandraFlushWriterTasksBlocked": [
+        'cassandra_thread_pool_blocked_tasks{pool="MemtableFlushWriter"} <= 0'
+    ],
+    "CassandraHintsTooMany": [
+        'increase(cassandra_storage_hints_total[1m]) <= 3'
+    ],
+    "CassandraRepairTasksBlocked": [
+        'cassandra_thread_pool_blocked_tasks{pool="AntiEntropyStage"} <= 0'
+    ],
+    "CassandraStorageExceptions": [
+        'increase(cassandra_storage_exceptions_total[1m]) <= 1'
+    ],
+    "CassandraTombstonesTooManyMajor": [
+        'cassandra_table_tombstones_scanned{quantile="0.99"} < 1000'
+    ],
+    "CassandraTombstonesTooManyWarning": [
+        'cassandra_table_tombstones_scanned{quantile="0.99"} < 100'
+    ],
+    "CassandraViewWriteLatencyTooHigh": [
+        'cassandra_client_request_view_write_latency_seconds{'
+        'quantile="0.99"} <= 1'
+    ],
     "CinderServiceDown": ['openstack_cinder_service_state != 0'],
     "CinderServiceOutage": [
         'count by(binary) (openstack_cinder_service_state == 0) != on(binary) '
@@ -41,6 +90,32 @@ alert_metrics_openstack = {
         'count(openstack_ironic_driver) by (driver) <= 0'
     ],
     "LibvirtDown": ['libvirt_up != 0'],
+    "KafkaInsufficientBrokers": [
+        'sum by (namespace, cluster) (up{job="tf-kafka-jmx"}) / '
+        'count by (namespace, cluster) (up{job="tf-kafka-jmx"}) >= 1'
+    ],
+    "KafkaMissingController": [
+        'sum by (namespace, cluster) (kafka_controller_kafkacontroller_value{'
+        'name="ActiveControllerCount"}) >= 1'
+    ],
+    "KafkaOfflinePartitionsDetected": [
+        'sum by (namespace, cluster) (kafka_controller_kafkacontroller_value{'
+        'name="OfflinePartitionsCount"}) <= 0'
+    ],
+    "KafkaTooManyControllers": [
+        'sum by (namespace, cluster) (kafka_controller_kafkacontroller_value{'
+        'name="ActiveControllerCount"}) <= 1'
+    ],
+    "KafkaUncleanLeaderElectionOccured": [
+        'max by (namespace, cluster) '
+        '(kafka_controller_controllerstats_uncleanleaderelectionspersec{'
+        'rate="1m"}) <= 0'
+    ],
+    "KafkaUnderReplicatedPartitions": [
+        'sum by (namespace, cluster) '
+        '(rate(kafka_server_replicamanager_value{'
+        'name="UnderReplicatedPartitions"}[1m])) <= 0'
+    ],
     "MariadbGaleraDonorFallingBehind": [
         '(mysql_global_status_wsrep_local_state != 2 or '
         'mysql_global_status_wsrep_local_recv_queue <= 100)'
@@ -80,7 +155,8 @@ alert_metrics_openstack = {
     ],
     "MemcachedConnectionsNoneMajor": [
         'count(memcached_current_connections == 0) by (namespace) != '
-        'count(memcached_up) by (namespace)'
+        'count(memcached_up) by (namespace) or '
+        'absent(memcached_current_connections == 0)'
     ],
     "MemcachedConnectionsNoneMinor": ['memcached_current_connections != 0'],
     "MemcachedEvictionsLimit": [
@@ -188,7 +264,98 @@ alert_metrics_openstack = {
         'rabbitmq_partitions <= 0'
     ],
     "RabbitMQNodeDiskFreeAlarm": ['rabbitmq_node_disk_free_alarm <= 0'],
-    "RabbitMQNodeMemoryAlarm": ['rabbitmq_node_mem_alarm <= 0']
+    "RabbitMQNodeMemoryAlarm": ['rabbitmq_node_mem_alarm <= 0'],
+    "RedisClusterFlapping": [
+        'max by (namespace, cluster) '
+        '(changes(redis_connected_slaves[2m])) <= 2'
+    ],
+    "RedisDisconnectedReplicas": [
+        'count by (namespace, cluster) (redis_connected_slaves) - '
+        'sum by (namespace, cluster) (redis_connected_slaves) - 1 <= 0'
+    ],
+    "RedisDown": ['redis_up != 0'],
+    "RedisMissingPrimary": [
+        'count by (namespace, cluster) '
+        '(redis_instance_info{role="master"}) != 0'
+    ],
+    "RedisMultiplePrimaries": [
+        'count by (namespace, cluster) '
+        '(redis_instance_info{role="master"}) <= 1'
+    ],
+    "RedisRejectedConnections": [
+        'increase(redis_rejected_connections_total[1m]) <= 0'
+    ],
+    "RedisReplicationBroken": [
+        'min by (namespace, cluster) (delta(redis_connected_slaves[1m])) >= 0'
+    ],
+    "TungstenFabricBGPSessionsDown": [
+        'min by (node) '
+        '(tf_controller_sessions{protocol="bgp",state="down"}) <= 0'
+    ],
+    "TungstenFabricBGPSessionsNoActive": [
+        'max by (node) '
+        '(tf_controller_sessions{protocol="bgp",state="up"}) != 0'
+    ],
+    "TungstenFabricBGPSessionsNoEstablished": [
+        'max by (node) '
+        '(tf_controller_sessions{protocol="bgp"}) != 0'
+    ],
+    "TungstenFabricControllerDown": ['tf_controller_up != 0'],
+    "TungstenFabricControllerOutage": ['max(tf_controller_up) != 0'],
+    "TungstenFabricVrouterDown": ['tf_vrouter_up != 0'],
+    "TungstenFabricVrouterLLSSessionsChangesTooHigh": [
+        'abs(delta(tf_vrouter_lls_session_info[2m])) < 5'
+    ],
+    "TungstenFabricVrouterLLSSessionsTooHigh": [
+        'count by (node) (tf_vrouter_lls_session_info) < 10'
+    ],
+    "TungstenFabricVrouterMetadataCheck": [
+        'sum by (node) (tf_vrouter_lls_session_info{name="metadata"} or '
+        '0*tf_vrouter_up) != 0'
+    ],
+    "TungstenFabricVrouterOutage": ['max(tf_vrouter_up) != 0'],
+    "TungstenFabricVrouterXMPPSessionsChangesTooHigh": [
+        'abs(delta(tf_vrouter_xmpp_connection_state[2m])) < 5'
+    ],
+    "TungstenFabricVrouterXMPPSessionsTooHigh": [
+        'count by (node) (tf_vrouter_xmpp_connection_state) < 10'
+    ],
+    "TungstenFabricVrouterXMPPSessionsZero": [
+        'sum by (node) (count by (node) '
+        '(tf_vrouter_xmpp_connection_state) or 0*tf_vrouter_up) != 0'],
+    "TungstenFabricXMPPSessionsChangesTooHigh": [
+        'abs(delta(tf_controller_sessions{protocol="xmpp"}[2m])) < 100'
+    ],
+    "TungstenFabricXMPPSessionsDown": [
+        'min by (node) '
+        '(tf_controller_sessions{protocol="xmpp",state="down"}) <= 0'
+    ],
+    "TungstenFabricXMPPSessionsMissing": [
+        'count(tf_vrouter_up) * 2 - '
+        '(sum(tf_controller_sessions{protocol="xmmp"}) or vector(0)) <= 0'
+    ],
+    "TungstenFabricXMPPSessionsMissingEstablished": [
+        'count(tf_vrouter_up) * 2 - (sum(tf_controller_sessions{'
+        'protocol="xmpp",state="up"}) or vector(0)) <= 0'
+    ],
+    "TungstenFabricXMPPSessionsTooHigh": [
+        'min(tf_controller_sessions{protocol="xmpp"}) by (node) < 500'
+    ],
+    "ZookeeperMissingFollowers": [
+        '(sum by (namespace, cluster) (synced_followers) + 1) >= '
+        'count by (namespace, cluster) (up{job="tf-zookeeper"})'
+    ],
+    "ZookeeperRequestOverload": [
+        'sum by (namespace, cluster, pod) (outstanding_requests) <= 10'
+    ],
+    "ZookeeperRunningOutOfFileDescriptors": [
+        'sum by (namespace, cluster, pod) '
+        '(open_file_descriptor_count{job="tf-zookeeper"} / '
+        'max_file_descriptor_count{job="tf-zookeeper"}) <= 0.85'
+    ],
+    "ZookeeperSyncOverload": [
+        'sum by (namespace, cluster) (pending_syncs) <= 10'
+    ]
 }
 
 alert_metrics_no_openstack = {
@@ -294,32 +461,6 @@ alert_metrics_no_openstack = {
     ],
     "FileDescriptorUsageWarning": [
         'node_filefd_allocated / node_filefd_maximum <= 0.8'
-    ],
-    "KafkaInsufficientBrokers": [
-        'sum by (namespace, cluster) (up{job="tf-kafka-jmx"}) / '
-        'count by (namespace, cluster) (up{job="tf-kafka-jmx"}) >= 1'
-    ],
-    "KafkaMissingController": [
-        'sum by (namespace, cluster) (kafka_controller_kafkacontroller_value{'
-        'name="ActiveControllerCount"}) >= 1'
-    ],
-    "KafkaOfflinePartitionsDetected": [
-        'sum by (namespace, cluster) (kafka_controller_kafkacontroller_value{'
-        'name="OfflinePartitionsCount"}) <= 0'
-    ],
-    "KafkaTooManyControllers": [
-        'sum by (namespace, cluster) (kafka_controller_kafkacontroller_value{'
-        'name="ActiveControllerCount"}) <= 1'
-    ],
-    "KafkaUncleanLeaderElectionOccured": [
-        'max by (namespace, cluster) '
-        '(kafka_controller_controllerstats_uncleanleaderelectionspersec{'
-        'rate="1m"}) <= 0'
-    ],
-    "KafkaUnderReplicatedPartitions": [
-        'sum by (namespace, cluster) '
-        '(rate(kafka_server_replicamanager_value{'
-        'name="UnderReplicatedPartitions"}[1m])) <= 0'
     ],
     "KubeAPIDown": [
         'probe_success{job="kubernetes-master-api"} != 0'
