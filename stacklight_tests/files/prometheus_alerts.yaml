@@ -31,8 +31,10 @@ CassandraStorageExceptions: increase(cassandra_storage_exceptions_total[1m]) > 1
 CassandraTombstonesTooManyMajor: cassandra_table_tombstones_scanned{quantile="0.99"} >= 1000
 CassandraTombstonesTooManyWarning: cassandra_table_tombstones_scanned{quantile="0.99"} >= 100
 CassandraViewWriteLatencyTooHigh: cassandra_client_request_view_write_latency_seconds{quantile="0.99"} > 1
-CephClusterFullCritical: sum(ceph_osd_stat_bytes_used) by (rook_cluster) / sum(ceph_osd_stat_bytes) by (rook_cluster) > 0.95
-CephClusterFullWarning: sum(ceph_osd_stat_bytes_used) by (rook_cluster) / sum(ceph_osd_stat_bytes) by (rook_cluster) > 0.85
+CephClusterFullCritical: sum by(rook_cluster) (ceph_osd_stat_bytes_used) / sum by(rook_cluster)
+  (ceph_osd_stat_bytes) > 0.95
+CephClusterFullWarning: sum by(rook_cluster) (ceph_osd_stat_bytes_used) / sum by(rook_cluster)
+  (ceph_osd_stat_bytes) > 0.85
 CephClusterHealthCritical: ceph_health_status > 1
 CephClusterHealthMinor: ceph_health_status >= 1
 CephDataRecoveryTakingTooLong: ceph_pg_undersized > 0
@@ -43,13 +45,17 @@ CephMonQuorumAtRisk: count(ceph_mon_quorum_status{job="rook-ceph-mgr"} == 1) <= 
 CephMonVersionMismatch: count(count by(ceph_version) (ceph_mon_metadata{job="rook-ceph-mgr"}))
   > 1
 CephNodeDown: cluster:ceph_node_down:join_kube == 0
-CephOSDDiskNotResponding: label_replace((ceph_osd_in == 1 and ceph_osd_up == 0),"disk","$1","ceph_daemon","osd.(.*)")
-  + on(ceph_daemon) group_left(host, device) label_replace(ceph_disk_occupation,"host","$1","exported_instance","(.*)")
-CephOSDDiskUnavailable: label_replace((ceph_osd_in == 0 and ceph_osd_up == 0),"disk","$1","ceph_daemon","osd.(.*)")
-  + on(ceph_daemon) group_left(host, device) label_replace(ceph_disk_occupation,"host","$1","exported_instance","(.*)")
+CephOSDDiskNotResponding: max by(ceph_daemon, disk, host, rook_cluster, namespace) (label_replace((ceph_osd_in
+  == 1 and ceph_osd_up == 0), "disk", "$1", "ceph_daemon", "osd.(.*)")) + on(ceph_daemon)
+  group_left(host, device) max by(ceph_daemon, device, host, rook_cluster, namespace)
+  (label_replace(ceph_disk_occupation, "host", "$1", "exported_instance", "(.*)"))
+CephOSDDiskUnavailable: max by(ceph_daemon, disk, host, rook_cluster, namespace) (label_replace((ceph_osd_in
+  == 0 and ceph_osd_up == 0), "disk", "$1", "ceph_daemon", "osd.(.*)")) + on(ceph_daemon)
+  group_left(host, device) max by(ceph_daemon, device, host, rook_cluster, namespace)
+  (label_replace(ceph_disk_occupation, "host", "$1", "exported_instance", "(.*)"))
 CephOSDDown: count(ceph_osd_up) - sum(ceph_osd_up) > 0
-CephOSDPgNumTooHighCritical: max(ceph_osd_numpg) by (rook_cluster) > 300
-CephOSDPgNumTooHighWarning: max(ceph_osd_numpg) by (rook_cluster) > 200
+CephOSDPgNumTooHighCritical: max by(rook_cluster) (ceph_osd_numpg) > 300
+CephOSDPgNumTooHighWarning: max by(rook_cluster) (ceph_osd_numpg) > 200
 CephOSDVersionMismatch: count(count by(ceph_version) (ceph_osd_metadata{job="rook-ceph-mgr"}))
   > 1
 CephPGInconsistent: ceph_pg_inconsistent > 0
@@ -195,7 +201,8 @@ MCCSSLCertExpirationMajor: max_over_time(probe_ssl_earliest_cert_expiry{job="mcc
 MCCSSLCertExpirationWarning: max_over_time(probe_ssl_earliest_cert_expiry{job="mcc-blackbox"}[1h])
   < probe_success{job="mcc-blackbox"} * (time() + 86400 * 30)
 MCCSSLProbesFailing: max_over_time(probe_success{job="mcc-blackbox"}[1h]) == 0
-MemcachedConnectionsNoneMajor: count(memcached_current_connections == 0) by (namespace) == count(memcached_up) by (namespace)
+MemcachedConnectionsNoneMajor: count by(namespace) (memcached_current_connections == 0) ==
+  count by(namespace) (memcached_up)
 MemcachedConnectionsNoneMinor: memcached_current_connections == 0
 MemcachedEvictionsLimit: increase(memcached_items_evicted_total[1m]) > 10
 MemcachedServiceDown: memcached_up == 0
@@ -231,8 +238,12 @@ NodeDown: up{job="kubelet"} == 0 and on(node) kube_node_status_condition{conditi
   == 0
 NodeNetworkInterfaceFlapping: changes(node_network_up{device!~"veth.+",job="node-exporter"}[2m])
   > 2
-NovaComputeServicesDownMajor: count(openstack_nova_service_state{binary="nova-compute"} == 0) by (binary) >= count(openstack_nova_service_state{binary="nova-compute"}) by (binary) * 0.5
-NovaComputeServicesDownMinor: count(openstack_nova_service_state{binary="nova-compute"} == 0) by (binary) >= count(openstack_nova_service_state{binary="nova-compute"}) by (binary) * 0.25
+NovaComputeServicesDownMajor: count by(binary) (openstack_nova_service_state{binary="nova-compute"}
+  == 0) >= count by(binary) (openstack_nova_service_state{binary="nova-compute"})
+  * 0.5
+NovaComputeServicesDownMinor: count by(binary) (openstack_nova_service_state{binary="nova-compute"}
+  == 0) >= count by(binary) (openstack_nova_service_state{binary="nova-compute"})
+  * 0.25
 NovaServiceDown: openstack_nova_service_state == 0
 NovaServiceOutage: count by(binary) (openstack_nova_service_state == 0) == on(binary)
   count by(binary) (openstack_nova_service_state)

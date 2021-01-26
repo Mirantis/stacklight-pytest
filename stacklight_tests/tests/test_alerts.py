@@ -864,12 +864,12 @@ alert_metrics_no_openstack = {
     "etcdNoLeader": ['etcd_server_has_leader{job=~".*etcd.*"} != 0'],
     # Ceph alerts
     "CephClusterFullCritical": [
-        'sum(ceph_osd_stat_bytes_used) by (rook_cluster) / '
-        'sum(ceph_osd_stat_bytes) by (rook_cluster) <= 0.95'
+        'sum by(rook_cluster) (ceph_osd_stat_bytes_used) / '
+        'sum by(rook_cluster) (ceph_osd_stat_bytes) <= 0.95'
     ],
     "CephClusterFullWarning": [
-        'sum(ceph_osd_stat_bytes_used) by (rook_cluster) / '
-        'sum(ceph_osd_stat_bytes) by (rook_cluster) <= 0.85'
+        'sum by(rook_cluster) (ceph_osd_stat_bytes_used) / '
+        'sum by(rook_cluster) (ceph_osd_stat_bytes) <= 0.85'
     ],
     "CephClusterHealthCritical": ['ceph_health_status <= 1'],
     "CephClusterHealthMinor": ['ceph_health_status < 1'],
@@ -887,16 +887,20 @@ alert_metrics_no_openstack = {
     ],
     "CephNodeDown": ['cluster:ceph_node_down:join_kube != 0'],
     "CephOSDDiskNotResponding": [
-        'label_replace((ceph_osd_in != 1 or ceph_osd_up != 0), "disk", "$1", '
-        '"ceph_daemon", "osd.(.*)") + on(ceph_daemon) group_left(host, device)'
-        ' label_replace(ceph_disk_occupation, "host", "$1", '
-        '"exported_instance", "(.*)")'
+        'max by(ceph_daemon, disk, host, rook_cluster, namespace) '
+        '(label_replace((ceph_osd_in != 1 or ceph_osd_up != 0), '
+        '"disk", "$1", "ceph_daemon", "osd.(.*)")) + on(ceph_daemon) '
+        'group_left(host, device) max by(ceph_daemon, device, host, '
+        'rook_cluster, namespace) (label_replace(ceph_disk_occupation, '
+        '"host", "$1", "exported_instance", "(.*)"))'
     ],
     "CephOSDDiskUnavailable": [
-        'label_replace((ceph_osd_in != 0 or ceph_osd_up != 0), "disk", "$1", '
-        '"ceph_daemon", "osd.(.*)") + on(ceph_daemon) group_left(host, device)'
-        ' label_replace(ceph_disk_occupation, "host", "$1", '
-        '"exported_instance", "(.*)")'
+        'max by(ceph_daemon, disk, host, rook_cluster, namespace) '
+        '(label_replace((ceph_osd_in != 0 or ceph_osd_up != 0), '
+        '"disk", "$1", "ceph_daemon", "osd.(.*)")) + on(ceph_daemon) '
+        'group_left(host, device) max by(ceph_daemon, device, host, '
+        'rook_cluster, namespace) (label_replace(ceph_disk_occupation, '
+        '"host", "$1", "exported_instance", "(.*)"))'
     ],
     "CephOSDVersionMismatch": [
         'count(count(ceph_osd_metadata{job="rook-ceph-mgr"}) by '
@@ -904,10 +908,10 @@ alert_metrics_no_openstack = {
     ],
     "CephOSDDown": ['count(ceph_osd_up) - sum(ceph_osd_up) <= 0'],
     "CephOSDPgNumTooHighCritical": [
-        'max(ceph_osd_numpg) by (rook_cluster) <= 300'
+        'max by(rook_cluster) (ceph_osd_numpg) <= 300'
     ],
     "CephOSDPgNumTooHighWarning": [
-        'max(ceph_osd_numpg) by (rook_cluster) <= 200'
+        'max by(rook_cluster) (ceph_osd_numpg) <= 200'
     ],
     "CephPGInconsistent": ['ceph_pg_inconsistent <= 0'],
     "CephPGUndersized": ['ceph_pg_undersized <= 0'],
